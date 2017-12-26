@@ -1,0 +1,32 @@
+DIGEST 83ced0cc4156d6f5d63cdff1cadf3ff3
+Fproof
+R15:19 Coq.Arith.Arith <> <> lib
+R37:53 Coq.ZArith.BinInt <> <> lib
+R71:89 Coq.Numbers.BinNums <> <> lib
+R107:120 Coq.Lists.List <> <> lib
+def 163:164 <> Ix
+R169:169 Coq.Numbers.BinNums <> Z ind
+def 207:214 <> MemValue
+R219:219 Coq.Numbers.BinNums <> Z ind
+ind 275:280 <> Factor
+constr 291:293 <> Raw
+R305:308 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R309:314 proof <> Factor ind
+R297:304 proof <> MemValue def
+ind 361:364 <> Stmt
+constr 376:380 <> Write
+R385:388 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R395:398 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R399:402 proof <> Stmt ind
+R389:394 proof <> Factor ind
+R384:384 Coq.Numbers.BinNums <> Z ind
+def 457:463 <> Program
+R468:471 Coq.Init.Datatypes <> list ind
+R473:476 proof <> Stmt ind
+def 543:548 <> Memory
+R556:559 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R560:567 proof <> MemValue def
+R554:555 proof <> Ix def
+def 582:591 <> initMemory
+R595:600 proof <> Memory def
+R615:616 Coq.Numbers.BinNums <> Z0 constr
