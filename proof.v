@@ -54,9 +54,10 @@ Definition Timepoint := nat.
 Definition ScheduleMap := Stmt -> Timepoint.
 
 (* A schedule is a permutation of a program *)
-Definition SchedulePerm (p: Program) (q: Program) := Permutation p q.
+(* Definition SchedulePerm (p: Program) (q: Program) := Permutation p q. *)
 
-(* How to formalise a dependence? *)
-(* )Inductive DependenceOnScheduleMap : Type := (smap: ScheduleMap) -> (s1: Stmt) -> (s2: Stmt) -> (lt (smap s1) (smap s2)) -> DependenceOnScheduleMap. *)
-Inductive DependenceOnScheduleMap :   ScheduleMap -> Stmt -> Stmt -> Prop -> Type :=
- Dep : forall (smap : ScheduleMap) (s1: Stmt) (s2: Stmt), DependenceOnScheduleMap smap s1 s2 (smap s1 < smap s2).
+(* How to leormalise a dependence? *)
+(* Inductive DependenceOnScheduleMap : Type := (smap: ScheduleMap) -> (s1: Stmt) -> (s2: Stmt) -> (lt (smap s1) (smap s2)) -> DependenceOnScheduleMap. *)
+
+Inductive ScheduleAdmitsDep:  ScheduleMap -> Stmt -> Stmt -> Prop -> Type :=
+  Dep : forall (smap : ScheduleMap) (s1: Stmt) (s2: Stmt), ScheduleAdmitsDep smap s1 s2 (smap s1 < smap s2).
