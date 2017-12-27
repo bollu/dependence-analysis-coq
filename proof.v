@@ -3,6 +3,7 @@ Require Import Coq.ZArith.BinInt.
 Require Import Coq.Numbers.BinNums.
 Require Import Coq.Lists.List.
 Require Import Coq.ZArith.Zbool.
+Require Import Coq.Sorting.Permutation.
 
 
 (* An index into memory *)
@@ -34,4 +35,28 @@ Definition modelStmtMemorySideEffect (s: Stmt) (mold: Memory) : Memory :=
   match s with
   | Write wix wval => (fun ix => if (Zeq_bool ix wix) then wval else Z0)
   end.
-       
+
+(* Runner for function that models memoru side effects of entire programs *)
+Fixpoint modelProgramMemorySideEffect_go (p: Program) (mold: Memory) : Memory :=
+  match p with
+  | nil => mold
+  | x :: xs => modelProgramMemorySideEffect_go xs (modelStmtMemorySideEffect x mold)
+  end.
+
+Definition modelProgramMemorySideEffect (p: Program) : Memory :=
+  modelProgramMemorySideEffect_go p initMemory.
+
+                                
+(* A timepoint for a schedule *)
+Definition Timepoint := nat. 
+
+(* A schedule maps statements to time points *)
+Definition ScheduleMap := Stmt -> Timepoint.
+
+(* A schedule is a permutation of a program *)
+Definition SchedulePerm (p: Program) (q: Program) := Permutation p q.
+
+(* How to formalise a dependence? *)
+(* )Inductive DependenceOnScheduleMap : Type := (smap: ScheduleMap) -> (s1: Stmt) -> (s2: Stmt) -> (lt (smap s1) (smap s2)) -> DependenceOnScheduleMap. *)
+Inductive DependenceOnScheduleMap :   ScheduleMap -> Stmt -> Stmt -> Prop -> Type :=
+ Dep : forall (smap : ScheduleMap) (s1: Stmt) (s2: Stmt), DependenceOnScheduleMap smap s1 s2 (smap s1 < smap s2).
