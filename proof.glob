@@ -1,32 +1,88 @@
-DIGEST 83ced0cc4156d6f5d63cdff1cadf3ff3
+DIGEST 614ae81e1f65af43cdf5e99b404cbefe
 Fproof
 R15:19 Coq.Arith.Arith <> <> lib
 R37:53 Coq.ZArith.BinInt <> <> lib
 R71:89 Coq.Numbers.BinNums <> <> lib
 R107:120 Coq.Lists.List <> <> lib
-def 163:164 <> Ix
-R169:169 Coq.Numbers.BinNums <> Z ind
-def 207:214 <> MemValue
-R219:219 Coq.Numbers.BinNums <> Z ind
-ind 275:280 <> Factor
-constr 291:293 <> Raw
-R305:308 Coq.Init.Logic <> :type_scope:x_'->'_x not
-R309:314 proof <> Factor ind
-R297:304 proof <> MemValue def
-ind 361:364 <> Stmt
-constr 376:380 <> Write
-R385:388 Coq.Init.Logic <> :type_scope:x_'->'_x not
-R395:398 Coq.Init.Logic <> :type_scope:x_'->'_x not
-R399:402 proof <> Stmt ind
-R389:394 proof <> Factor ind
-R384:384 Coq.Numbers.BinNums <> Z ind
-def 457:463 <> Program
-R468:471 Coq.Init.Datatypes <> list ind
-R473:476 proof <> Stmt ind
-def 543:548 <> Memory
-R556:559 Coq.Init.Logic <> :type_scope:x_'->'_x not
-R560:567 proof <> MemValue def
-R554:555 proof <> Ix def
-def 582:591 <> initMemory
-R595:600 proof <> Memory def
-R615:616 Coq.Numbers.BinNums <> Z0 constr
+R138:153 Coq.ZArith.Zbool <> <> lib
+R171:193 Coq.Sorting.Permutation <> <> lib
+def 236:237 <> Ix
+R242:242 Coq.Numbers.BinNums <> Z ind
+def 280:287 <> MemValue
+R292:292 Coq.Numbers.BinNums <> Z ind
+ind 439:442 <> Stmt
+constr 454:458 <> Write
+R463:466 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R475:478 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R479:482 proof <> Stmt ind
+R467:474 proof <> MemValue def
+R462:462 Coq.Numbers.BinNums <> Z ind
+def 537:543 <> Program
+R548:551 Coq.Init.Datatypes <> list ind
+R553:556 proof <> Stmt ind
+def 623:628 <> Memory
+R636:639 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R640:647 proof <> MemValue def
+R634:635 proof <> Ix def
+def 692:701 <> initMemory
+R705:710 proof <> Memory def
+R725:726 Coq.Numbers.BinNums <> Z0 constr
+def 880:904 <> modelStmtMemorySideEffect
+R910:913 proof <> Stmt ind
+R923:928 proof <> Memory def
+R933:938 proof <> Memory def
+R951:951 proof <> s var
+R962:966 proof <> Write constr
+R995:1002 Coq.ZArith.Zbool <> Zeq_bool def
+R1004:1005 proof <> ix var
+R1027:1028 Coq.Numbers.BinNums <> Z0 constr
+def 1125:1155 <> modelProgramMemorySideEffect_go
+R1161:1167 proof <> Program def
+R1177:1182 proof <> Memory def
+R1187:1192 proof <> Memory def
+R1205:1205 proof <> p var
+R1216:1218 Coq.Init.Datatypes <> nil constr
+R1223:1226 proof <> mold var
+R1233:1236 Coq.Init.Datatypes <> :list_scope:x_'::'_x not
+R1243:1273 proof <> modelProgramMemorySideEffect_go def
+R1279:1303 proof <> modelStmtMemorySideEffect def
+R1307:1310 proof <> mold var
+def 1332:1359 <> modelProgramMemorySideEffect
+R1365:1371 proof <> Program def
+R1376:1381 proof <> Memory def
+R1388:1418 proof <> modelProgramMemorySideEffect_go def
+R1422:1431 proof <> initMemory def
+R1420:1420 proof <> p var
+def 1512:1520 <> Timepoint
+R1525:1527 Coq.Init.Datatypes <> nat ind
+def 1591:1601 <> ScheduleMap
+R1610:1613 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R1614:1622 proof <> Timepoint def
+R1606:1609 proof <> Stmt ind
+def 1684:1695 <> SchedulePerm
+R1701:1707 proof <> Program def
+R1714:1720 proof <> Program def
+R1726:1736 Coq.Sorting.Permutation <> Permutation ind
+R1740:1740 proof <> q var
+R1738:1738 proof <> p var
+ind 1946:1968 <> DependenceOnScheduleMap
+constr 2022:2024 <> Dep
+R1985:1988 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R1993:1996 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R2001:2004 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R2009:2012 Coq.Init.Logic <> :type_scope:x_'->'_x not
+R1997:2000 proof <> Stmt ind
+R1989:1992 proof <> Stmt ind
+R1974:1984 proof <> ScheduleMap def
+R2043:2053 proof <> ScheduleMap def
+R2061:2064 proof <> Stmt ind
+R2072:2075 proof <> Stmt ind
+R2079:2101 proof <> DependenceOnScheduleMap ind
+R2122:2124 Coq.Init.Peano <> :nat_scope:x_'<'_x not
+R2115:2118 proof <> smap var
+R2120:2121 proof <> s1 var
+R2125:2128 proof <> smap var
+R2130:2131 proof <> s2 var
+R2111:2112 proof <> s2 var
+R2108:2109 proof <> s1 var
+R2103:2106 proof <> smap var
