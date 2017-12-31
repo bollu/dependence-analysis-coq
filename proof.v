@@ -1,5 +1,5 @@
-
 Require Import Coq.ZArith.BinInt.
+Require Import Coq.ZArith.BinIntDef.
 Require Import Coq.Numbers.BinNums.
 Require Import Coq.Lists.List.
 Require Import Coq.ZArith.Zbool.
@@ -7,6 +7,9 @@ Require Import Coq.Sorting.Permutation.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Omega.
 Require Import Coq.Bool.Sumbool.
+Require Import Coq.ZArith.Zhints.
+Require Import Coq.Classes.EquivDec.
+Require Import Coq.Structures.Equalities.
 
 
 (* An index into memory *)
@@ -38,29 +41,31 @@ Qed.
 
 
 Definition writeToMemory (wix: Ix) (wval: MemValue) (mold: Memory) : Memory :=
-  fun ix => if Zeq_bool ix wix then wval else mold ix.
+  fun ix => if (ix =? wix)%Z then wval else mold ix.
 
 Theorem readFromWriteIdentical : forall (wix: Ix) (wval: MemValue) (mem: Memory),
     (writeToMemory wix wval mem) wix = wval.
 Proof.
   intros wix wval mem.
   unfold writeToMemory.
-  assert ((wix = wix)).
-  reflexivity.
-  rewrite  Zeq_is_eq_bool in H.
-  rewrite H.
+  rewrite Z.eqb_refl.
   reflexivity.
 Qed.
 
+
+(* I do not know who Zneq_to_neq fails. TODO: debug this *)
 Theorem readFromWriteDifferent : forall (wix: Ix) (rix: Ix) (wval : MemValue) (mem: Memory),
     rix <> wix -> (writeToMemory wix wval mem) rix = mem rix.
 Proof.
   intros wix rix wval mem.
   intros rix_neq_wix.
   unfold writeToMemory.
-  rewrite Zeq_is_eq_bool in rix_neq_wix.
-Admitted.
-
+  assert((rix =? wix)%Z = false).
+  apply Z.eqb_neq in rix_neq_wix.
+  auto.
+  rewrite H.
+  reflexivity.
+Qed.
 
 
   
@@ -96,6 +101,7 @@ Definition AllowFlipIfWritesDontAlias : Prop :=
 Theorem trichotomy: forall (i1 i2 scrutinee: Ix), i1 <> i2 -> (scrutinee = i1) \/ (scrutinee = i2) \/ (scrutinee <> i1 /\ scrutinee <> i2).
 Proof.
   intros i1 i2 scrutinee.
+  intros i1_neq_i2.
   omega.
 Qed.
 
