@@ -38,7 +38,7 @@ Qed.
 
 
 Definition writeToMemory (wix: Ix) (wval: MemValue) (mold: Memory) : Memory :=
-  fun ix => if Zeq_bool ix wix then wval else mold wix.
+  fun ix => if Zeq_bool ix wix then wval else mold ix.
 
 Theorem readFromWriteIdentical : forall (wix: Ix) (wval: MemValue) (mem: Memory),
     (writeToMemory wix wval mem) wix = wval.
@@ -52,10 +52,23 @@ Proof.
   reflexivity.
 Qed.
 
+Theorem readFromWriteDifferent : forall (wix: Ix) (rix: Ix) (wval : MemValue) (mem: Memory),
+    rix <> wix -> (writeToMemory wix wval mem) rix = mem rix.
+Proof.
+  intros wix rix wval mem.
+  intros rix_neq_wix.
+  unfold writeToMemory.
+  rewrite Zeq_is_eq_bool in rix_neq_wix.
+Admitted.
+
+
+
+  
+
 (* Model the effect of memory writes on memory. *)
 Definition modelStmtMemorySideEffect (s: Stmt) (mold: Memory) : Memory :=
   match s with
-  | Write wix wval => (fun ix => if (Zeq_bool ix wix) then wval else mold wix)
+  | Write wix wval => (writeToMemory wix wval mold)
   end.
 
 Definition modelProgramMemorySideEffect (p: Program) : Memory :=
@@ -79,6 +92,13 @@ Definition AllowFlipIfWritesDontAlias : Prop :=
     (Program2Stmts (Write i1 v1) (Write i2 v2))
     (Program2Stmts (Write i2 v2) (Write i1 v1)).
 
+(* Theorem about integer equalities I need to separate writes into disjoint sets *)
+Theorem trichotomy: forall (i1 i2 scrutinee: Ix), i1 <> i2 -> (scrutinee = i1) \/ (scrutinee = i2) \/ (scrutinee <> i1 /\ scrutinee <> i2).
+Proof.
+  intros i1 i2 scrutinee.
+  omega.
+Qed.
+
 Theorem allowFlipIfWritesDontAlias:
   forall (i1 i2: Ix), forall (v1 v2: MemValue),
       i1 <> i2 ->
@@ -93,9 +113,7 @@ Proof.
   unfold modelProgramMemorySideEffect.
   unfold modelStmtMemorySideEffect.
   extensionality curix.
-  unfold initMemory.
-  intros.
-   rewrite sumbool_of_bool.
+  assert (curix = i1) \/ (curix = i2) \/ (curix <> i1 /\ curix <> i2).
 
 Qed.
 
