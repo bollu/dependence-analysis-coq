@@ -1,4 +1,4 @@
-Require Import Arith.
+
 Require Import Coq.ZArith.BinInt.
 Require Import Coq.Numbers.BinNums.
 Require Import Coq.Lists.List.
@@ -19,7 +19,8 @@ Definition MemValue := Z.
 Inductive Stmt : Type := Write : Z -> MemValue -> Stmt.
 
 (* A program is a list of statements *)
-Definition Program := list Stmt.
+Inductive Program : Type :=
+  Program2Stmts : Stmt -> Stmt -> Program.
 
 (* Memory is a function from an index to a value *)
 Definition Memory :=  Ix -> MemValue.
@@ -36,28 +37,31 @@ Definition modelStmtMemorySideEffect (s: Stmt) (mold: Memory) : Memory :=
   | Write wix wval => (fun ix => if (Zeq_bool ix wix) then wval else Z0)
   end.
 
-(* Runner for function that models memoru side effects of entire programs *)
-Fixpoint modelProgramMemorySideEffect_go (p: Program) (mold: Memory) : Memory :=
+Definition modelProgramMemorySideEffect (p: Program) : Memory :=
   match p with
-  | nil => mold
-  | x :: xs => modelProgramMemorySideEffect_go xs (modelStmtMemorySideEffect x mold)
+  | Program2Stmts s1 s2 => let s1mem := (modelStmtMemorySideEffect s1 initMemory) in
+                           (modelStmtMemorySideEffect s2 s1mem)
   end.
 
-Definition modelProgramMemorySideEffect (p: Program) : Memory :=
-  modelProgramMemorySideEffect_go p initMemory.
 
-                                
+(* Two programs are equivalent if their final states of memory is the same *)
+Definition programsEquivalent (p:Program) (q: Program) : Prop :=
+  modelProgramMemorySideEffect p  = modelProgramMemorySideEffect q.
+
+
+(* State theorem I wish to prove. *)
+(* If array indeces are not equal, it is safe to flip them*)
+Definition AlowFlipIfWritesDontAlias : Prop :=
+  forall (i1 i2: Ix), forall (v1 v2: MemValue),
+      i1 <> i2 ->
+  programsEquivalent
+    (Program2Stmts (Write i1 v1) (Write i2 v2))
+    (Program2Stmts (Write i2 v2) (Write i1 v1)).
+
+(**** Schedule stuff for later, I know nothing on how to prove this stuff ****)
 (* A timepoint for a schedule *)
 Definition Timepoint := nat. 
 
 (* A schedule maps statements to time points *)
 Definition ScheduleMap := Stmt -> Timepoint.
 
-(* A schedule is a permutation of a program *)
-(* Definition SchedulePerm (p: Program) (q: Program) := Permutation p q. *)
-
-(* How to leormalise a dependence? *)
-(* Inductive DependenceOnScheduleMap : Type := (smap: ScheduleMap) -> (s1: Stmt) -> (s2: Stmt) -> (lt (smap s1) (smap s2)) -> DependenceOnScheduleMap. *)
-
-Inductive ScheduleAdmitsDep:  ScheduleMap -> Stmt -> Stmt -> Prop -> Type :=
-  Dep : forall (smap : ScheduleMap) (s1: Stmt) (s2: Stmt), ScheduleAdmitsDep smap s1 s2 (smap s1 < smap s2).
