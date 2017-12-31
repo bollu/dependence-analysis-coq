@@ -4,6 +4,7 @@ Require Import Coq.Numbers.BinNums.
 Require Import Coq.Lists.List.
 Require Import Coq.ZArith.Zbool.
 Require Import Coq.Sorting.Permutation.
+Require Import Coq.Logic.FunctionalExtensionality.
 
 
 (* An index into memory *)
@@ -51,12 +52,29 @@ Definition programsEquivalent (p:Program) (q: Program) : Prop :=
 
 (* State theorem I wish to prove. *)
 (* If array indeces are not equal, it is safe to flip them*)
-Definition AlowFlipIfWritesDontAlias : Prop :=
+Definition AllowFlipIfWritesDontAlias : Prop :=
   forall (i1 i2: Ix), forall (v1 v2: MemValue),
       i1 <> i2 ->
   programsEquivalent
     (Program2Stmts (Write i1 v1) (Write i2 v2))
     (Program2Stmts (Write i2 v2) (Write i1 v1)).
+
+Theorem allowFlipIfWritesDontAlias:
+  forall (i1 i2: Ix), forall (v1 v2: MemValue),
+      i1 <> i2 ->
+  programsEquivalent
+    (Program2Stmts (Write i1 v1) (Write i2 v2))
+    (Program2Stmts (Write i2 v2) (Write i1 v1)).
+Proof.
+  intros i1 i2.
+  intros v1 v2.
+  intros i1_neq_i2.
+  unfold programsEquivalent.
+  unfold modelProgramMemorySideEffect.
+  unfold modelStmtMemorySideEffect.
+  extensionality curix.
+Qed.
+
 
 (**** Schedule stuff for later, I know nothing on how to prove this stuff ****)
 (* A timepoint for a schedule *)
