@@ -5,6 +5,8 @@ Require Import Coq.Lists.List.
 Require Import Coq.ZArith.Zbool.
 Require Import Coq.Sorting.Permutation.
 Require Import Coq.Logic.FunctionalExtensionality.
+Require Import Omega.
+Require Import Coq.Bool.Sumbool.
 
 
 (* An index into memory *)
@@ -29,13 +31,31 @@ Definition Memory :=  Ix -> MemValue.
 (* initial state of memory *)
 Definition initMemory : Memory := fun ix => Z0.
 
-(* currently, program state is just memory *)
-(* Definition ProgramState := Memory. *)
+Theorem initMemoryAlwaysZero : forall (wix: Ix), (initMemory wix) = Z0.
+Proof.
+  auto.
+Qed.
+
+
+Definition writeToMemory (wix: Ix) (wval: MemValue) (mold: Memory) : Memory :=
+  fun ix => if Zeq_bool ix wix then wval else mold wix.
+
+Theorem readFromWriteIdentical : forall (wix: Ix) (wval: MemValue) (mem: Memory),
+    (writeToMemory wix wval mem) wix = wval.
+Proof.
+  intros wix wval mem.
+  unfold writeToMemory.
+  assert ((wix = wix)).
+  reflexivity.
+  rewrite  Zeq_is_eq_bool in H.
+  rewrite H.
+  reflexivity.
+Qed.
 
 (* Model the effect of memory writes on memory. *)
 Definition modelStmtMemorySideEffect (s: Stmt) (mold: Memory) : Memory :=
   match s with
-  | Write wix wval => (fun ix => if (Zeq_bool ix wix) then wval else Z0)
+  | Write wix wval => (fun ix => if (Zeq_bool ix wix) then wval else mold wix)
   end.
 
 Definition modelProgramMemorySideEffect (p: Program) : Memory :=
@@ -73,6 +93,10 @@ Proof.
   unfold modelProgramMemorySideEffect.
   unfold modelStmtMemorySideEffect.
   extensionality curix.
+  unfold initMemory.
+  intros.
+   rewrite sumbool_of_bool.
+
 Qed.
 
 
