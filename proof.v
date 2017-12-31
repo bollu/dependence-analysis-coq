@@ -113,8 +113,30 @@ Proof.
   unfold modelProgramMemorySideEffect.
   unfold modelStmtMemorySideEffect.
   extensionality curix.
-  assert (curix = i1) \/ (curix = i2) \/ (curix <> i1 /\ curix <> i2).
-
+  destruct (trichotomy i1 i2 curix).
+  auto.
+  rewrite readFromWriteDifferent.
+  rewrite H.
+  rewrite readFromWriteIdentical.
+  rewrite readFromWriteIdentical.
+  reflexivity.
+  omega.
+  destruct H.
+  rewrite H.
+  rewrite readFromWriteIdentical.
+  rewrite readFromWriteDifferent.
+  rewrite readFromWriteIdentical.
+  auto.
+  auto.
+  rewrite readFromWriteDifferent.
+  rewrite readFromWriteDifferent.
+  rewrite readFromWriteDifferent.
+  rewrite readFromWriteDifferent.
+  auto.
+  omega.
+  omega.
+  omega.
+  omega.
 Qed.
 
 
