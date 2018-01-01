@@ -20,7 +20,7 @@ Require Import
   Coq.FSets.FMapList
   Coq.Structures.OrderedTypeEx.
 
-Module Import M := FMapList.Make(Nat_as_OT).
+Module Import M := FMapList.Make(Z_as_OT).
 
 
 Require Import
@@ -177,17 +177,20 @@ Inductive ScheduleMap : PList -> PList -> Prop :=
 Inductive Dependence : Type :=
   mkDependence: nat -> nat -> Dependence.
 
-Fixpoint extractDependencesgo
-         (index: nat)
+Fixpoint extractDependences
+         (stmtindex: nat)
          (progrev: PList)
          (writes: M.t nat)
-         : list Dependence :=
+  : list Dependence :=
   match progrev with
   | nil => nil
-  | (Write ix val)::ps => extractDependencesgo (index - 1) ps writes
+  | (Write wix _)::ps =>
+    let newwrites := add wix stmtindex writes in
+    let laterdeps := extractDependences (stmtindex - 1) ps newwrites in
+    match find wix writes with
+    | Some prevstmtix => (mkDependence prevstmtix stmtindex)::laterdeps
+    | None => laterdeps
+    end
   end.
 
           
-    
-                                
-
