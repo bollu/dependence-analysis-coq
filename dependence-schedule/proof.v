@@ -1,4 +1,5 @@
 Require Import Coq.Lists.List.
+Require Import Coq.Lists.ListSet.
 Require Import Coq.ZArith.BinInt.
 Require Import Coq.ZArith.BinIntDef.
 Require Import Coq.Numbers.BinNums.
@@ -182,48 +183,67 @@ Definition idSchedule : Schedule := fun x => x.
 Inductive Dependence : Prop -> Type :=
   mkDependence (t1: Timepoint)  (t2: Timepoint) : Dependence (t1 < t2).
 *)
-Inductive Dependence : Type := mkDependence:  Timepoint -> Timepoint -> Dependence.
+Inductive Dependence : Type := mkDependence:  Timepoint -> Timepoint -> Prop -> Dependence.
 
 Fixpoint extractDependencesGo
+         (stmtindex: Timepoint)
          (prog: PList)
-         (writes: M.t Timepoint)
-  : list Dependence :=
+         (writes: M.t Ix)
+  : list  Dependence :=
   match prog with
   | nil => nil
   | (Write wix _)::ps =>
-    let stmtindex := length prog in
     let newwrites := add wix stmtindex writes in
-    let laterdeps := extractDependencesGo ps newwrites in
+    let laterdeps := extractDependencesGo (stmtindex + 1) ps newwrites in
     match find wix writes with
-    | Some prevstmtix => (mkDependence prevstmtix stmtindex)::laterdeps
+    | Some prevstmtix => (mkDependence prevstmtix stmtindex (prevstmtix < stmtindex)):: laterdeps
     | None => laterdeps
     end
   end.
 
-Definition emptyWrites : M.t Timepoint := M.empty Timepoint.
- 
+Definition emptyWrites : M.t Ix := M.empty Ix.
+
 Definition extractDependences (prog: PList) : list Dependence :=
-  extractDependencesGo prog emptyWrites.
+  extractDependencesGo 0 prog emptyWrites.
                                               
-Definition ValidDependence (d: Dependence ) : Prop :=
+Definition ValidDependence (d: Dependence) : Prop :=
   match d with
-    mkDependence i j => i < j
+    mkDependence i j prop => prop
   end.
 
 Definition ValidSchedule (s: Schedule) : Prop :=
   Bijective s.
 
 
+Definition ValidWritesMap (writes: M.t Ix) (curtime: Timepoint) : Prop :=
+  forall (ix : Ix)
+
+  
 Definition ScheduleSatisfiesDependence (s: Schedule) (d: Dependence) : Prop :=
   match d with
-    mkDependence i j => s i < s j
+    mkDependence i j prop => s i < s j
   end.
 
 
 Theorem extractDependenceProducesValidDependences :
-  forall (p : PList) (d: Dependence),
-    List.In d (extractDependences p)  -> ValidDependence d.
-  intros p d.
-  intros inproof.
-  unfold ValidDependence.
+  forall (prog : PList), forall (d: Dependence),
+      List.In d (extractDependences prog)  -> ValidDependence d.
+  intros prog.
+  intros d.
+  apply Forall_forall.
+  unfold extractDependences.
+  unfold extractDependencesGo.
+  induction prog.
   Admitted.
+
+
+
+ 
+
+  
+
+
+
+
+
+
