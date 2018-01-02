@@ -1,6 +1,7 @@
 
 (* Me proving statements about maps to understand how to use maps in Coq *)
 
+Require Import FunInd.
 Require Import Coq.Lists.List.
 Require Import Coq.Lists.ListSet.
 Require Import Coq.ZArith.BinInt.
@@ -26,31 +27,32 @@ Require Import
   Coq.FSets.FMapList
   Coq.Structures.OrderedTypeEx.
 
-Module Import M := FMapList.Make(Z_as_OT).
+Module Import MNat := FMapList.Make(Nat_as_OT).
 
 
 Require Import
         Coq.FSets.FMapFacts.
 
 Definition Time := nat.
-Definition IxToTime := M.t Time.
-Definition IxToIx := M.t Z.
+Definition IxToTime := MNat.t Time.
+Definition IxToIx := MNat.t Z.
+Definition NatToNat := MNat.t nat.
 
-Definition IxToTimeMempty := M.empty Time.
+Definition IxToTimeMempty : IxToTime := MNat.empty Time.
 
-Example correct :(add 1%Z 1 IxToTimeMempty = add 1%Z 1 IxToTimeMempty).
+Example correct :(add 1 1 IxToTimeMempty = add 1 1 IxToTimeMempty).
 Proof.
   reflexivity.
 Qed.
 
-Definition keys (mm: IxToTime) : list Z :=
+Definition keys (mm: IxToTime) : list nat :=
   List.map  fst (elements mm).
 
 
 (* Check if you can prove anything about key/value pairs *)
-Definition Map1 := add (10)%Z 1 IxToTimeMempty.
+Definition Map1 := add (10) 1 IxToTimeMempty.
 
-Example keys_nonegative:  forall (k: Z), List.In k (keys Map1) ->  (k >= 0)%Z.
+Example keys_nonegative:  forall (k: nat), List.In k (keys Map1) ->  (k <= 20).
 Proof.
   intros k.
   intros belong.
@@ -58,7 +60,19 @@ Proof.
   simpl in belong.
   destruct belong.
   omega.
-
-Fixpoint idMapsGo (mm: IxToIx)
   tauto.
 Qed.
+
+Definition NatToNatEmpty : NatToNat := MNat.empty nat.
+
+(* We wish to show that map will have only positive values *)
+Function idMapsGo (mm: NatToNat)  (n: nat) {struct n}: NatToNat :=
+  match n with
+  | O => mm
+  | S (next) => idMapsGo (MNat.add n n mm) next
+  end.
+
+Example keys_nonnegative: forall (n: nat), forall (k: nat), List.In k (keys (idMapsGo NatToNatEmpty n)) -> k >= 0.
+Proof.
+  intros n k.
+  functional induction (idMapsGo NatToNatEmpty n).
