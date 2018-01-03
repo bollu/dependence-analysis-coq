@@ -1,4 +1,5 @@
 Require Import Coq.Lists.List.
+Require Import FunInd.
 Require Import Coq.Lists.ListSet.
 Require Import Coq.ZArith.BinInt.
 Require Import Coq.ZArith.BinIntDef.
@@ -14,6 +15,7 @@ Require Import Coq.Classes.EquivDec.
 Require Import Coq.Structures.Equalities.
 Require Import Coq.FSets.FMapInterface.
 Require Import FMapAVL.
+Require Import FMapFacts.
 Require Import Coq.Logic.FinFun.
 
 (* thank you kind stranger for showing me functorial modules syntax *)
@@ -24,6 +26,7 @@ Require Import
   Coq.Structures.OrderedTypeEx.
 
 Module Import M := FMapList.Make(Z_as_OT).
+Module Import MFacts := WFacts(M).
 
 
 Require Import
@@ -183,12 +186,12 @@ Definition idSchedule : Schedule := fun x => x.
 Inductive Dependence : Prop -> Type :=
   mkDependence (t1: Timepoint)  (t2: Timepoint) : Dependence (t1 < t2).
 *)
-Inductive Dependence : Type := mkDependence:  Timepoint -> Timepoint -> Prop -> Dependence.
+Inductive Dependence : Type := mkDependence:  Timepoint -> Timepoint -> Dependence.
 
-Fixpoint extractDependencesGo
+Function extractDependencesGo
          (stmtindex: Timepoint)
          (prog: PList)
-         (writes: M.t Ix)
+         (writes: M.t Timepoint)
   : list  Dependence :=
   match prog with
   | nil => nil
@@ -196,46 +199,64 @@ Fixpoint extractDependencesGo
     let newwrites := add wix stmtindex writes in
     let laterdeps := extractDependencesGo (stmtindex + 1) ps newwrites in
     match find wix writes with
-    | Some prevstmtix => (mkDependence prevstmtix stmtindex (prevstmtix < stmtindex)):: laterdeps
+    | Some prevstmtix => (mkDependence prevstmtix stmtindex):: laterdeps
     | None => laterdeps
     end
   end.
 
-Definition emptyWrites : M.t Ix := M.empty Ix.
+Definition emptyWrites : M.t Timepoint := M.empty Timepoint.
 
 Definition extractDependences (prog: PList) : list Dependence :=
   extractDependencesGo 0 prog emptyWrites.
                                               
 Definition ValidDependence (d: Dependence) : Prop :=
   match d with
-    mkDependence i j prop => prop
+    mkDependence i j => i < j
   end.
+
+
+Theorem extractDependenceProducesValidDependences :
+  forall (stmtindex: Timepoint)
+         (prog : PList)
+         (writes: M.t Timepoint)
+         (d: Dependence),
+    (forall (wix: Ix) (tp: Timepoint), M.MapsTo wix tp writes -> tp < stmtindex) ->
+    List.In d (extractDependencesGo stmtindex prog writes)  ->
+    ValidDependence d.
+  intros stmtindex prog writes d H.
+  functional induction extractDependencesGo stmtindex prog writes.
+  simpl. tauto.
+  MFacts.map_iff.
+  intros HNew.
+  apply in_inv in HNew.
+  (* seems legit till here *)
+  destruct HNew.
+  assert (prevstmtix < stmtindex).
+  rewrite <- find_mapsto_iff in e0.
+  specialize (H wix prevstmtix).
+  specialize (H e0).
+  auto.
+  
+
+
+  
+
+
+  Admitted.
+
+
 
 Definition ValidSchedule (s: Schedule) : Prop :=
   Bijective s.
 
 
 Definition ValidWritesMap (writes: M.t Ix) (curtime: Timepoint) : Prop :=
-  forall (ix : Ix)
 
   
 Definition ScheduleSatisfiesDependence (s: Schedule) (d: Dependence) : Prop :=
   match d with
     mkDependence i j prop => s i < s j
   end.
-
-
-Theorem extractDependenceProducesValidDependences :
-  forall (prog : PList), forall (d: Dependence),
-      List.In d (extractDependences prog)  -> ValidDependence d.
-  intros prog.
-  intros d.
-  apply Forall_forall.
-  unfold extractDependences.
-  unfold extractDependencesGo.
-  induction prog.
-  Admitted.
-
 
 
  
