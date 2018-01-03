@@ -4,6 +4,7 @@
 Require Import FunInd.
 Require Import Coq.Lists.List.
 Require Import Coq.FSets.FMapInterface.
+Require Import FMapFacts.
 Require Import FunInd FMapInterface.
 
 
@@ -12,8 +13,8 @@ Require Import
   Coq.Structures.OrderedTypeEx.
 
 Module Import MNat := FMapList.Make(Nat_as_OT).
-Require Import
-        Coq.FSets.FMapFacts.
+Module Import MNatFacts := WFacts(MNat).
+
 
 
 Module Import OTF_Nat := OrderedTypeFacts Nat_as_OT.
@@ -38,34 +39,32 @@ Definition keys (mm: NatToNat) : list nat :=
   List.map  fst (elements mm).
 
 
-Theorem keys_witness: forall (mm: NatToNat) (k: nat) (val:nat), InA eqke (k, val) mm -> List.In k (keys mm).
-  intros mm. k val.
-  intros k_maps_to_val.
-  unfold keys.
-  auto.
-  apply elements_1.
 
 (* forall n mm, (forall k, List.In k (keys mm) -> k >= 0) -> (forall k, List.In k (keys (insertNats n mm)) -> k >= 0) *)
-Theorem key_add_presence: forall (k: nat) (v: nat) (mm : NatToNat) (curk : nat), List.In curk (keys (add k v mm)) -> curk = k \/ List.In curk (keys mm).
-  intros k v mm curk curk_in_add.
-  simpl in curk_in_add.
-  simpl.
-  intros.
-  left.
+Theorem key_add_presence: forall (k: nat) (v: nat) (mm : NatToNat) (curk : nat), MNat.In curk ((add k v mm)) -> curk = k \/ MNat.In curk mm.
+  intros k v mm curk.
+  map_iff.
+  intros x.
+  intuition.
+Qed.
+
+Theorem Key_to_relation_keys_projection:  
+  forall (k: nat)  (mm : NatToNat) , MNat.In k mm  <-> List.In k (keys mm).
+Proof.
+  intros k mm.
+  (* how to prove double implication *)
+  split.
+  (* forward *)
 
 Example keys_nonnegative: forall (n: nat) (mm: NatToNat), 
     forall (k: nat),
-      (List.In k (keys mm) -> k >= 0) -> 
-      List.In k (keys (insertNats n mm)) -> k >= 0.
+      (MNat.In k mm -> k >= 0) -> 
+      (MNat.In k (insertNats n mm)) -> k >= 0.
 Proof.
   intros n.
   induction n.
   intros mm k kinmm.
-  simpl. apply kinmm.
-
-  intros mm k kinmm.
-  simpl.
-  apply IHn.
+  intros in_oldk.
   (* Now what?? *)
 
   (* Either k = (Sn) or K \in mm. If k = Sn then k > 0.
