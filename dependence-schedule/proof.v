@@ -215,7 +215,8 @@ Definition ValidDependence (d: Dependence) : Prop :=
   end.
 
 
-Theorem extractDependenceProducesValidDependences :
+
+Theorem extractDependencesGoProducesValidDependences :
   forall (stmtindex: Timepoint)
          (prog : PList)
          (writes: M.t Timepoint)
@@ -279,37 +280,15 @@ Theorem extractDependenceProducesValidDependences :
   exact IHl.
   Qed.
 
-  
-
-
-
-
-
-  
-
-
-
-
+Theorem extractDependencesProducesValidDependences:
+  forall (prog : PList) (d: Dependence),
+    List.In d (extractDependences prog) -> ValidDependence d.
+  intros prog d.
+  unfold extractDependences.
+  apply extractDependencesGoProducesValidDependences.
+  intros wix tp mapsto.
+  inversion mapsto.
+Qed.
 
 Definition ValidSchedule (s: Schedule) : Prop :=
   Bijective s.
-
-
-Definition ValidWritesMap (writes: M.t Ix) (curtime: Timepoint) : Prop :=
-
-  
-Definition ScheduleSatisfiesDependence (s: Schedule) (d: Dependence) : Prop :=
-  match d with
-    mkDependence i j prop => s i < s j
-  end.
-
-
- 
-
-  
-
-
-
-
-
-
