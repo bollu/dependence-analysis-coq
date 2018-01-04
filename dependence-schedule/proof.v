@@ -236,13 +236,58 @@ Theorem extractDependenceProducesValidDependences :
   specialize (H wix prevstmtix).
   specialize (H e0).
   auto.
+  unfold ValidDependence.
+  destruct d.
+  inversion H0.
+  rewrite <- H3.
+  rewrite <- H4.
+  exact H1.
+  assert(forall (wix0 : Ix) (tp : Timepoint),
+            MapsTo wix0 tp (add wix stmtindex writes) -> tp < stmtindex + 1).
+  intros.
+  specialize (H wix0 tp).
+  rewrite add_mapsto_iff in H1.
+  destruct H1.
+  destruct H1.
+  rewrite H2.
+  intuition.
+  destruct H1.
+  rewrite (H H2).
+  intuition.
+  specialize (IHl H1 H0).
+  exact IHl.
+  intros INew.
+
+
+  assert((forall (wix0 : Ix) (tp : Timepoint),
+             MapsTo wix0 tp (add wix stmtindex writes) -> tp < stmtindex + 1)).
+  intros wix0 tp.
+  intuition.
+  specialize (H wix0 tp).
+  rewrite add_mapsto_iff in H0.
+  destruct H0.
+  destruct H0.
+  rewrite H1.
+  intuition.
+  destruct H0.
+  specialize (H H1).
+  rewrite H.
+  intuition.
+
+  specialize (IHl H0).
+  specialize (IHl INew).
+  exact IHl.
+  Qed.
+
   
 
 
+
+
+
   
 
 
-  Admitted.
 
 
 
