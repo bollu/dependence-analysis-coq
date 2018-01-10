@@ -17,6 +17,7 @@ Require Import Coq.FSets.FMapInterface.
 Require Import FMapAVL.
 Require Import FMapFacts.
 Require Import Coq.Logic.FinFun.
+Require Import Nat.
 
 (* thank you kind stranger for showing me functorial modules syntax *)
 (* http://newartisans.com/2016/10/using-fmap-in-coq/ *)
@@ -186,99 +187,61 @@ Definition idSchedule : Schedule := fun x => x.
 Inductive Dependence : Prop -> Type :=
   mkDependence (t1: Timepoint)  (t2: Timepoint) : Dependence (t1 < t2).
 *)
-Inductive Dependence : Type := mkDependence:  Timepoint -> Timepoint -> Dependence.
-
-Function extractDependencesGo
-         (stmtindex: Timepoint)
-         (prog: PList)
-         (writes: M.t Timepoint)
-  : list  Dependence :=
-  match prog with
-  | nil => nil
-  | (Write wix _)::ps =>
-    let newwrites := add wix stmtindex writes in
-    let laterdeps := extractDependencesGo (stmtindex + 1) ps newwrites in
-    match find wix writes with
-    | Some prevstmtix => (mkDependence prevstmtix stmtindex):: laterdeps
-    | None => laterdeps
-    end
-  end.
+Inductive Dependence : Type :=
+  mkDependence:  Timepoint -> Timepoint -> Dependence.
 
 Definition emptyWrites : M.t Timepoint := M.empty Timepoint.
 
-Definition extractDependences (prog: PList) : list Dependence :=
-  extractDependencesGo 0 prog emptyWrites.
+Definition ListNth (T: Type) (n: nat)  (v: T)  (l: list T) : Prop := nth_error l n = Some v.
                                               
-Definition ValidDependence (d: Dependence) : Prop :=
+Definition ValidDependence (d: Dependence) (p: PList): Prop :=
   match d with
-    mkDependence i j => i < j
+    mkDependence i j => i < j /\ j < (length p) /\
+                        exists (wix: Ix) (v0 v1 : MemValue),
+                          ListNth _ i (Write wix v0) p /\
+                          ListNth _ j (Write wix v1) p
   end.
 
 
+Function extractDependencesGo
+         (stmtindex: nat)
+         (prog: PList)
+         (writes: M.t Timepoint)
+         { struct prog }
+  : list Dependence :=
+  match prog with
+  | nil => nil
+  | cons stmt prog' =>
+    match stmt with
+    | Write wix _ => let
+        newwrites := add wix stmtindex writes in
+      let nextDependences := extractDependencesGo (stmtindex + 1) prog' newwrites in
+      match find wix writes with
+      | Some oldt => (mkDependence oldt stmtindex)::nextDependences
+      | None => nextDependences
+      end
+    end
+  end.
 
 Theorem extractDependencesGoProducesValidDependences :
   forall (stmtindex: Timepoint)
          (prog : PList)
          (writes: M.t Timepoint)
          (d: Dependence),
+  exists (origprog: PList),
+         skipn stmtindex origprog = prog -> 
     (forall (wix: Ix) (tp: Timepoint), M.MapsTo wix tp writes -> tp < stmtindex) ->
     List.In d (extractDependencesGo stmtindex prog writes)  ->
-    ValidDependence d.
-  intros stmtindex prog writes d H.
-  functional induction extractDependencesGo stmtindex prog writes.
-  simpl. tauto.
-  MFacts.map_iff.
-  intros HNew.
-  apply in_inv in HNew.
-  (* seems legit till here *)
-  destruct HNew.
-  assert (prevstmtix < stmtindex).
-  rewrite <- find_mapsto_iff in e0.
-  specialize (H wix prevstmtix).
-  specialize (H e0).
-  auto.
-  unfold ValidDependence.
-  destruct d.
-  inversion H0.
-  rewrite <- H3.
-  rewrite <- H4.
-  exact H1.
-  assert(forall (wix0 : Ix) (tp : Timepoint),
-            MapsTo wix0 tp (add wix stmtindex writes) -> tp < stmtindex + 1).
-  intros.
-  specialize (H wix0 tp).
-  rewrite add_mapsto_iff in H1.
-  destruct H1.
-  destruct H1.
-  rewrite H2.
-  intuition.
-  destruct H1.
-  rewrite (H H2).
-  intuition.
-  specialize (IHl H1 H0).
-  exact IHl.
-  intros INew.
-
-
-  assert((forall (wix0 : Ix) (tp : Timepoint),
-             MapsTo wix0 tp (add wix stmtindex writes) -> tp < stmtindex + 1)).
-  intros wix0 tp.
-  intuition.
-  specialize (H wix0 tp).
-  rewrite add_mapsto_iff in H0.
-  destruct H0.
-  destruct H0.
-  rewrite H1.
-  intuition.
-  destruct H0.
-  specialize (H H1).
-  rewrite H.
-  intuition.
-
-  specialize (IHl H0).
-  specialize (IHl INew).
-  exact IHl.
-  Qed.
+    ValidDependence d prog.
+  intros stmtsleft prog writes d.
+  functional induction (extractDependencesGo stmtsleft prog writes).
+  - intros. contradiction.
+  - intros. destruct d. unfold ValidDependence. destruct H1. inversion H1. rewrite <- H3.
+    apply find_mapsto_iff in e2.
+    specialize (IHl )
+    split.
+    + 
+  
 
 Theorem extractDependencesProducesValidDependences:
   forall (prog : PList) (d: Dependence),
@@ -290,5 +253,65 @@ Theorem extractDependencesProducesValidDependences:
   inversion mapsto.
 Qed.
 
+Theorem DependenceToAlias: forall  (prog: PList) (d: Dependence) (t0 t1: Timepoint), 
+    d = mkDependence t0 t1 ->
+    List.In d (extractDependences prog) ->
+    exists (wix: Ix) (w0: Stmt) (w1: Stmt) (val0 val1: MemValue), List.In w0 prog /\ w0 = (Write wix val0) /\ List.In w1 prog /\ w1 = (Write wix val1) /\ Some w0 = nth_error prog t0.
+  intros prog. induction prog.
+  intros.
+  inversion H0.
+  intros.
+  assert(ValidDependence d).
+  apply extractDependencesProducesValidDependences in H0.
+  exact H0.
+  unfold ValidDependence in H1.
+  destruct d in H1.
+  assert(t3 = length prog - 1 \/ t3 < length prog - 1).
+
+
+
+Theorem DependenceRepresentsAliasing:
+  forall (stmtindex: Timepoint)
+         (prog : PList)
+         (writes: M.t Timepoint)
+         (d: Dependence),
+    (forall (wix: Ix) (tp: Timepoint), M.MapsTo wix tp writes -> tp < stmtindex) ->
+    List.In d (extractDependencesGo stmtindex prog writes)  ->
+    ValidDependence d.
+
+
 Definition ValidSchedule (s: Schedule) : Prop :=
   Bijective s.
+
+Definition ScheduleSatisfiesDependence (s: Schedule) (d: Dependence) : Prop :=
+  match d with
+  | mkDependence t0 t1 => s t0 < s t1
+  end.
+
+
+
+(* The identity schedule produces valid dependences *)
+Theorem IdentityScheduleSatisfiesDependenceFromProgram: forall (prog: PList),
+    forall (d: Dependence), List.In d (extractDependences prog) -> ScheduleSatisfiesDependence idSchedule d.
+  apply extractDependencesProducesValidDependences.
+Qed.
+
+
+Definition ScheduleSatisfiesProgramDependences
+           (sched: Schedule) (prog: PList) : Prop :=
+  ValidSchedule sched -> 
+  forall (d: Dependence), List.In d (extractDependences prog) -> ScheduleSatisfiesDependence sched d.
+Proof.
+  intros sched prog. generalize dependent sched.
+  induction prog.
+  intros.
+  - simpl in H0.
+    contradiction.
+  - intros.
+
+
+Function applyScheduleToProgram (sched: Schedule) (prog: PList) : PList :=
+  (* TODO *)
+
+  Theorem scheduleSemanticsMapping forall (prog: Plist) (sched: Schedule), ScheduleSatisfiesProgramDependences sched prog -> programsEquivalent prog (applyScheduleToProgram sched prog).
+Proof.
