@@ -109,24 +109,17 @@ Definition modelStmtMemorySideEffect (s: Stmt) (mold: Memory) : Memory :=
 
 (* We shouldn't think of this as an actual list, we should think of the list indeces
 as indeces for the schedule to operate on *)
-Definition Stmts (n: nat) := Vector.t Stmt n.
+Definition Stmts := list Stmt.
+Definition Schedule (stmts: Stmts) (f: Stmts -> Stmts) := Permutation stmts (f stmts). 
 
-Definition timepoint  (k: nat) (n: nat) := (k < n).
-
-
-Definition ScheduleFn (n: nat) : Type := forall (k1 k2: nat), timepoint k1 n -> timepoint k2 n.
-
-Inductive Schedule (n: nat) (f: ScheduleFn n): Type :=
- |  mkSchedule: Bijective f -> Schedule n f.
-
-Definition Program (n: nat) (f: ScheduleFn n) := prod (Stmts n) (Schedule n f).
-
-Definition programStmts (n: nat) (f: ScheduleFn n) (p: Program n f) : Stmts n := fst p.
-
+Theorem permutation_length_preserve_conversion: (a b: Stmts) (i: nat) (perm: Permutation a b) (witnesss: i < length a) -> i < length b.
 
 (* get ith instruction from a program *)
-Definition programIthInstr  (n: nat) (f: ScheduleFn n) (p: Program n f) (i: timepoint n) : Stmt :=
-   nth (fst p) i.
+Definition permutationPreservesLength: 
+Definition programIthInstr (i: nat) (f: Stmts -> Stmts) (stmts: Stmts) (s: Schedule stmts f) (witness: i < length stmts) : Stmt :=
+    nth_order (of_list (f (stmts))) witness.
+
+                                                                                                  
 
 
 Inductive dependence :=
