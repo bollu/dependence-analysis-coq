@@ -97,7 +97,7 @@ Qed.
   
 
 (* Model the effect of memory writes on memory. *)
-Definition modelStmtMemorySideEffect (s: Stmt) (mold: Memory) : Memory :=
+Definition modelStmtMemorySideEffect (mold: Memory) (s: Stmt) : Memory :=
   match s with
   | Write wix wval => (writeToMemory wix wval mold)
   end.
@@ -121,6 +121,11 @@ Inductive Schedule (n: nat) (stmts: Stmts n) (f: ScheduleFn n) :=
 Definition stmtAtTimepoint (n: nat) (stmts: Stmts n) (time: timepoint n) (f: ScheduleFn n) (schedule: Schedule n stmts f) : Stmt :=
   Vector.nth stmts (f time).
 
+
+Function scheduleSideEffect (n: nat) (stmts: Stmts n) (f: ScheduleFn n) (schedule: Schedule n stmts f)  (mold: Memory) : Memory :=
+  Vector.fold_left modelStmtMemorySideEffect initMemory stmts.
+
+           
 Inductive Dependence (n: nat) :=
 | mkDependence : Fin.t n -> Fin.t n -> Dependence n.
 
@@ -148,3 +153,4 @@ Definition validNewSchedule (n: nat) (depset: DependenceSet n) (stmts: Stmts n)
   CompleteDependenceSet n depset stmts f schedule ->
   forall (t0 t1 : timepoint n),
     ListSet.set_In (mkDependence n t0 t1) depset -> timepointToNat n (f' t0) < timepointToNat n (f' t1).
+
