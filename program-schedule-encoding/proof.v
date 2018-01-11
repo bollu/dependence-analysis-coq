@@ -109,68 +109,33 @@ Definition modelStmtMemorySideEffect (s: Stmt) (mold: Memory) : Memory :=
 
 (* We shouldn't think of this as an actual list, we should think of the list indeces
 as indeces for the schedule to operate on *)
-Definition Stmts := list Stmt.
-Definition Schedule (stmts: Stmts) (f: Stmts -> Stmts) := Permutation stmts (f stmts). 
+Definition Stmts (n: nat) := Vector.t Stmt n.
 
-Theorem permutation_length_preserve_conversion: (a b: Stmts) (i: nat) (perm: Permutation a b) (witnesss: i < length a) -> i < length b.
+Definition timepoint (n: nat) := Fin.t n.
 
-(* get ith instruction from a program *)
-Definition permutationPreservesLength: 
-Definition programIthInstr (i: nat) (f: Stmts -> Stmts) (stmts: Stmts) (s: Schedule stmts f) (witness: i < length stmts) : Stmt :=
-    nth_order (of_list (f (stmts))) witness.
+Definition ScheduleFn (n: nat) :=  timepoint n -> timepoint n.
 
-                                                                                                  
+Inductive Schedule (n: nat) (stmts: Stmts n) (f: ScheduleFn n) :=
+| mkSchedule: Bijective f -> Schedule n stmts f.
 
+Definition stmtAtTimepoint (n: nat) (stmts: Stmts n) (time: timepoint n) (f: ScheduleFn n) (schedule: Schedule n stmts f) : Stmt :=
+  Vector.nth stmts (f time).
 
-Inductive dependence :=
-| mkDependence: nat -> nat -> dependence.
-
-(* If there is a write to wix at this timepoint t, return [t], else return [] *)
-Definition getWriteAtTimepoint (n: nat) (f: ScheduleFn n) (p: Program n f) (wix_needle: MemIx) (tp: timepoint n) : list (timepoint n) :=
-  match programIthInstr n f p tp with
-  | Write wix _ => if (wix =? wix_needle)%Z
-                   then tp::List.nil
-                   else List.nil
-  end.
+Inductive Dependence (n: nat) :=
+| mkDependence : Fin.t n -> Fin.t n -> Dependence n.
 
 
-Theorem n_minus_1_lt_n (n: nat)  : n > 1 -> n - 1 < n.
-  intros.
-  induction n.
-  inversion H.
-  simpl. omega.
-Qed.
-
-(* need to match with witness for why n = 1 or n > 1
-Definition decTimepoint (n: nat) (t: timepoint n) : timepoint n :=
-  match t with
-  | Fin.F1 => Fin.F1
-  | Fin.FS prev => Fin.of_nat_lt (n_minus_1_lt_n n)
-  end.
-*)
-                
-
-Definition decTimepoint (n: nat) (t: timepoint n) : timepoint n := t.
-
-Function getWritesTillTimepointGo (n: nat)
-           (f: ScheduleFn n)
-           (p: Program n f)
-           (wix_needle: MemIx)
-           (tcur: timepoint n) : list (timepoint n) :=
-  match tcur with
-  | Fin.F1 => getWriteAtTimepoint n f p wix_needle tcur
-  | Fin.FS _ =>  let writeAtPrevTimepoints := getWritesTillTimepointGo n f p wix_needle (decTimepoint _ tcur) in writeAtPrevTimepointss
-
-  end.
+Definition DependenceSet (n: nat) := ListSet.set (Dependence n).
 
 
+Definition timepointToNat (n: nat) (t: timepoint n)  : nat :=
+  proj1_sig (Fin.to_nat t).
 
-Definition makeDependences (n: nat) (f: ScheduleFn n) (p: Program n f) : list dependence :=
-  match programStmts n f p with
-  | Vector.nil _ => List.nil
-  | cons _ s _ rest =>  match s with
-                        | Write wix _ => List.nil
-                        end
-  end.
-
-
+Definition CompleteDependenceSet (n: nat) (depset: DependenceSet n) (stmts: Stmts n) (f: ScheduleFn n) (schedule: Schedule n stmts f) :=
+  forall (t0 t1 : timepoint n)
+         (wix: MemIx)
+         (val0 val1 : MemValue),
+    timepointToNat n t0 < timepointToNat n t1 ->
+    stmtAtTimepoint n stmts t0 f schedule = (Write wix val0) ->
+    stmtAtTimepoint n stmts t1 f schedule = (Write wix val1) ->
+    ListSet.set_In (mkDependence n t0 t1) depset.
