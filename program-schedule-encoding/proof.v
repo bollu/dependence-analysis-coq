@@ -154,3 +154,7 @@ Definition validNewSchedule (n: nat) (depset: DependenceSet n) (stmts: Stmts n)
   forall (t0 t1 : timepoint n),
     ListSet.set_In (mkDependence n t0 t1) depset -> timepointToNat n (f' t0) < timepointToNat n (f' t1).
 
+
+Definition schedulesHaveSameSideEffect (n: nat) (stmts: Stmts n) (f f': ScheduleFn n) (schedule: Schedule n stmts f) (schedule': Schedule n stmts f') :=
+  forall (mold: Memory),
+    scheduleSideEffect n stmts f schedule mold = scheduleSideEffect n stmts f' schedule' mold.
