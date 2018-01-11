@@ -131,7 +131,7 @@ Definition DependenceSet (n: nat) := ListSet.set (Dependence n).
 Definition timepointToNat (n: nat) (t: timepoint n)  : nat :=
   proj1_sig (Fin.to_nat t).
 
-Definition CompleteDependenceSet (n: nat) (depset: DependenceSet n) (stmts: Stmts n) (f: ScheduleFn n) (schedule: Schedule n stmts f) :=
+Definition CompleteDependenceSet (n: nat) (depset: DependenceSet n) (stmts: Stmts n) (f: ScheduleFn n) (schedule: Schedule n stmts f) : Prop :=
   forall (t0 t1 : timepoint n)
          (wix: MemIx)
          (val0 val1 : MemValue),
@@ -139,3 +139,12 @@ Definition CompleteDependenceSet (n: nat) (depset: DependenceSet n) (stmts: Stmt
     stmtAtTimepoint n stmts t0 f schedule = (Write wix val0) ->
     stmtAtTimepoint n stmts t1 f schedule = (Write wix val1) ->
     ListSet.set_In (mkDependence n t0 t1) depset.
+
+
+Definition validNewSchedule (n: nat) (depset: DependenceSet n) (stmts: Stmts n)
+        (f f': ScheduleFn n)
+        (schedule : Schedule n stmts f)
+        (schedule' : Schedule n stmts f') : Prop :=
+  CompleteDependenceSet n depset stmts f schedule ->
+  forall (t0 t1 : timepoint n),
+    ListSet.set_In (mkDependence n t0 t1) depset -> timepointToNat n (f' t0) < timepointToNat n (f' t1).
