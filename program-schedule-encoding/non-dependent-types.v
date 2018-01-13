@@ -163,20 +163,92 @@ Proof.
 
   (* no statements *)
   induction stmts.
-  + unfold schedulesHaveSameSideEffect.
-    intros.
-    unfold scheduleSideEffect.
-    simpl. reflexivity.
+  unfold schedulesHaveSameSideEffect.
+  intros.
+  unfold scheduleSideEffect.
+  simpl. reflexivity.
 
-  + intros.
-    unfold Schedule in schedule.
-    unfold Schedule in schedule'.
-    unfold Schedule in IHstmts.
-    specialize (IHstmts schedule schedule').
-    unfold schedulesHaveSameSideEffect.
-    intros.
-    unfold scheduleSideEffect.
-    auto.
-    (* WAIT WHAT? HOW IN THE FUCK? IS MY THEOREM TOO STRONG? o_O *)
+  intros.
+  unfold Schedule in schedule.
+  unfold Schedule in schedule'.
+  unfold Schedule in IHstmts.
+  specialize (IHstmts schedule schedule').
+  unfold schedulesHaveSameSideEffect.
+  intros.
+  unfold scheduleSideEffect.
+  auto.
+  (* WAIT WHAT? HOW IN THE FUCK? IS MY THEOREM TOO STRONG? o_O*)
 Qed.
 
+
+Definition flip2 : ScheduleFn :=
+  fun x => match x with
+           | 0 => 1
+           | 1 => 0
+           | x => x
+           end.
+
+(* this has got to have a cleaner proof o_O *)
+Theorem flip2Bijective: Bijective (flip2).
+Proof.
+  unfold Bijective.
+  exists flip2.
+  split.
+  intros.
+  assert(x = 0 \/ x = 1 \/ (x > 1)). omega.
+  destruct H. rewrite H. simpl. reflexivity.
+  destruct H. rewrite H. simpl. reflexivity.
+  destruct H. reflexivity.
+  assert(flip2 (S m) = S m).
+  unfold flip2. destruct H. reflexivity. reflexivity.
+  rewrite H0. rewrite H0. reflexivity.
+
+  intros.
+  assert(y = 0 \/ y = 1 \/ (y > 1)). omega.
+  destruct H. subst. auto.
+  destruct H. subst. auto.
+  destruct H. auto.
+  assert(flip2 (S m) = S m).
+  unfold flip2. destruct m. inversion H. auto.
+  repeat((rewrite H0)). auto.
+Qed.
+  
+Definition flip2General (n: nat) (m: nat) (witness: n < m) : ScheduleFn :=
+  fun x => if x =? n
+           then m
+           else if x =? m
+                then n
+                else x.
+
+Theorem flip2GeneralInvolutive: forall (n m: nat) (witness: n < m) (x: nat), flip2General n m witness (flip2General n m witness x) = x.
+  intros.
+  assert(x = n \/ x = m \/ (x <> n /\ x <> m)). omega.
+  destruct H.  rewrite H. unfold flip2General. rewrite <- beq_nat_refl. assert(m <> n). omega.  rewrite <- Nat.eqb_neq in H0. rewrite H0. rewrite <- beq_nat_refl. reflexivity.
+
+  destruct H. rewrite H. unfold flip2General. assert(m <> n). omega.
+  rewrite <- Nat.eqb_neq in H0. rewrite H0. simpl.
+  assert(m =? m = true). rewrite Nat.eqb_eq. reflexivity.
+  rewrite H1. simpl.
+  assert( n =? n = true). rewrite Nat.eqb_eq. reflexivity.
+  rewrite H2. auto.
+  destruct H.
+
+  unfold flip2General.
+  rewrite <- Nat.eqb_neq in H.
+  rewrite <- Nat.eqb_neq in H0.
+  rewrite H. simpl.
+  rewrite H0. simpl.
+  rewrite H. rewrite H0. auto.
+Qed.
+
+Theorem flip2GeneralBijective: forall (n m: nat) (witness: n < m),
+    Bijective(flip2General n m witness).
+Proof.
+  intros.
+  unfold Bijective.
+  exists (flip2General n m witness).
+  split.
+  intros.
+  apply flip2GeneralInvolutive.
+  apply flip2GeneralInvolutive.
+Qed.
