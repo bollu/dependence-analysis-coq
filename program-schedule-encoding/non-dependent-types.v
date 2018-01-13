@@ -220,6 +220,7 @@ Definition flip2General (n: nat) (m: nat) (witness: n < m) : ScheduleFn :=
                 then n
                 else x.
 
+(* Build flip2General so that we can easily create schedules to test *)
 Theorem flip2GeneralInvolutive: forall (n m: nat) (witness: n < m) (x: nat), flip2General n m witness (flip2General n m witness x) = x.
   intros.
   assert(x = n \/ x = m \/ (x <> n /\ x <> m)). omega.
@@ -252,3 +253,17 @@ Proof.
   apply flip2GeneralInvolutive.
   apply flip2GeneralInvolutive.
 Qed.
+
+(* Now we can create any schedule by composing flips with idSchedule *)
+Definition idScheduleFn : ScheduleFn := fun x => x.
+Theorem idScheduleBijective: Bijective(idScheduleFn).
+Proof.
+  unfold Bijective.
+  exists idScheduleFn.
+  unfold idScheduleFn. auto.
+Qed.
+
+
+Definition twoWritesNonAliasing : Stmts := List.cons (Write 0%Z 0%Z) (List.cons (Write 1%Z 0%Z) List.nil).
+
+Theorem nonAliasingHasEmptyCompleteDepSet :=  
