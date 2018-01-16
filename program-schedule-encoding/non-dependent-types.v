@@ -53,6 +53,7 @@ Definition MemValue := Z.
 (* A statement in our grammar *)
 Inductive Stmt :  Type :=
   Write : MemIx -> MemValue -> Stmt.
+  Default: Stmt
 
 (* Memory is a function from an index to a value *)
 Definition Memory :=  MemIx -> MemValue.
@@ -109,6 +110,8 @@ Definition modelStmtMemorySideEffect (mold: Memory) (s: Stmt) : Memory :=
 
 (* We shouldn't think of this as an actual list, we should think of the list indeces
 as indeces for the schedule to operate on *)
+Definition program := list Stmt.
+
 Definition Stmts := list Stmt.
 
 Definition timepoint := nat.
@@ -116,6 +119,8 @@ Definition timepoint := nat.
 Definition ScheduleFn :=  nat -> nat.
 
 Definition Schedule (stmts: Stmts) (f: ScheduleFn) := Bijective f.
+
+  
 
 Function scheduleSideEffect (stmts: Stmts) (f: ScheduleFn) (schedule: Schedule stmts f)  (mold: Memory) : Memory :=
   List.fold_left modelStmtMemorySideEffect stmts initMemory.
@@ -263,7 +268,20 @@ Proof.
   unfold idScheduleFn. auto.
 Qed.
 
+Definition program2Schedule (p: program) : Schedule p id :=
+  idScheduleBijective.
 
-Definition twoWritesNonAliasing : Stmts := List.cons (Write 0%Z 0%Z) (List.cons (Write 1%Z 0%Z) List.nil).
+Theorem balancedSubtractionAddition : forall (n m t : nat), n + m = t -> n > 0 -> ((n - 1) + (m + 1)) = t.
+Proof.
+  intros. omega.
+Qed.
 
-Theorem nonAliasingHasEmptyCompleteDepSet :=  
+
+Definition schedule2Program (stmts: Stmts) (f: ScheduleFn) (sched: Schedule stmts f) (fuel: nat) (ix: nat) (fuel_gt_zero: fuel > 0) (ix_plus_fuel_eq_length: ix + fuel = length stmts): program :=
+  match fuel with
+  | O => List.nil
+  | S(fuel') => List.cons (List.at m,  )
+  end.
+       
+
+Definition twoWritesNonAliasingProgram : Stmts := List.cons (Write 0%Z 0%Z) (List.cons (Write 1%Z 0%Z) List.nil).
