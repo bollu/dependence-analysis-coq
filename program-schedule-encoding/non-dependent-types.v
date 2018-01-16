@@ -53,7 +53,6 @@ Definition MemValue := Z.
 (* A statement in our grammar *)
 Inductive Stmt :  Type :=
   Write : MemIx -> MemValue -> Stmt.
-  Default: Stmt
 
 (* Memory is a function from an index to a value *)
 Definition Memory :=  MemIx -> MemValue.
@@ -276,12 +275,31 @@ Proof.
   intros. omega.
 Qed.
 
+Definition safeListIndexing (A: Set) (l: list A) (ix: nat) (witness: ix < length l) : A.
+Proof.
+  destruct (nth_error l ix) eqn:E.
+  exact a.
+  rewrite <- nth_error_Some in witness.
+  contradiction.
+Qed.
 
-Definition schedule2Program (stmts: Stmts) (f: ScheduleFn) (sched: Schedule stmts f) (fuel: nat) (ix: nat) (fuel_gt_zero: fuel > 0) (ix_plus_fuel_eq_length: ix + fuel = length stmts): program :=
-  match fuel with
-  | O => List.nil
-  | S(fuel') => List.cons (List.at m,  )
-  end.
-       
+
+
+Fixpoint schedule2Program (stmts: Stmts) (f: ScheduleFn) (sched: Schedule stmts f) (ix: nat): program.
+Proof.
+  destruct ix eqn:ix'.
+  - (* Nil *) exact (List.nil).
+
+   - (* S ix' *)
+     destruct (ix <? length stmts) eqn:E.
+     + (* ix < length stmts *)
+       apply leb_complete in E.
+       exact (List.cons (safeListIndexing  _ stmts ix E) (schedule2Program stmts f sched n)).
+     + (* ix = length stmts *)
+       exact (List.nil).
+Defined.
+
+
+
 
 Definition twoWritesNonAliasingProgram : Stmts := List.cons (Write 0%Z 0%Z) (List.cons (Write 1%Z 0%Z) List.nil).
