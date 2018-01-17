@@ -285,21 +285,37 @@ Qed.
 
 
 
-Fixpoint schedule2Program (stmts: Stmts) (f: ScheduleFn) (sched: Schedule stmts f) (ix: nat): program.
+Fixpoint schedule2ProgramGo (stmts: Stmts) (f: ScheduleFn) (sched: Schedule stmts f) (ix: nat) (fuel: nat) (witness: fuel + ix = length stmts - 1): program.
 Proof.
-  destruct ix eqn:ix'.
-  - (* Nil *) exact (List.nil).
-
-   - (* S ix' *)
+  destruct fuel eqn:fuel'.
+  - (* fuel = nil *) exact (List.nil).
+  - (* fuel = s fuel' *)
      destruct (ix <? length stmts) eqn:E.
      + (* ix < length stmts *)
        apply leb_complete in E.
-       exact (List.cons (safeListIndexing  _ stmts ix E) (schedule2Program stmts f sched n)).
+       assert (n + (ix + 1) = length stmts - 1). omega.
+       exact (List.cons (safeListIndexing  _ stmts ix E) (schedule2ProgramGo stmts f sched (ix + 1) n H)).
      + (* ix = length stmts *)
        exact (List.nil).
 Defined.
 
 
 
+Definition schedule2Program (stmts: Stmts) (f: ScheduleFn) (sched: Schedule stmts f) : program.
+Proof.
+  assert ((length stmts - 1) + 0 = length stmts - 1) as witness. omega.
+  exact (schedule2ProgramGo stmts f sched 0 (length stmts - 1) witness).
+Defined.
 
 Definition twoWritesNonAliasingProgram : Stmts := List.cons (Write 0%Z 0%Z) (List.cons (Write 1%Z 0%Z) List.nil).
+
+Theorem program2SchedIdIsId (p: program): schedule2Program _ _ (program2Schedule p) = p.
+Proof.
+  induction p.
+  - (* Nil *)
+    simpl. auto.
+  - (* Cons *)
+    simpl. unfold schedule2Program.
+    
+
+

@@ -103,7 +103,6 @@ Definition modelStmtMemorySideEffect (mold: Memory) (s: Stmt) : Memory :=
   end.
 
 
-
 (**** Schedule stuff for later, I know nothing on how to prove this stuff ****)
 (* A timepoint for a schedule *)
 
@@ -132,7 +131,6 @@ Inductive Dependence (n: nat) :=
 
 Definition DependenceSet (n: nat) := ListSet.set (Dependence n).
 
-
 Definition timepointToNat (n: nat) (t: timepoint n)  : nat :=
   proj1_sig (Fin.to_nat t).
 
@@ -158,3 +156,10 @@ Definition validNewSchedule (n: nat) (depset: DependenceSet n) (stmts: Stmts n)
 Definition schedulesHaveSameSideEffect (n: nat) (stmts: Stmts n) (f f': ScheduleFn n) (schedule: Schedule n stmts f) (schedule': Schedule n stmts f') :=
   forall (mold: Memory),
     scheduleSideEffect n stmts f schedule mold = scheduleSideEffect n stmts f' schedule' mold.
+
+
+
+Theorem validNewSchedulesHasSameSideEffect: forall (n: nat) (stmts: Stmts n) (f f': ScheduleFn n) (schedule: Schedule n stmts f) (schedule': Schedule n stmts f')(depset: DependenceSet n),
+    CompleteDependenceSet n depset stmts f schedule ->
+    validNewSchedule n depset stmts f f' schedule schedule' ->
+    schedulesHaveSameSideEffect n stmts f f' schedule schedule'.
