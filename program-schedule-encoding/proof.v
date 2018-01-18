@@ -20,6 +20,7 @@ Require Import Coq.Logic.FinFun.
 Require Import Nat.
 Require Import VectorDef.
 Require Import MSetWeakList.
+Import EqNotations.
 
 (* thank you kind stranger for showing me functorial modules syntax *)
 (* http://newartisans.com/2016/10/using-fmap-in-coq/ *)
@@ -121,6 +122,43 @@ Definition stmtAtTimepoint (n: nat) (stmts: Stmts n) (time: timepoint n) (f: Sch
   Vector.nth stmts (f time).
 
 
+Definition Program (n: nat) := Vector.t Stmt n.
+
+Function oneElemVector (A: Set) (a: A) : Vector.t A 1 :=
+  Vector.cons A a 0 (Vector.nil A).
+
+Function scheduleIndex (n: nat) (ix: nat) (witness: ix < n) (stmts: Stmts n) (f: ScheduleFn n) (schedule: Schedule n stmts f) : Stmt :=
+  Vector.nth stmts (f (Fin.of_nat_lt witness)).
+  
+
+                               
+Definition Vector1N (n: nat) : Vector.t nat n.
+Proof.
+  assert(length (seq 1 n) = n).
+  rewrite List.seq_length.
+  reflexivity.
+  exact (rew H in  of_list (seq 1 n)).
+Defined.
+
+
+Function Vector1N' (n: nat) : Vector.t nat n :=
+  let v := (seq 1 n) in
+  rew List.seq_length _ _ in of_list v.
+
+
+(* Interesting place where we need dependent pattern match *)
+Function scheduleStmtsGo (n: nat) (ix: nat) (witness: ix < n) (stmts: Stmts n) (f: ScheduleFn n) (schedule: Schedule n stmts f): Program ix :=
+  match ix as curix return ((curix < ix) -> Program (S curix)) with
+  | O => fun _ => let a' := Vector.nth stmts (f (Fin.of_nat_lt witness)) in
+    oneElemVector _ a'
+  | S ix' => fun ix_new_lt_ix =>
+               let a' := Vector.nth stmts (f (Fin.of_nat_lt witness)) in
+               let witness' := lt_trans _ _ _ (Nat.lt_succ_diag_r _ ) (lt_trans _ _ _ ix_new_lt_ix witness) in
+               let recur := scheduleStmtsGo n ix' witness' stmts f schedule in
+                   Vector.append (oneElemVector _ a') recur
+  end.
+           
+  
 Function scheduleSideEffect (n: nat) (stmts: Stmts n) (f: ScheduleFn n) (schedule: Schedule n stmts f)  (mold: Memory) : Memory :=
   Vector.fold_left modelStmtMemorySideEffect initMemory stmts.
 
@@ -159,7 +197,34 @@ Definition schedulesHaveSameSideEffect (n: nat) (stmts: Stmts n) (f f': Schedule
 
 
 
+
+Theorem cons_and_append_equivalence:
+  forall (n: nat) (A: Set) (a: A) (xx: Vector.t A n),
+    Vector.cons A a n xx = Vector.append (Vector.cons A a _ (Vector.nil _)) xx.
+  intros.
+  simpl.
+  reflexivity.
+Qed.
+
 Theorem validNewSchedulesHasSameSideEffect: forall (n: nat) (stmts: Stmts n) (f f': ScheduleFn n) (schedule: Schedule n stmts f) (schedule': Schedule n stmts f')(depset: DependenceSet n),
     CompleteDependenceSet n depset stmts f schedule ->
     validNewSchedule n depset stmts f f' schedule schedule' ->
     schedulesHaveSameSideEffect n stmts f f' schedule schedule'.
+  intros.
+  generalize dependent depset. 
+  generalize dependent schedule'. 
+  generalize dependent f'.
+  induction (rev stmts).
+  - (* 0 *)
+    intros.
+    unfold schedulesHaveSameSideEffect.
+    intros.
+    unfold scheduleSideEffect. simpl. reflexivity.
+
+  - (* Induction *)
+    intros.
+    rename h into newStmt.
+    unfold schedulesHaveSameSideEffect.
+    intros.
+    destruct newStmt.
+    unfold scheduleSideEffect.

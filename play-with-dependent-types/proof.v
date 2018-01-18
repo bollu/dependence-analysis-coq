@@ -1,9 +1,15 @@
-Definition useGt0 (n: nat) (witness: n > 0) : nat :=
-  10.
 
 
-Definition createGt0(n: nat) : nat :=
-  match n with
+Lemma add_lhs_sub_rhs_stays_equal: forall (n m total: nat), (S n) + m = total -> n + (S m) = total.
+Proof.
+  intros.
+  omega.
+
+Definition fuel_to_nat (fuel: nat) (n: nat) (max: nat) (witness1: fuel + nat = max)
+           (witness2: /\ n > 0) :=
+  match fuel with
   | O => 42
-  | S(n') => useGt0 n  (#???)
-  end.
+  | S fuel' => fuel_to_nat fuel' (n + 1) max  
+           
+                  
+
