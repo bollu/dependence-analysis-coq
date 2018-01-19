@@ -149,13 +149,24 @@ Definition dependencesFromWriteSetAndWrite (t: timepoint) (ws: writeset) (w: wri
   end.
     
 
-Fixpoint computeDependencesGo (n: nat) (c: com n) : dependenceset :=
+Fixpoint computeDependences (n: nat) (c: com n) : dependenceset :=
   match c with
   | CBegin => emptyDependenceSet
   | CSeq n' c' w =>
-    let prevdeps := computeDependencesGo n' c' in
+    let prevdeps := computeDependences n' c' in
     let prevwriteset := computeWriteSet n' c' in
     (dependencesFromWriteSetAndWrite n prevwriteset w) ++ prevdeps
   end.
 
-    
+Definition dependenceLexPositive (d: dependence) : Prop :=
+  fst d < snd d.
+
+Definition dependenceInRange (d: dependence) (n: nat) (c: com n) : Prop :=
+  fst d <= n /\ snd d <= n.
+
+Definition dependenceAliases (d: dependence) (n: nat) (c: com n) : Prop :=
+  let w1 := getWriteAt n c (fst d) in
+  let w2 := getWriteAt n c (snd d) in
+
+  
+  
