@@ -140,18 +140,22 @@ Fixpoint computeWriteSet (n: nat) (c: com n) : writeset :=
 
 Definition dependence: Type := nat * nat.
 Definition dependenceset: Type := list dependence.
-Definition emptydepset : dependenceset := List.nil.
+Definition emptyDependenceSet : dependenceset := List.nil.
 
-Fixpoint dependencesFromWritesetGo (ws ws': writeset) (t: timepoint) : dependenceset :=
-  match t with
-  | O => emptydepset
-  | S t' => let deps' := dependencesFromWritesetGo ws ws' t' in
-            let w1 := ws t in
-            let w2 := ws' t in
-            deps'
+Definition dependencesFromWriteSetAndWrite (t: timepoint) (ws: writeset) (w: write) : dependenceset :=
+  match w with
+  | Write ix _ => let prev_write_timepoints_at_ix := ws ix in
+                  List.map (fun pwt => (pwt, t))  prev_write_timepoints_at_ix
+  end.
+    
+
+Fixpoint computeDependencesGo (n: nat) (c: com n) : dependenceset :=
+  match c with
+  | CBegin => emptyDependenceSet
+  | CSeq n' c' w =>
+    let prevdeps := computeDependencesGo n' c' in
+    let prevwriteset := computeWriteSet n' c' in
+    (dependencesFromWriteSetAndWrite n prevwriteset w) ++ prevdeps
   end.
 
-Fixpoint computeDependencesGo (prevws: prevWriteSet) (c: com) (tp: timepoint) : dependenceset :=
-  match c with
-  | CWrite write => emptydepset
-  | CSeq c1 c2 => dependencesFromWritesetGo (computeWriteSet )
+    
