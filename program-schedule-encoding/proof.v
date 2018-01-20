@@ -20,8 +20,11 @@ Require Import Coq.Logic.FinFun.
 Require Import Nat.
 Require Import VectorDef.
 Require Import MSetWeakList.
+Require Import FSetInterface.
+Require Import FSetList.
 Import EqNotations.
 
+(* Require Import CoLoR.Util.FSet.FSetUtil. *)
 (* thank you kind stranger for showing me functorial modules syntax *)
 (* http://newartisans.com/2016/10/using-fmap-in-coq/ *)
 
@@ -43,188 +46,156 @@ Require Import
 
 
 (* An index into memory *)
-Definition MemIx := Z.
+Definition memix := nat.
 
 (* values in memory *)
-Definition MemValue := Z.
+Definition memvalue := Z.
 
-(* factor used in building expressions *)
-(*Inductive Factor : Set := Raw : MemValue -> Factor. *)
+Inductive write : Type :=
+  Write: memix -> memvalue -> write.
 
-(* A statement in our grammar *)
-Inductive Stmt :  Type :=
-  Write : MemIx -> MemValue -> Stmt.
 
-(* Memory is a function from an index to a value *)
-Definition Memory :=  MemIx -> MemValue.
+Definition memory :=  memix -> memvalue.
+
+Notation "ix '::=' val" := (memory ix val) (at level 60).
 
 (* initial state of memory *)
-Definition initMemory : Memory := fun ix => Z0.
+Definition initMemory : memory := fun ix => Z0.
 
-Theorem initMemoryAlwaysZero : forall (wix: MemIx), (initMemory wix) = Z0.
+Theorem initMemoryAlwaysZero : forall (wix: memix), (initMemory wix) = Z0.
 Proof.
   auto.
 Qed.
 
 
-Definition writeToMemory (wix: MemIx) (wval: MemValue) (mold: Memory) : Memory :=
-  fun ix => if (ix =? wix)%Z then wval else mold ix.
+Definition writeToMemory (wix: memix) (wval: memvalue) (mold: memory) : memory :=
+  fun ix => if (ix =? wix) then wval else mold ix.
 
-Theorem readFromWriteIdentical : forall (wix: MemIx) (wval: MemValue) (mem: Memory),
+Theorem readFromWriteIdentical : forall (wix: memix) (wval: memvalue) (mem: memory),
     (writeToMemory wix wval mem) wix = wval.
 Proof.
   intros wix wval mem.
   unfold writeToMemory.
-  rewrite Z.eqb_refl.
+  rewrite Nat.eqb_refl.
   reflexivity.
 Qed.
 
 
 (* I do not know who Zneq_to_neq fails. TODO: debug this *)
-Theorem readFromWriteDifferent : forall (wix: MemIx) (rix: MemIx) (wval : MemValue) (mem: Memory),
+Theorem readFromWriteDifferent : forall (wix: memix) (rix: memix) (wval : memvalue) (mem: memory),
     rix <> wix -> (writeToMemory wix wval mem) rix = mem rix.
 Proof.
   intros wix rix wval mem.
   intros rix_neq_wix.
   unfold writeToMemory.
-  assert((rix =? wix)%Z = false).
-  apply Z.eqb_neq in rix_neq_wix.
+  assert((rix =? wix) = false).
+  apply Nat.eqb_neq in rix_neq_wix.
   auto.
   rewrite H.
   reflexivity.
 Qed.
 
 
-  
-
 (* Model the effect of memory writes on memory. *)
-Definition modelStmtMemorySideEffect (mold: Memory) (s: Stmt) : Memory :=
-  match s with
+Definition modelWriteSideEffect (mold: memory) (w: write) : memory :=
+  match w with
   | Write wix wval => (writeToMemory wix wval mold)
   end.
 
 
-(**** Schedule stuff for later, I know nothing on how to prove this stuff ****)
-(* A timepoint for a schedule *)
-
-(* We shouldn't think of this as an actual list, we should think of the list indeces
-as indeces for the schedule to operate on *)
-Definition Stmts (n: nat) := Vector.t Stmt n.
-
-Definition timepoint (n: nat) := Fin.t n.
-
-Definition ScheduleFn (n: nat) :=  timepoint n -> timepoint n.
-
-Inductive Schedule (n: nat) (stmts: Stmts n) (f: ScheduleFn n) :=
-| mkSchedule: Bijective f -> Schedule n stmts f.
-
-Definition stmtAtTimepoint (n: nat) (stmts: Stmts n) (time: timepoint n) (f: ScheduleFn n) (schedule: Schedule n stmts f) : Stmt :=
-  Vector.nth stmts (f time).
+Inductive com: nat ->  Type :=
+| CSeq: forall (n: nat), com n -> write -> com (n + 1)
+| CBegin: com 0.
 
 
-Definition Program (n: nat) := Vector.t Stmt n.
+Theorem n_minus_1_plus_1_eq_n_when_n_gt_0: forall (n: nat), n > 0 -> n - 1 + 1 = n.
+Proof. intros. omega. Qed.
 
-Function oneElemVector (A: Set) (a: A) : Vector.t A 1 :=
-  Vector.cons A a 0 (Vector.nil A).
 
-Function scheduleIndex (n: nat) (ix: nat) (witness: ix < n) (stmts: Stmts n) (f: ScheduleFn n) (schedule: Schedule n stmts f) : Stmt :=
-  Vector.nth stmts (f (Fin.of_nat_lt witness)).
-  
 
-                               
-Definition Vector1N (n: nat) : Vector.t nat n.
-Proof.
-  assert(length (seq 1 n) = n).
-  rewrite List.seq_length.
-  reflexivity.
-  exact (rew H in  of_list (seq 1 n)).
+Example c_example' : com 2 := (CSeq _ (CSeq _ CBegin (Write 1 100%Z)) (Write 1 100%Z)).
+
+
+Definition timepoint: Type := nat.
+Definition writeset: Type := memix -> list timepoint.
+
+Definition emptyWriteSet : writeset := fun ix => List.nil.
+Definition addToWriteSet (ws: writeset) (ix: memix) (tp: timepoint) : writeset :=
+  fun ix' => if ix' =? ix
+             then List.cons tp (ws ix')
+             else ws ix'.
+Definition singletonWriteSet (ix: memix) (tp: timepoint) : writeset :=
+  addToWriteSet emptyWriteSet ix tp.
+Definition mergeWriteSets (ws ws': writeset) : writeset :=
+  fun ix => ws ix ++ ws' ix.
+               
+
+Definition writeToWriteset (w: write) (tp: timepoint) : writeset :=
+  match w with
+  | Write ix value => singletonWriteSet ix tp
+  end.
+
+Fixpoint computeWriteSet (n: nat) (c: com n) : writeset :=
+  match c with
+  | CSeq n' cs w => mergeWriteSets (computeWriteSet n' cs) (writeToWriteset w n)
+  | CBegin => emptyWriteSet
+  end.
+
+
+Definition dependence: Type := nat * nat.
+Definition dependenceset: Type := list dependence.
+Definition emptyDependenceSet : dependenceset := List.nil.
+
+Definition dependencesFromWriteSetAndWrite (t: timepoint) (ws: writeset) (w: write) : dependenceset :=
+  match w with
+  | Write ix _ => let prev_write_timepoints_at_ix := ws ix in
+                  List.map (fun pwt => (pwt, t))  prev_write_timepoints_at_ix
+  end.
+    
+
+Fixpoint computeDependences (n: nat) (c: com n) : dependenceset :=
+  match c with
+  | CBegin => emptyDependenceSet
+  | CSeq n' c' w =>
+    let prevdeps := computeDependences n' c' in
+    let prevwriteset := computeWriteSet n' c' in
+    (dependencesFromWriteSetAndWrite n prevwriteset w) ++ prevdeps
+  end.
+
+Definition dependenceLexPositive (d: dependence) : Prop :=
+  fst d < snd d.
+
+Definition commandIxInRange (n: nat) (c: com n) (i: nat) : Prop :=
+  i <= n /\ i >= 1.
+
+Definition dependenceInRange (d: dependence) (n: nat) (c: com n) : Prop :=
+  commandIxInRange n c (fst d) /\ commandIxInRange n c (snd d).
+
+Definition writeIx (w: write) : memix :=
+  match w with
+  | Write ix _ => ix
+  end.
+
+
+Program Fixpoint getWriteAt (n: nat) (c: com n) (i: nat) (witness: i <= n /\ i >= 1) :=
+  match c with
+  | CBegin => _
+  | CSeq _ c' w => if i == n then w else getWriteAt _ c' i _
+  end.
+Next Obligation.
+  omega.
+Defined.
+Next Obligation.
+  split.
+  apply le_lt_or_eq in H0.
+  destruct H0.
+  omega.
+  contradiction.
+  assumption.
 Defined.
 
-
-Function Vector1N' (n: nat) : Vector.t nat n :=
-  let v := (seq 1 n) in
-  rew List.seq_length _ _ in of_list v.
-
-
-(* Interesting place where we need dependent pattern match *)
-Function scheduleStmtsGo (n: nat) (ix: nat) (witness: ix < n) (stmts: Stmts n) (f: ScheduleFn n) (schedule: Schedule n stmts f): Program ix :=
-  match ix as curix return ((curix < ix) -> Program (S curix)) with
-  | O => fun _ => let a' := Vector.nth stmts (f (Fin.of_nat_lt witness)) in
-    oneElemVector _ a'
-  | S ix' => fun ix_new_lt_ix =>
-               let a' := Vector.nth stmts (f (Fin.of_nat_lt witness)) in
-               let witness' := lt_trans _ _ _ (Nat.lt_succ_diag_r _ ) (lt_trans _ _ _ ix_new_lt_ix witness) in
-               let recur := scheduleStmtsGo n ix' witness' stmts f schedule in
-                   Vector.append (oneElemVector _ a') recur
-  end.
-           
+   
   
-Function scheduleSideEffect (n: nat) (stmts: Stmts n) (f: ScheduleFn n) (schedule: Schedule n stmts f)  (mold: Memory) : Memory :=
-  Vector.fold_left modelStmtMemorySideEffect initMemory stmts.
 
-           
-Inductive Dependence (n: nat) :=
-| mkDependence : Fin.t n -> Fin.t n -> Dependence n.
-
-
-Definition DependenceSet (n: nat) := ListSet.set (Dependence n).
-
-Definition timepointToNat (n: nat) (t: timepoint n)  : nat :=
-  proj1_sig (Fin.to_nat t).
-
-Definition CompleteDependenceSet (n: nat) (depset: DependenceSet n) (stmts: Stmts n) (f: ScheduleFn n) (schedule: Schedule n stmts f) : Prop :=
-  forall (t0 t1 : timepoint n)
-         (wix: MemIx)
-         (val0 val1 : MemValue),
-    timepointToNat n t0 < timepointToNat n t1 ->
-    stmtAtTimepoint n stmts t0 f schedule = (Write wix val0) ->
-    stmtAtTimepoint n stmts t1 f schedule = (Write wix val1) ->
-    ListSet.set_In (mkDependence n t0 t1) depset.
-
-
-Definition validNewSchedule (n: nat) (depset: DependenceSet n) (stmts: Stmts n)
-        (f f': ScheduleFn n)
-        (schedule : Schedule n stmts f)
-        (schedule' : Schedule n stmts f') : Prop :=
-  CompleteDependenceSet n depset stmts f schedule ->
-  forall (t0 t1 : timepoint n),
-    ListSet.set_In (mkDependence n t0 t1) depset -> timepointToNat n (f' t0) < timepointToNat n (f' t1).
-
-
-Definition schedulesHaveSameSideEffect (n: nat) (stmts: Stmts n) (f f': ScheduleFn n) (schedule: Schedule n stmts f) (schedule': Schedule n stmts f') :=
-  forall (mold: Memory),
-    scheduleSideEffect n stmts f schedule mold = scheduleSideEffect n stmts f' schedule' mold.
-
-
-
-
-Theorem cons_and_append_equivalence:
-  forall (n: nat) (A: Set) (a: A) (xx: Vector.t A n),
-    Vector.cons A a n xx = Vector.append (Vector.cons A a _ (Vector.nil _)) xx.
-  intros.
-  simpl.
-  reflexivity.
-Qed.
-
-Theorem validNewSchedulesHasSameSideEffect: forall (n: nat) (stmts: Stmts n) (f f': ScheduleFn n) (schedule: Schedule n stmts f) (schedule': Schedule n stmts f')(depset: DependenceSet n),
-    CompleteDependenceSet n depset stmts f schedule ->
-    validNewSchedule n depset stmts f f' schedule schedule' ->
-    schedulesHaveSameSideEffect n stmts f f' schedule schedule'.
-  intros.
-  generalize dependent depset. 
-  generalize dependent schedule'. 
-  generalize dependent f'.
-  induction (rev stmts).
-  - (* 0 *)
-    intros.
-    unfold schedulesHaveSameSideEffect.
-    intros.
-    unfold scheduleSideEffect. simpl. reflexivity.
-
-  - (* Induction *)
-    intros.
-    rename h into newStmt.
-    unfold schedulesHaveSameSideEffect.
-    intros.
-    destruct newStmt.
-    unfold scheduleSideEffect.
+  
+  

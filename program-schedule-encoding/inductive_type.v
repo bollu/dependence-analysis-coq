@@ -22,6 +22,7 @@ Require Import VectorDef.
 Require Import MSetWeakList.
 Require Import FSetInterface.
 Require Import FSetList.
+Import EqNotations.
 
 (* Require Import CoLoR.Util.FSet.FSetUtil. *)
 (* thank you kind stranger for showing me functorial modules syntax *)
@@ -107,6 +108,10 @@ Inductive com: nat ->  Type :=
 | CBegin: com 0.
 
 
+Theorem n_minus_1_plus_1_eq_n_when_n_gt_0: forall (n: nat), n > 0 -> n - 1 + 1 = n.
+Proof. intros. omega. Qed.
+
+
 
 Example c_example' : com 2 := (CSeq _ (CSeq _ CBegin (Write 1 100%Z)) (Write 1 100%Z)).
 
@@ -130,7 +135,6 @@ Definition writeToWriteset (w: write) (tp: timepoint) : writeset :=
   | Write ix value => singletonWriteSet ix tp
   end.
 
-  
 Fixpoint computeWriteSet (n: nat) (c: com n) : writeset :=
   match c with
   | CSeq n' cs w => mergeWriteSets (computeWriteSet n' cs) (writeToWriteset w n)
@@ -161,12 +165,37 @@ Fixpoint computeDependences (n: nat) (c: com n) : dependenceset :=
 Definition dependenceLexPositive (d: dependence) : Prop :=
   fst d < snd d.
 
-Definition dependenceInRange (d: dependence) (n: nat) (c: com n) : Prop :=
-  fst d <= n /\ snd d <= n.
+Definition commandIxInRange (n: nat) (c: com n) (i: nat) : Prop :=
+  i <= n /\ i >= 1.
 
-Definition dependenceAliases (d: dependence) (n: nat) (c: com n) : Prop :=
-  let w1 := getWriteAt n c (fst d) in
-  let w2 := getWriteAt n c (snd d) in
+Definition dependenceInRange (d: dependence) (n: nat) (c: com n) : Prop :=
+  commandIxInRange n c (fst d) /\ commandIxInRange n c (snd d).
+
+Definition writeIx (w: write) : memix :=
+  match w with
+  | Write ix _ => ix
+  end.
+
+
+Program Fixpoint getWriteAt (n: nat) (c: com n) (i: nat) (witness: i <= n /\ i >= 1) :=
+  match c with
+  | CBegin => _
+  | CSeq _ c' w => if i == n then w else getWriteAt _ c' i _
+  end.
+Next Obligation.
+  omega.
+Defined.
+Next Obligation.
+  split.
+  apply le_lt_or_eq in H0.
+  destruct H0.
+  omega.
+  contradiction.
+  assumption.
+Defined.
+
+   
+  
 
   
   
