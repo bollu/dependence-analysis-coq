@@ -192,8 +192,21 @@ Next Obligation.
   destruct witness.
   auto.
 Defined.
-        
-  
+
+
+(* Non dependent typed versions *)
+Program Fixpoint getWriteAt' (n: nat) (c: com n) (i: nat) : option write :=
+  match c with
+  | CBegin => None
+  | CSeq _ c' w => if i =? n then Some w else getWriteAt' _ c' i
+  end.
+
+Program Definition dependenceAliases' (d: dependence) (n: nat) (c: com n) : Prop :=
+  let ix1 := fst d in
+  let ix2 := snd d in
+  let w1 := getWriteAt' n c ix1 in
+  let w2 := getWriteAt' n c ix2 in
+  option_map writeIx w1 = option_map writeIx w2.
 
   
 Fixpoint computeWriteSet (n: nat) (c: com n) : writeset :=
@@ -349,5 +362,51 @@ Theorem computeDependencesInRange: forall (n: nat) (c: com n),
   simpl in H.
   contradiction.
 Qed.
+
+
+(* Stuck in dependent type hell. Going to try non dependent typed version. *)
+Theorem computeDependencesAlias: forall (n: nat) (c: com n), forall (d: dependence) (witness: List.In d (computeDependences n c)), dependenceAliases d n c (computeDependencesInRange _ _  d witness).
+Proof.
+  intros.
+  generalize dependent d.
+  dependent induction c.
+  intros.
+  unfold computeDependences in witness.
+  fold computeDependences in witness.
+  unfold dependenceAliases.
+  unfold getWriteAt.
+Abort.
+
+(* All writes are present in write set *)
+Theorem computeWriteSetComplete :  forall (n: nat) (c: com n) (wix: memix) (wval: memvalue) (i: nat),
+    getWriteAt' n c i  = Some (Write wix wval) -> List.In i ((computeWriteSet n c) wix).
+ Abort.
+
+(* All writes in write set exist in code *)
+Theorem computeWriteSetConsistent :  forall (n: nat) (c: com n) (wix: memix) (wval: memvalue) (i: nat), List.In i ((computeWriteSet n c) wix) -> getWriteAt' n c i  = Some (Write wix wval).
+Abort.
+
+
+
+Theorem computeDependencesAlias': forall (n: nat) (c: com n), forall (d: dependence), List.In d (computeDependences n c) ->  dependenceAliases' d n c.
+Proof.
+  intros.
+  generalize dependent d.
+  dependent induction c.
+  intros.
+  unfold computeDependences in H.
+  fold computeDependences in H.
+  rewrite List.in_app_iff in H.
+  destruct H.
+  unfold dependencesFromWriteSetAndWrite in H.
+  destruct w.
+  apply in_map_iff in H.
+  destruct H.
+  destruct H.
+  unfold computeWriteSet in H0.
+  destruct c.
+  fold computeWriteSet in H0.
+Abort.
+
 
 
