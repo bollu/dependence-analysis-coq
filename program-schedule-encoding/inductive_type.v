@@ -22,6 +22,7 @@ Require Import VectorDef.
 Require Import MSetWeakList.
 Require Import FSetInterface.
 Require Import FSetList.
+Require Import Coq.Program.Equality.
 Import EqNotations.
 
 (* Require Import CoLoR.Util.FSet.FSetUtil. *)
@@ -135,32 +136,12 @@ Definition writeToWriteset (w: write) (tp: timepoint) : writeset :=
   | Write ix value => singletonWriteSet ix tp
   end.
 
-Fixpoint computeWriteSet (n: nat) (c: com n) : writeset :=
-  match c with
-  | CSeq n' cs w => mergeWriteSets (computeWriteSet n' cs) (writeToWriteset w n)
-  | CBegin => emptyWriteSet
-  end.
 
 
 Definition dependence: Type := nat * nat.
 Definition dependenceset: Type := list dependence.
 Definition emptyDependenceSet : dependenceset := List.nil.
 
-Definition dependencesFromWriteSetAndWrite (t: timepoint) (ws: writeset) (w: write) : dependenceset :=
-  match w with
-  | Write ix _ => let prev_write_timepoints_at_ix := ws ix in
-                  List.map (fun pwt => (pwt, t))  prev_write_timepoints_at_ix
-  end.
-    
-
-Fixpoint computeDependences (n: nat) (c: com n) : dependenceset :=
-  match c with
-  | CBegin => emptyDependenceSet
-  | CSeq n' c' w =>
-    let prevdeps := computeDependences n' c' in
-    let prevwriteset := computeWriteSet n' c' in
-    (dependencesFromWriteSetAndWrite n prevwriteset w) ++ prevdeps
-  end.
 
 Definition dependenceLexPositive (d: dependence) : Prop :=
   fst d < snd d.
@@ -215,4 +196,101 @@ Defined.
   
 
   
+Fixpoint computeWriteSet (n: nat) (c: com n) : writeset :=
+  match c with
+  | CSeq n' cs w => mergeWriteSets (computeWriteSet n' cs) (writeToWriteset w n)
+  | CBegin => emptyWriteSet
+  end.
   
+
+Definition dependencesFromWriteSetAndWrite (t: timepoint) (ws: writeset) (w: write) : dependenceset :=
+  match w with
+  | Write ix _ => let prev_write_timepoints_at_ix := ws ix in
+                  List.map (fun pwt => (pwt, t))  prev_write_timepoints_at_ix
+  end.
+    
+
+Fixpoint computeDependences (n: nat) (c: com n) : dependenceset :=
+  match c with
+  | CBegin => emptyDependenceSet
+  | CSeq n' c' w =>
+    let prevdeps := computeDependences n' c' in
+    let prevwriteset := computeWriteSet n' c' in
+    (dependencesFromWriteSetAndWrite n prevwriteset w) ++ prevdeps
+  end.
+
+(* computeDependences on "com 0" always returns an empty dependence set *)
+Theorem computeDependence0IsEmpty: forall (n: nat) (c: com n), n = 0 -> computeDependences n c = List.nil.
+Proof.
+  intros.
+  unfold computeDependences.
+  remember c as c'.
+  destruct c.
+  omega.
+  rewrite Heqc'.
+  unfold emptyDependenceSet.
+  reflexivity.
+Qed.
+
+    
+(* ComputeDependences always returns dependences that are lex positive *)
+Theorem computeDependencesLexPositive': forall (n: nat) (c: com n),
+    let deps := computeDependences n c in
+    forall (d: dependence), List.In d deps -> dependenceLexPositive d.
+Proof.
+  (* How to open let? *)
+Abort.
+
+(* computeWriteSet n c will have all writes <= n*)
+Theorem computeWriteSetInBounds: forall (n: nat) (c: com n) (ix: memix) (t: timepoint), List.In t ((computeWriteSet n c) ix) -> t <= n.
+Proof.
+  intros.
+  generalize dependent ix.
+  generalize dependent t0.
+  dependent induction c.
+  intros.
+  simpl in H.
+  unfold mergeWriteSets in H.
+  rewrite List.in_app_iff in H.
+  destruct H.
+  specialize (IHc t0 ix H).
+  omega.
+  unfold writeToWriteset in H.
+  unfold singletonWriteSet in H.
+  unfold emptyWriteSet in H.
+  unfold addToWriteSet in H.
+  destruct w.
+  assert(ix = m \/ ~(ix = m)). omega.
+  destruct H0.
+  subst.
+  rewrite Nat.eqb_refl in H.
+  simpl in H.
+  destruct H.
+  omega.
+  contradiction.
+  rewrite <- Nat.eqb_neq in H0.
+  rewrite H0 in H.
+  contradiction.
+  intros.
+  unfold computeWriteSet in H.
+  unfold emptyWriteSet in H.
+  simpl in H.
+  contradiction.
+Qed.
+
+
+  
+
+Theorem computeDependencesLexPositive: forall (n: nat) (c: com n),
+    forall (d: dependence), List.In d (computeDependences n c) -> dependenceLexPositive d.
+Proof.
+  intros.
+  generalize dependent d.
+  dependent induction c.
+  intros.
+  unfold computeDependences in H.
+  fold computeDependences in H.
+  rewrite List.in_app_iff in H.
+  destruct H.
+
+Abort.
