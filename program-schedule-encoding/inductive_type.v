@@ -289,8 +289,29 @@ Proof.
   dependent induction c.
   intros.
   unfold computeDependences in H.
+  simpl in H.
   fold computeDependences in H.
-  rewrite List.in_app_iff in H.
+  destruct w. rewrite List.in_app_iff in H.
   destruct H.
+  (* till here, shit makes sense *)
+  unfold dependencesFromWriteSetAndWrite in H.
+  apply in_map_iff in H.
+  destruct H.
+  destruct H.
+  apply computeWriteSetInBounds in H0.
+  unfold dependenceLexPositive.
+  subst.
+  simpl.
+  omega.
+  specialize (IHc d H).
+  assumption.
+  intros.
+  unfold computeDependences in H.
+  simpl in H.
+  contradiction.
+Qed.
+
+
+
 
 Abort.
