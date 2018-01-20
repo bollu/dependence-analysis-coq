@@ -241,8 +241,7 @@ Proof.
   (* How to open let? *)
 Abort.
 
-(* computeWriteSet n c will have all writes <= n*)
-Theorem computeWriteSetInBounds: forall (n: nat) (c: com n) (ix: memix) (t: timepoint), List.In t ((computeWriteSet n c) ix) -> t <= n.
+Theorem computeWriteSetInBounds: forall (n: nat) (c: com n) (ix: memix) (t: timepoint), List.In t ((computeWriteSet n c) ix) -> t <= n /\ t >= 1.
 Proof.
   intros.
   generalize dependent ix.
@@ -313,5 +312,42 @@ Qed.
 
 
 
+Theorem computeDependencesInRange: forall (n: nat) (c: com n),
+    forall (d: dependence), List.In d (computeDependences n c) -> dependenceInRange d n c.
+  intros.
+  generalize dependent d.
+  dependent induction c.
+  intros.
+  unfold computeDependences in H.
+  fold computeDependences in H.
+  rewrite List.in_app_iff in H.
+  destruct H.
+  unfold dependencesFromWriteSetAndWrite in H.
+  destruct w.
+  unfold dependenceInRange.
+  destruct d.
+  unfold commandIxInRange.
+  simpl.
+  apply in_map_iff in H.
+  destruct H.
+  destruct H.
+  inversion H.
+  subst.
+  apply computeWriteSetInBounds in H0.
+  omega.
+  specialize (IHc d H).
+  unfold dependenceInRange.
+  unfold dependenceInRange in IHc.
+  destruct d.
+  simpl in IHc.
+  simpl.
+  unfold commandIxInRange.
+  unfold commandIxInRange in IHc.
+  omega.
 
-Abort.
+  intros.
+  simpl in H.
+  contradiction.
+Qed.
+
+
