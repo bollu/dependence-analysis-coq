@@ -195,6 +195,23 @@ Next Obligation.
 Defined.
 
    
+Program Definition dependenceAliases (d: dependence) (n: nat) (c: com n) (witness: dependenceInRange d n c) : Prop :=
+  let ix1 := fst d in
+  let ix2 := snd d in
+  let w1 := getWriteAt n c ix1 _ in
+  let w2 := getWriteAt n c ix2 _ in
+  writeIx w1 = writeIx w2.
+Next Obligation.
+  unfold dependenceInRange in witness.
+  destruct witness.
+  auto.
+Defined.
+Next Obligation.
+  unfold dependenceInRange in witness.
+  destruct witness.
+  auto.
+Defined.
+        
   
 
   
