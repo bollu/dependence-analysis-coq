@@ -201,6 +201,7 @@ Program Fixpoint getWriteAt' (n: nat) (c: com n) (i: nat) : option write :=
   | CSeq _ c' w => if i =? n then Some w else getWriteAt' _ c' i
   end.
 
+
 Program Definition dependenceAliases' (d: dependence) (n: nat) (c: com n) : Prop :=
   let ix1 := fst d in
   let ix2 := snd d in
@@ -377,9 +378,68 @@ Proof.
   unfold getWriteAt.
 Abort.
 
+
+Theorem getWriteAt'Range: forall (n: nat) (c: com n) (i: nat) (w: write), getWriteAt' n c i  = Some w -> i >= 1 /\ i <= n.
+Proof.
+  intros n c.
+  dependent induction c.
+  intros.
+  unfold getWriteAt' in H.
+  fold getWriteAt' in H.
+  assert(forall (x y : nat), x < y \/ x = y \/ x > y) as trichotomy. intros. omega.
+  specialize( trichotomy i (n + 1)).
+  destruct trichotomy.
+  - (* i < n + 1 *)
+    assert (i <> n + 1). omega.
+    fold getWriteAt' in H.
+    rewrite <- Nat.eqb_neq in H1.
+    rewrite H1 in H.
+    specialize (IHc _ _ H).
+    destruct IHc.
+    split; try assumption. omega.
+
+  -  intros.
+     destruct H0.
+     (* i = n + 1 *)
+     + omega.
+
+     (* i > n + 1 *)
+     +  assert (i <> n + 1). omega.
+        rewrite <- Nat.eqb_neq in H1.
+        rewrite H1 in H.
+        specialize (IHc _ _ H).
+        omega.
+        (* contradiction *)
+  - (*CBegin case - contradiction *)
+    intros.
+    unfold getWriteAt' in H.
+    inversion H.
+Qed.
+
+    
+
+
+
+
+ 
 (* All writes are present in write set *)
 Theorem computeWriteSetComplete :  forall (n: nat) (c: com n) (wix: memix) (wval: memvalue) (i: nat),
     getWriteAt' n c i  = Some (Write wix wval) -> List.In i ((computeWriteSet n c) wix).
+Proof.
+  intros.
+  generalize dependent i.
+  generalize dependent wix.
+  generalize dependent wval.
+  dependent induction c.
+  intros.
+  unfold computeWriteSet.
+  fold computeWriteSet.
+  unfold mergeWriteSets.
+  rewrite List.in_app_iff.
+  assert (i = n + 1 \/ i < (n + 1)). omega.
+
+  rewrite 
+             
  Abort.
 
 (* All writes in write set exist in code *)
