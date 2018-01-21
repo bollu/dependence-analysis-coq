@@ -379,6 +379,7 @@ Proof.
 Abort.
 
 
+
 Lemma getWriteAt'RangeConsistent: forall (n: nat) (c: com n) (i: nat) (w: write), getWriteAt' n c i  = Some w -> i >= 1 /\ i <= n.
 Proof.
   intros n c.
@@ -446,10 +447,50 @@ Proof.
   omega.
 Qed.
 
+Lemma getWriteAt'OnCSeq: forall (n: nat) (c: com n) (w: write), getWriteAt' _ (CSeq _ c w) (n + 1) = Some w.
+  intros n c.
+  dependent induction c.
+  intros.
+  simpl.
+  assert (n + 1 + 1 =? n + 1 + 1 = true).
+  rewrite Nat.eqb_eq. auto.
+  rewrite H.
+  reflexivity.
+  intros.
+  simpl.
+  reflexivity.
+Qed.
+
+Lemma getWriteAt'DestructOnCSeq: forall (n: nat) (c: com n) (i: nat) (w: write),
+    i < n /\ i >= 1 -> getWriteAt' (n + 1) (CSeq n c w) i = getWriteAt' n c i.
+Proof.
+  intros n c.
+  dependent induction c.
+  intros.
+  assert (i = n + 1 \/ i < n + 1). omega.
+  destruct H0.
+  rewrite H0.
+  rewrite getWriteAt'OnCSeq.
+  simpl.
+  assert ((n + 1 =? n + 1 + 1) = false).
+  rewrite Nat.eqb_neq. omega.
+  rewrite H1.
+  assert (n +1 =? n + 1 = true). rewrite Nat.eqb_eq. reflexivity.
+  rewrite H2.
+  reflexivity.
+  simpl.
+  assert (i =? n + 1 + 1 = false). rewrite Nat.eqb_neq. omega.
+  assert (i =? n + 1 = false). rewrite Nat.eqb_neq. omega.
+  rewrite H1. rewrite H2.
+  reflexivity.
+  intros.
+  simpl.
+  omega.
+Qed.
 
 
 (* All writes are present in write set *)
-Lemma computeWriteSetComplete :  forall (n: nat) (c: com n) (wix: memix) (wval: memvalue) (i: nat),
+Lemma computeWriteSetCharacterBwd :  forall (n: nat) (c: com n) (wix: memix) (wval: memvalue) (i: nat),
     getWriteAt' n c i  = Some (Write wix wval) -> List.In i ((computeWriteSet n c) wix).
 Proof.
   intros.
@@ -506,16 +547,35 @@ Qed.
 
 
 
-
-  
-
-             
- Abort.
-
 (* All writes in write set exist in code *)
-Theorem computeWriteSetConsistent :  forall (n: nat) (c: com n) (wix: memix) (wval: memvalue) (i: nat), List.In i ((computeWriteSet n c) wix) -> getWriteAt' n c i  = Some (Write wix wval).
-Abort.
+Theorem computeWriteSetCharacterFwd :  forall (n: nat) (c: com n) (wix: memix) (i: nat), List.In i ((computeWriteSet n c) wix) -> exists (wval: memvalue), getWriteAt' n c i = Some (Write wix wval).
+Proof.
+  intros n c wix i.
+  intros H.
+  dependent induction c.
+  unfold computeWriteSet in H. fold computeWriteSet in H. unfold mergeWriteSets in H.
+  rewrite List.in_app_iff in H.
+  destruct H.
 
+  assert(i = n + 1 \/ (i < n + 1 /\ i >= 1)).
+  apply computeWriteSetInBounds in H.
+  omega.
+  destruct H.
+  destruct H0.
+  assert (i <= n).
+  apply computeWriteSetInBounds in H. omega.
+  omega.
+  simpl.
+  assert ((i =? n + 1) = false).
+  rewrite Nat.eqb_neq. omega.
+  rewrite H1.
+  specialize (IHc wix i H).
+  exact IHc.
+
+
+
+Abort.
+.
 
 
 Theorem computeDependencesAlias': forall (n: nat) (c: com n), forall (d: dependence), List.In d (computeDependences n c) ->  dependenceAliases' d n c.
