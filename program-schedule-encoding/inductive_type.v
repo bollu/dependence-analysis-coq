@@ -379,7 +379,7 @@ Proof.
 Abort.
 
 
-Theorem getWriteAt'Range: forall (n: nat) (c: com n) (i: nat) (w: write), getWriteAt' n c i  = Some w -> i >= 1 /\ i <= n.
+Lemma getWriteAt'RangeConsistent: forall (n: nat) (c: com n) (i: nat) (w: write), getWriteAt' n c i  = Some w -> i >= 1 /\ i <= n.
 Proof.
   intros n c.
   dependent induction c.
@@ -389,7 +389,7 @@ Proof.
   assert(forall (x y : nat), x < y \/ x = y \/ x > y) as trichotomy. intros. omega.
   specialize( trichotomy i (n + 1)).
   destruct trichotomy.
-  - (* i < n + 1 *)
+  (* i < n + 1 *)
     assert (i <> n + 1). omega.
     fold getWriteAt' in H.
     rewrite <- Nat.eqb_neq in H1.
@@ -398,23 +398,56 @@ Proof.
     destruct IHc.
     split; try assumption. omega.
 
-  -  intros.
+  intros.
      destruct H0.
      (* i = n + 1 *)
-     + omega.
+     omega.
 
      (* i > n + 1 *)
-     +  assert (i <> n + 1). omega.
+      assert (i <> n + 1). omega.
         rewrite <- Nat.eqb_neq in H1.
         rewrite H1 in H.
         specialize (IHc _ _ H).
         omega.
         (* contradiction *)
-  - (*CBegin case - contradiction *)
+  (*CBegin case - contradiction *)
     intros.
     unfold getWriteAt' in H.
     inversion H.
 Qed.
+
+Lemma getWriteAt'RangeComplete: forall (n: nat) (c: com n) (i: nat), i >= 1 /\ i <= n -> exists (w: write), getWriteAt' n c i = Some w.
+Proof.
+  intros n c.
+  dependent induction c.
+  intros.
+  unfold getWriteAt'. fold getWriteAt'.
+  assert(i = n + 1 \/ i < n + 1 \/ i > n + 1) as trichotomy. omega.
+  (* i = n  + 1 *)
+  destruct trichotomy as [tri | tri'].
+  rewrite <- Nat.eqb_eq in tri.
+  rewrite tri.
+  exists w. reflexivity.
+
+  destruct tri' as [tri' | tri''].
+  (* i < n + 1 *)
+  assert(i >= 1 /\ i <= n). omega.
+  specialize (IHc _ H0).
+  destruct IHc.
+  assert (i <> n + 1). omega.
+  rewrite <- Nat.eqb_neq in H2.
+  rewrite H2.
+  exists x.
+  assumption.
+
+  (* i > n + 1 *)
+  omega. (* contradiction *)
+  intros.
+  omega.
+Qed.
+
+
+
 
     
 
