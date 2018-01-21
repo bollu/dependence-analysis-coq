@@ -448,15 +448,8 @@ Qed.
 
 
 
-
-    
-
-
-
-
- 
 (* All writes are present in write set *)
-Theorem computeWriteSetComplete :  forall (n: nat) (c: com n) (wix: memix) (wval: memvalue) (i: nat),
+Lemma computeWriteSetComplete :  forall (n: nat) (c: com n) (wix: memix) (wval: memvalue) (i: nat),
     getWriteAt' n c i  = Some (Write wix wval) -> List.In i ((computeWriteSet n c) wix).
 Proof.
   intros.
@@ -469,9 +462,53 @@ Proof.
   fold computeWriteSet.
   unfold mergeWriteSets.
   rewrite List.in_app_iff.
-  assert (i = n + 1 \/ i < (n + 1)). omega.
+  remember H as getWriteAt'Invoke.
+  clear HeqgetWriteAt'Invoke.
+  apply getWriteAt'RangeConsistent in H.
+  assert (i = n + 1 \/ i < n + 1) as icase. omega.
+  destruct icase as [i_eq_sn | i_lt_sn].
+  - (* i = n + 1*)
+  right.
+  unfold writeToWriteset.
+  destruct w.
+  unfold singletonWriteSet.
+  unfold addToWriteSet.
+  inversion getWriteAt'Invoke.
+  assert (i =? n + 1 = true). rewrite Nat.eqb_eq. assumption.
+  rewrite H0 in H1. simpl in H1.
+  inversion H1.
+  assert (wix =? wix = true). exact (Nat.eqb_refl wix).
+  rewrite H2.
+  rewrite Nat.eqb_eq in H0.
+  rewrite H0.
+  simpl.
+  auto.
+  (* i < n + 1 *)
+  -  left.
+     assert (i >= 1 /\ i <= n) as witness. omega.
+     assert(exists (w: write), getWriteAt' n c i = Some w) as writeExists.
+     apply (getWriteAt'RangeComplete _ _ _ witness).
+     inversion getWriteAt'Invoke.
+     destruct writeExists.
+     destruct x.
+     specialize (IHc _ _ _ H0).
+     assert (i <> n + 1). omega.
+     rewrite <- Nat.eqb_neq in H2.
+     rewrite H2 in H1.
+     rewrite H0 in H1.
+     inversion H1.
+     rewrite H4 in IHc.
+     assumption.
+     (* i > n + 1 *)
+  - intros.
+    inversion H.
+Qed.
 
-  rewrite 
+
+
+
+  
+
              
  Abort.
 
