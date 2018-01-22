@@ -752,9 +752,9 @@ Lemma dependenceInRangeInclusive: forall (d: dependence) (c: com) (w: write),  d
 Qed.
   
 
-Theorem computeDependencesAlias'Fwd: forall (n: nat) (c: com n), forall (d: dependence), List.In d (computeDependences n c) ->  dependenceAliases' d n c.
+Theorem computeDependencesAlias'Fwd: forall (c: com ), forall (d: dependence), List.In d (computeDependences c) ->  dependenceAliases' d  c.
 Proof.
-  intros n c.
+  intros  c.
   dependent induction c.
   intros.
   unfold computeDependences in H.
@@ -770,8 +770,10 @@ Proof.
   inversion H.
   simpl.
   subst.
-  assert (n + 1 =? n + 1 = true). rewrite Nat.eqb_eq. omega.
   unfold dependenceAliases'. simpl.
+  Abort.
+(* 
+  assert (n + 1 =? n + 1 = true). rewrite Nat.eqb_eq. omega.
   rewrite H1.
   assert (n0 =? n + 1 = false).
   apply computeWriteSetInBounds in H0.
@@ -809,12 +811,13 @@ Proof.
   - intros.
     inversion H.
 Qed.
+*)
 
 
 (* Show under what conditions we can shorten the range of a dependence *)
-Theorem dependenceInRangeDestructOnCSeq: forall (d: dependence) (n: nat) (c: com n) (w: write), dependenceInRange d (n + 1) (CSeq n c w) -> snd d <> n + 1 ->
+Theorem dependenceInRangeDestructOnCSeq: forall (d: dependence) (c: com) (w: write), dependenceInRange d (CSeq c w) -> snd d <> comlen c + 1 ->
 dependenceLexPositive d ->
-dependenceInRange d n c.
+dependenceInRange d c.
 Proof.
   unfold dependenceInRange.
   unfold commandIxInRange.
@@ -825,14 +828,14 @@ Proof.
 Qed.
 
 
-Theorem computeDependenceAlias'Bwd:   forall (n: nat) (c: com n), forall (d: dependence), dependenceAliases' d n c -> dependenceInRange d n c -> dependenceLexPositive d  -> List.In d (computeDependences n c).
+Theorem computeDependenceAlias'Bwd:   forall (c: com), forall (d: dependence), dependenceAliases' d c -> dependenceInRange d c -> dependenceLexPositive d  -> List.In d (computeDependences c).
 Proof.
-  intros n c.
+  intros c.
   dependent induction c.
   intros.
   destruct d eqn:DSave.
   destruct w eqn:WSave.
-  rewrite (destructDependenceAliasesInCSeq n c _ _ _ _ H1 H0) in H.
+  rewrite (destructDependenceAliasesInCSeq  c _ _ _ _ H1 H0) in H.
   destruct H. (* use induction principle on dependence aliasing *)
   - (* n1 = n + 1 *)
     unfold computeDependences.
@@ -847,7 +850,10 @@ Proof.
     subst.
     split.
     auto.
-    eapply computeWriteSetCharacterBwd.
+    unfold comlen. fold comlen.
+Abort.
+(* 
+    eapply computeWriteSetCharacterBwd in H0.
     exact H2.
 
   - (* n1 <> n + 1 *)
@@ -866,29 +872,30 @@ Proof.
   - (* CBegin case *)
     unfold dependenceInRange. unfold dependenceLexPositive. unfold commandIxInRange. simpl. intros. omega.
 Qed.
+*)
 
 
-Fixpoint runProgram (n: nat) (p: com n) (initmemory: memory) : memory :=
+Fixpoint runProgram  (p: com) (initmemory: memory) : memory :=
   match p with
   | CBegin => initmemory
-  | CSeq n' p' w => writeToMemory' w  (runProgram n' p' initmemory)
+  | CSeq p' w => writeToMemory' w  (runProgram p' initmemory)
   end.
 
 
 (* definition of program equality *)
-Definition ceq (n m : nat) (c: com n) (c' : com m) : Prop :=
-  forall (initmemory : memory), JMeq (runProgram n c initmemory) (runProgram m c' initmemory).
+Definition ceq (c c' : com) : Prop :=
+  forall (initmemory : memory), (runProgram c initmemory) = (runProgram c' initmemory).
 
-Notation "x '===' y" := (ceq _ _  x y) (at level 70).
+Notation "x '===' y" := (ceq x y) (at level 70).
 
-Theorem ceq_refl: forall (n: nat) (c: com n), ceq _ _ c c.
+Theorem ceq_refl: forall (c: com), c === c.
 Proof.
   intros.
   unfold ceq.
   intros. reflexivity.
 Qed.
 
-Theorem ceq_symmetric: forall (n m : nat) (c: com n) (c': com m), ceq _ _ c c' <-> ceq _ _ c' c.
+Theorem ceq_symmetric: forall(c c': com), c === c' <-> c' === c.
 Proof.
   intros.
   unfold ceq.
@@ -898,25 +905,15 @@ Proof.
   intros. auto.
 Qed.
 
-Program Fixpoint com_append (n m : nat) (c: com n) (c': com m) : com (n + m) :=
-  match c' in (com m') return com (n + m') with
+Fixpoint com_append (c c': com) : com :=
+  match c' with
   | CBegin => c
-  | CSeq _ c'' w => CSeq _ (com_append n _ c c'') w
-  end.
-Next Obligation.
-  rewrite plus_assoc_reverse.
-  reflexivity.
-Qed.
-
-
-Fixpoint com_append' (n m : nat) (c: com n) (c': com m) : com (n + m) :=
-  match c' in (com m') return com (n + m') with
-  | CBegin => rew plus_n_O n in c
-  | CSeq _ c'' w => rew (plus_assoc_reverse _ _ _) in CSeq _ (com_append n _ c c'') w
+  | CSeq c' w => CSeq  (com_append  c c') w
   end.
 
-Notation "x '+++' y"  := (com_append' _ _ x y) (at level 60).
-Theorem ceq_add_cseq: forall (n n': nat) (cn: com n) (cn' : com n') (w: write), cn === cn' -> (CSeq _ cn w) ===  (CSeq _ cn' w).
+
+Notation "x '+++' y"  := (com_append  x y) (at level 60).
+Theorem ceq_add_cseq: forall (cn cn' : com) (w: write), cn === cn' -> (CSeq cn w) ===  (CSeq cn' w).
 Proof.
   intros.
   unfold ceq.
@@ -933,40 +930,13 @@ Qed.
 (* Should be handy: https://coq.inria.fr/library/Coq.Logic.EqdepFacts.html *)
 
 (* As usual, dependent typed hell *)
-Theorem ceq_append: forall (n n' m m': nat) (cn: com n) (cn' : com n') (cm: com m) (cm' : com m'), ceq _ _ cn cn' -> ceq _ _ cm cm' -> ceq _ _ (com_append  _ _ cn cn') (com_append _ _ cm cm').
+Theorem ceq_append: forall (cl cl' cr cr' : com), cl === cr -> cl' === cr' -> cl +++ cl' === cr +++ cr'.
 Proof.
   intros.
+  induction cl'.
+  induction cr'.
+  unfold com_append. fold com_append.
+  remember (cl +++ cl') as ll.
+  remember (cr +++ cr') as rr.
   unfold ceq.
   intros.
-  dependent induction cn'.
-  unfold com_append.
-  fold com_append.
-Abort.
-
-
-
-Theorem ceq_append'_weak: forall (nl nr nnew : nat) (cl: com nl) (cr: com nr) (cnew: com nnew), cl === cr -> cl +++ cnew === cr +++ cnew.
-Proof.
-  intros.
-  generalize dependent cnew.
-  dependent induction cl.
-  dependent induction cr.
-  intros.
-  assert (n + 1 + nnew = (nnew + n) + 1). omega.
-  assert (n0 + 1 + nnew = (n0 + nnew) + 1). omega.
-  (* how to continue? I need to show that the types can unify :( *)
-  Fail apply ceq_add_cseq.
-Abort.
-
-
-Theorem ceq_append': forall (n n' m m': nat) (cn: com n) (cn' : com n') (cm: com m) (cm' : com m'), ceq _ _ cn cm -> ceq _ _ cn' cm' -> ceq _ _ (com_append'  _ _ cn cn') (com_append' _ _ cm cm').
-Proof.
-  intros.
-  generalize dependent cn'. generalize dependent cm'. generalize dependent n'.
-  generalize dependent m'.
-  dependent induction cn.
-  dependent induction cm.
-  unfold com_append'. fold com_append'.
-  intros.
-
-Abort.
