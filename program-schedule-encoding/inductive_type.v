@@ -755,7 +755,7 @@ Qed.
 Theorem computeDependencesAlias'Fwd: forall (c: com ), forall (d: dependence), List.In d (computeDependences c) ->  dependenceAliases' d  c.
 Proof.
   intros  c.
-  dependent induction c.
+  induction c.
   intros.
   unfold computeDependences in H.
   fold computeDependences in H.
@@ -764,6 +764,7 @@ Proof.
   rewrite List.in_app_iff in H.
   destruct H.
   apply List.in_map_iff in H.
+  unfold comlen in H. fold comlen in H.
   destruct H.
   destruct H.
   destruct d eqn:Dsave.
@@ -771,15 +772,13 @@ Proof.
   simpl.
   subst.
   unfold dependenceAliases'. simpl.
-  Abort.
-(* 
-  assert (n + 1 =? n + 1 = true). rewrite Nat.eqb_eq. omega.
-  rewrite H1.
-  assert (n0 =? n + 1 = false).
-  apply computeWriteSetInBounds in H0.
+  assert (n >= 1 /\ n <= comlen c).
+  apply computeWriteSetInBounds in H0. omega.
+  assert (n =? S (comlen c) = false).
   rewrite Nat.eqb_neq. omega.
-  rewrite H2.
-  unfold writeIx.
+  assert (comlen c =? comlen c = true).
+  rewrite Nat.eqb_eq. omega.
+  rewrite H2. rewrite H3.
   simpl.
   apply computeWriteSetCharacterFwd in H0.
   destruct H0.
@@ -787,15 +786,13 @@ Proof.
   simpl.
   reflexivity.
   -
-    remember (CSeq n c (Write m m0)) as couter.
     (* inductive case? *)
     destruct d eqn:Dsave.
-    rewrite Heqcouter.
     apply  destructDependenceAliasesInCSeq.
     apply computeDependencesLexPositive in H. exact H.
     apply computeDependencesInRange in H.
     apply dependenceInRangeInclusive. exact H.
-    assert (n1 = n + 1 \/ n1 <> n + 1).
+    assert (n0 = comlen c + 1 \/ n0 <> comlen c+ 1).
     omega.
     destruct H0.
     + (* n1 = n + 1 *)
@@ -811,7 +808,6 @@ Proof.
   - intros.
     inversion H.
 Qed.
-*)
 
 
 (* Show under what conditions we can shorten the range of a dependence *)
@@ -831,48 +827,54 @@ Qed.
 Theorem computeDependenceAlias'Bwd:   forall (c: com), forall (d: dependence), dependenceAliases' d c -> dependenceInRange d c -> dependenceLexPositive d  -> List.In d (computeDependences c).
 Proof.
   intros c.
-  dependent induction c.
+  induction c.
   intros.
-  destruct d eqn:DSave.
-  destruct w eqn:WSave.
-  rewrite (destructDependenceAliasesInCSeq  c _ _ _ _ H1 H0) in H.
-  destruct H. (* use induction principle on dependence aliasing *)
-  - (* n1 = n + 1 *)
-    unfold computeDependences.
-    fold computeDependences.
-    apply List.in_app_iff.
-    left. (* this dependence comes from dependences at n + 1 *)
+  destruct d eqn:dsave.
+  destruct w eqn:wsave.
+  remember H as depAliases. clear HeqdepAliases.
+  apply (destructDependenceAliasesInCSeq c n n0 m m0 H1 H0) in H.
+  destruct H.
+  - (* n0 = comlen c + 1 *)
+    destruct H. destruct H2.
+    unfold computeDependences. fold computeDependences.
     unfold dependencesFromWriteSetAndWrite.
-    apply List.in_map_iff.
-    exists n0.
-    destruct H.
-    destruct H2.
-    subst.
+    rewrite List.in_app_iff.
+    left. (* Dependence will be part of new write set *)
+    rewrite List.in_map_iff.
+    exists n.
     split.
-    auto.
     unfold comlen. fold comlen.
-Abort.
-(* 
-    eapply computeWriteSetCharacterBwd in H0.
-    exact H2.
+    rewrite H. rewrite Nat.add_comm. reflexivity.
+    eapply computeWriteSetCharacterBwd.
+    apply H2.
 
-  - (* n1 <> n + 1 *)
+  - (* n0 <> comlen c + 1 => n0 <= comlen c *)
     intros.
-    destruct H.
     unfold computeDependences.
     fold computeDependences.
-    (* We are in the older computeDependences region *)
-    rewrite List.in_app_iff. right.
+    unfold dependencesFromWriteSetAndWrite.
+    rewrite List.in_app_iff.
+    right. (* This depenednece will be in the older set of deps *)
+    assert (dependenceInRange (n, n0) c).
+    apply dependenceInRangeDestructOnCSeq with (w := w).
+    exact H0. simpl. destruct H. exact H. exact H1.
+    destruct H.
     apply IHc.
-    exact H2.
-    apply dependenceInRangeDestructOnCSeq in H0.
-    exact H0. simpl. exact H. exact H1. exact H1.
+    exact H3.
+    exact H2. exact H1.
 
-
-  - (* CBegin case *)
-    unfold dependenceInRange. unfold dependenceLexPositive. unfold commandIxInRange. simpl. intros. omega.
+  - (* CBegin *)
+    intros.
+    simpl.
+    unfold dependenceInRange in H0.
+    unfold commandIxInRange in H0.
+    simpl in H0.
+    omega.
 Qed.
-*)
+
+
+
+
 
 
 Fixpoint runProgram  (p: com) (initmemory: memory) : memory :=
@@ -940,3 +942,4 @@ Proof.
   remember (cr +++ cr') as rr.
   unfold ceq.
   intros.
+Abort.
