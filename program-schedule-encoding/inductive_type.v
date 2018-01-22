@@ -760,7 +760,13 @@ Theorem destructDependenceAlisesInCSeq: forall (n: nat) (c: com n) (tbegin tend:
   omega.
 Qed.
 
+Lemma dependenceInRangeInclusive: forall (d: dependence) (n: nat) (c: com n) (w: write),  dependenceInRange d n c -> dependenceInRange d (n + 1) (CSeq n c w).
+  unfold dependenceInRange. unfold commandIxInRange. destruct d. simpl.
+  intros.
+  omega.
+Qed.
   
+
 Theorem computeDependencesAlias': forall (n: nat) (c: com n), forall (d: dependence), List.In d (computeDependences n c) ->  dependenceAliases' d n c.
 Proof.
   intros n c.
@@ -769,18 +775,18 @@ Proof.
   unfold computeDependences in H.
   fold computeDependences in H.
   unfold dependencesFromWriteSetAndWrite in H.
-  destruct w.
+  destruct w eqn:Wsave.
   rewrite List.in_app_iff in H.
   destruct H.
-  unfold dependenceAliases'.
   apply List.in_map_iff in H.
   destruct H.
   destruct H.
-  destruct d.
+  destruct d eqn:Dsave.
   inversion H.
   simpl.
   subst.
   assert (n + 1 =? n + 1 = true). rewrite Nat.eqb_eq. omega.
+  unfold dependenceAliases'. simpl.
   rewrite H1.
   assert (n0 =? n + 1 = false).
   apply computeWriteSetInBounds in H0.
@@ -793,10 +799,33 @@ Proof.
   rewrite H0.
   simpl.
   reflexivity.
-  - (* inductive case? *)
-    destruct d.
+  -
+    remember (CSeq n c (Write m m0)) as couter.
+    (* inductive case? *)
+    destruct d eqn:Dsave.
+    rewrite Heqcouter.
     apply  destructDependenceAlisesInCSeq.
-    unfold dependenceAliases'.
+    apply computeDependencesLexPositive in H. exact H.
+    apply computeDependencesInRange in H.
+    apply dependenceInRangeInclusive. exact H.
+    assert (n1 = n + 1 \/ n1 <> n + 1).
+    omega.
+    destruct H0.
+    + (* n1 = n + 1 *)
+      apply computeDependencesInRange in H.
+      unfold dependenceInRange in H.
+      unfold commandIxInRange in H.
+      simpl in H. omega.
+    + (* n1 <> n + 1 *)
+      intros.
+      right.
+      specialize (IHc _ H).
+      split. assumption. assumption.
+  - intros.
+    inversion H.
+Qed.
+
+
 
     
 Abort.
