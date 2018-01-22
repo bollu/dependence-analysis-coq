@@ -671,26 +671,123 @@ Proof.
     inversion H0.
 Qed.
 
+(* Destruction principle for dependenceAlises over CSeq *)
+(* either the dependence end is pointing to the final instruction, in which case
+   the dependence begin must alias with this. *)
+(* Otherwise, the alasing is happening inside *)
+Theorem destructDependenceAlisesInCSeq: forall (n: nat) (c: com n) (tbegin tend: timepoint)  (wix: memix) (wval: memvalue),
+    dependenceLexPositive (tbegin, tend) ->
+    dependenceInRange (tbegin, tend) (n + 1) (CSeq n c (Write wix wval)) ->
+    dependenceAliases' (tbegin, tend) (n + 1) (CSeq n c (Write wix wval)) <->
+    (tend = n + 1 /\ option_map writeIx (getWriteAt' n c tbegin ) = Some wix) \/
+    (tend <> n + 1 /\ dependenceAliases' (tbegin, tend) n c).
+  intros n c.
+  split.
+  (* -> *)
+  intros.
+  assert ((tend = n + 1) \/ (tend < n + 1 /\ tend >= 1)).
+  unfold dependenceInRange in H0.
+  unfold commandIxInRange in H0.
+  simpl in H0.
+  omega.
+  destruct H2.
+  (* tend = n + 1 *)
+  left.
+  unfold dependenceAliases' in H1.
+  simpl in H1.
+  subst.
+  assert (n + 1 =? n + 1 = true). rewrite Nat.eqb_eq. reflexivity.
+  rewrite H2 in H1. simpl.
+  assert (tbegin =? n + 1 = false).
+  unfold dependenceLexPositive in H.
+  simpl in H.
+  rewrite Nat.eqb_neq. omega.
+  rewrite H3 in H1.
+  simpl in H1.
+  auto.
+
+  (* tend <>  n + 1 *)
+  right.
+  unfold dependenceAliases' in H1.
+  simpl fst in H1.
+  simpl snd in H1.
+  assert (tbegin < n + 1 /\ tbegin >= 1).
+  unfold dependenceLexPositive in H. simpl in H.
+  unfold dependenceInRange in H0.
+  unfold commandIxInRange in H0. simpl in H0.
+  omega.
+  rewrite getWriteAt'DestructOnCSeq in H1.
+  rewrite getWriteAt'DestructOnCSeq in H1.
+  unfold dependenceAliases'.
+  simpl.
+  assert (tend <> n + 1). omega.
+  auto.
+  omega.
+  omega.
+  (* <- *)
+  intros.
+  destruct H1.
+  (* tend = n + 1 *)
+  destruct H1.
+  unfold dependenceAliases'.
+  simpl fst. simpl snd.
+  rewrite H1. rewrite getWriteAt'OnCSeq.
+  assert (tbegin < n + 1 /\ tbegin >= 1).
+  unfold dependenceLexPositive in H. unfold dependenceInRange in H0. unfold commandIxInRange in H0. simpl in H. simpl in H0.
+  omega.
+  assert (getWriteAt' (n + 1) (CSeq n c (Write wix wval)) tbegin = getWriteAt' n c tbegin).
+  apply getWriteAt'DestructOnCSeq.
+  omega.
+  rewrite H4.
+  rewrite H2.
+  simpl.
+  reflexivity.
+  (* tend <> n + 1 *)
+  (* Note that in A \/ B, when you are in B case, you are not given ~A. That is very interesting, thanks to LEM. So, I need to explicitly state that t <> n + 1
+   *)
+  destruct H1.
+
+  
 
 
 Theorem computeDependencesAlias': forall (n: nat) (c: com n), forall (d: dependence), List.In d (computeDependences n c) ->  dependenceAliases' d n c.
 Proof.
-  intros.
-  generalize dependent d.
+  intros n c.
   dependent induction c.
   intros.
   unfold computeDependences in H.
   fold computeDependences in H.
-  rewrite List.in_app_iff in H.
-  destruct H.
   unfold dependencesFromWriteSetAndWrite in H.
   destruct w.
-  apply in_map_iff in H.
+  rewrite List.in_app_iff in H.
+  destruct H.
+  unfold dependenceAliases'.
+  apply List.in_map_iff in H.
   destruct H.
   destruct H.
-  unfold computeWriteSet in H0.
-  destruct c.
-  fold computeWriteSet in H0.
+  destruct d.
+  inversion H.
+  simpl.
+  subst.
+  assert (n + 1 =? n + 1 = true). rewrite Nat.eqb_eq. omega.
+  rewrite H1.
+  assert (n0 =? n + 1 = false).
+  apply computeWriteSetInBounds in H0.
+  rewrite Nat.eqb_neq. omega.
+  rewrite H2.
+  unfold writeIx.
+  simpl.
+  apply computeWriteSetCharacterFwd in H0.
+  destruct H0.
+  rewrite H0.
+  simpl.
+  reflexivity.
+  - (* inductive case? *)
+    destruct d.
+    apply  destructDependenceAlisesInCSeq.
+    unfold dependenceAliases'.
+
+    
 Abort.
 
 
