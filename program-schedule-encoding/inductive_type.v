@@ -110,17 +110,22 @@ Definition modelWriteSideEffect (mold: memory) (w: write) : memory :=
   end.
 
 
-Inductive com: nat ->  Type :=
-| CSeq: forall (n: nat), com n -> write -> com (n + 1)
-| CBegin: com 0.
+Inductive com: Type :=
+| CSeq: com -> write -> com
+| CBegin: com.
 
+Fixpoint comlen (c: com) : nat :=
+  match c with
+  | CBegin => 0
+  | CSeq c' _ => 1 + comlen c'
+  end.
 
 Theorem n_minus_1_plus_1_eq_n_when_n_gt_0: forall (n: nat), n > 0 -> n - 1 + 1 = n.
 Proof. intros. omega. Qed.
 
 
 
-Example c_example' : com 2 := (CSeq _ (CSeq _ CBegin (Write 1 100%Z)) (Write 1 100%Z)).
+Example c_example' : com := (CSeq (CSeq CBegin (Write 1 100%Z)) (Write 1 100%Z)).
 
 
 Definition timepoint: Type := nat.
@@ -133,8 +138,32 @@ Definition addToWriteSet (ws: writeset) (ix: memix) (tp: timepoint) : writeset :
              else ws ix'.
 Definition singletonWriteSet (ix: memix) (tp: timepoint) : writeset :=
   addToWriteSet emptyWriteSet ix tp.
+
+(* Reason about what it means to be in a singleton write set *)
+Lemma destructInSingletonWriteSet:
+  forall (ix curix: memix) (curtp tp: timepoint),
+    List.In curtp ((singletonWriteSet ix tp) curix) -> curtp = tp /\ ix = curix.
+  intros.
+  unfold singletonWriteSet in H.
+  unfold addToWriteSet in H.
+  assert (curix = ix \/ curix <> ix). omega.
+  destruct H0.
+  (* curix = ix *)
+  rewrite <- Nat.eqb_eq in H0.
+  rewrite H0 in H.
+  inversion H.
+  split; auto.
+  rewrite Nat.eqb_eq in H0. auto.
+  inversion H1.
+  (* curix <> ix *)
+  rewrite <- Nat.eqb_neq in H0.
+  rewrite H0 in H.
+  inversion H.
+Qed.
+
 Definition mergeWriteSets (ws ws': writeset) : writeset :=
   fun ix => ws ix ++ ws' ix.
+
                
 
 Definition writeToWriteset (w: write) (tp: timepoint) : writeset :=
@@ -142,6 +171,15 @@ Definition writeToWriteset (w: write) (tp: timepoint) : writeset :=
   | Write ix value => singletonWriteSet ix tp
   end.
 
+Lemma destructInWriteToWriteSet':
+  forall (n: nat) (curtp : timepoint) (ix curix: memix) (val: memvalue),
+    List.In curtp (writeToWriteset (Write ix val) n curix) -> curtp = n /\ curix = ix.
+Proof.
+  intros.
+  unfold writeToWriteset in H.
+  apply destructInSingletonWriteSet in H.
+  omega.
+Qed.
 
 
 Definition dependence: Type := nat * nat.
@@ -152,11 +190,11 @@ Definition emptyDependenceSet : dependenceset := List.nil.
 Definition dependenceLexPositive (d: dependence) : Prop :=
   fst d < snd d.
 
-Definition commandIxInRange (n: nat) (c: com n) (i: nat) : Prop :=
-  i <= n /\ i >= 1.
+Definition commandIxInRange  (c: com) (i: nat) : Prop :=
+  i <= comlen c /\ i >= 1.
 
-Definition dependenceInRange (d: dependence) (n: nat) (c: com n) : Prop :=
-  commandIxInRange n c (fst d) /\ commandIxInRange n c (snd d).
+Definition dependenceInRange (d: dependence) (c: com) : Prop :=
+  commandIxInRange c (fst d) /\ commandIxInRange c (snd d).
 
 Definition writeIx (w: write) : memix :=
   match w with
@@ -164,61 +202,25 @@ Definition writeIx (w: write) : memix :=
   end.
 
 
-Program Fixpoint getWriteAt (n: nat) (c: com n) (i: nat) (witness: i <= n /\ i >= 1) :=
-  match c with
-  | CBegin => _
-  | CSeq _ c' w => if i == n then w else getWriteAt _ c' i _
-  end.
-Next Obligation.
-  omega.
-Defined.
-Next Obligation.
-  split.
-  apply le_lt_or_eq in H0.
-  destruct H0.
-  omega.
-  contradiction.
-  assumption.
-Defined.
-
-   
-Program Definition dependenceAliases (d: dependence) (n: nat) (c: com n) (witness: dependenceInRange d n c) : Prop :=
-  let ix1 := fst d in
-  let ix2 := snd d in
-  let w1 := getWriteAt n c ix1 _ in
-  let w2 := getWriteAt n c ix2 _ in
-  writeIx w1 = writeIx w2.
-Next Obligation.
-  unfold dependenceInRange in witness.
-  destruct witness.
-  auto.
-Defined.
-Next Obligation.
-  unfold dependenceInRange in witness.
-  destruct witness.
-  auto.
-Defined.
-
-
 (* Non dependent typed versions *)
-Program Fixpoint getWriteAt' (n: nat) (c: com n) (i: nat) : option write :=
+Program Fixpoint getWriteAt' (c: com) (i: nat) : option write :=
   match c with
   | CBegin => None
-  | CSeq _ c' w => if i =? n then Some w else getWriteAt' _ c' i
+  | CSeq c' w => if i =? (comlen c) then Some w else getWriteAt' c' i
   end.
 
 
-Program Definition dependenceAliases' (d: dependence) (n: nat) (c: com n) : Prop :=
+Program Definition dependenceAliases' (d: dependence) (c: com) : Prop :=
   let ix1 := fst d in
   let ix2 := snd d in
-  let w1 := getWriteAt' n c ix1 in
-  let w2 := getWriteAt' n c ix2 in
+  let w1 := getWriteAt' c ix1 in
+  let w2 := getWriteAt' c ix2 in
   option_map writeIx w1 = option_map writeIx w2.
 
   
-Fixpoint computeWriteSet (n: nat) (c: com n) : writeset :=
+Fixpoint computeWriteSet (c: com) : writeset :=
   match c with
-  | CSeq n' cs w => mergeWriteSets (computeWriteSet n' cs) (writeToWriteset w n)
+  | CSeq  cs w => mergeWriteSets (computeWriteSet cs) (writeToWriteset w (comlen c))
   | CBegin => emptyWriteSet
   end.
   
@@ -230,82 +232,55 @@ Definition dependencesFromWriteSetAndWrite (t: timepoint) (ws: writeset) (w: wri
   end.
     
 
-Fixpoint computeDependences (n: nat) (c: com n) : dependenceset :=
+Fixpoint computeDependences (c: com) : dependenceset :=
   match c with
   | CBegin => emptyDependenceSet
-  | CSeq n' c' w =>
-    let prevdeps := computeDependences n' c' in
-    let prevwriteset := computeWriteSet n' c' in
-    (dependencesFromWriteSetAndWrite n prevwriteset w) ++ prevdeps
+  | CSeq c' w =>
+    let prevdeps := computeDependences  c' in
+    let prevwriteset := computeWriteSet c' in
+    (dependencesFromWriteSetAndWrite (comlen c) prevwriteset w) ++ prevdeps
   end.
 
 (* computeDependences on "com 0" always returns an empty dependence set *)
-Theorem computeDependence0IsEmpty: forall (n: nat) (c: com n), n = 0 -> computeDependences n c = List.nil.
+Theorem computeDependence0IsEmpty: forall (c: com), comlen c = 0 -> computeDependences c = List.nil.
 Proof.
   intros.
-  unfold computeDependences.
-  remember c as c'.
   destruct c.
-  omega.
-  rewrite Heqc'.
-  unfold emptyDependenceSet.
+  simpl in H. inversion H.
+  simpl.
   reflexivity.
 Qed.
 
     
-(* ComputeDependences always returns dependences that are lex positive *)
-Theorem computeDependencesLexPositive': forall (n: nat) (c: com n),
-    let deps := computeDependences n c in
-    forall (d: dependence), List.In d deps -> dependenceLexPositive d.
-Proof.
-  (* How to open let? *)
-Abort.
 
-Theorem computeWriteSetInBounds: forall (n: nat) (c: com n) (ix: memix) (t: timepoint), List.In t ((computeWriteSet n c) ix) -> t <= n /\ t >= 1.
+Theorem computeWriteSetInBounds: forall (c: com) (ix: memix) (t: timepoint), List.In t ((computeWriteSet  c) ix) -> t <= (comlen c) /\ t >= 1.
 Proof.
+  intros c.
+  induction c.
   intros.
-  generalize dependent ix.
-  generalize dependent t0.
-  dependent induction c.
-  intros.
-  simpl in H.
+  unfold computeWriteSet in H. fold computeWriteSet in H.
   unfold mergeWriteSets in H.
   rewrite List.in_app_iff in H.
   destruct H.
-  specialize (IHc t0 ix H).
+  specialize (IHc  _ _ H).
+  unfold comlen. fold comlen. omega.
+  unfold comlen. fold comlen.
+  unfold writeToWriteset in H. simpl in H. destruct w.
+  apply destructInSingletonWriteSet in H.
   omega.
-  unfold writeToWriteset in H.
-  unfold singletonWriteSet in H.
-  unfold emptyWriteSet in H.
-  unfold addToWriteSet in H.
-  destruct w.
-  assert(ix = m \/ ~(ix = m)). omega.
-  destruct H0.
-  subst.
-  rewrite Nat.eqb_refl in H.
-  simpl in H.
-  destruct H.
-  omega.
-  contradiction.
-  rewrite <- Nat.eqb_neq in H0.
-  rewrite H0 in H.
-  contradiction.
   intros.
-  unfold computeWriteSet in H.
-  unfold emptyWriteSet in H.
-  simpl in H.
-  contradiction.
+  inversion H.
 Qed.
 
 
   
 
-Theorem computeDependencesLexPositive: forall (n: nat) (c: com n),
-    forall (d: dependence), List.In d (computeDependences n c) -> dependenceLexPositive d.
+Theorem computeDependencesLexPositive: forall (c: com),
+    forall (d: dependence), List.In d (computeDependences c) -> dependenceLexPositive d.
 Proof.
   intros.
   generalize dependent d.
-  dependent induction c.
+  induction c.
   intros.
   unfold computeDependences in H.
   simpl in H.
@@ -332,11 +307,11 @@ Qed.
 
 
 
-Theorem computeDependencesInRange: forall (n: nat) (c: com n),
-    forall (d: dependence), List.In d (computeDependences n c) -> dependenceInRange d n c.
+Theorem computeDependencesInRange: forall (c: com),
+    forall (d: dependence), List.In d (computeDependences c) -> dependenceInRange d c.
   intros.
   generalize dependent d.
-  dependent induction c.
+  induction c.
   intros.
   unfold computeDependences in H.
   fold computeDependences in H.
@@ -363,6 +338,7 @@ Theorem computeDependencesInRange: forall (n: nat) (c: com n),
   simpl.
   unfold commandIxInRange.
   unfold commandIxInRange in IHc.
+  unfold comlen. fold comlen.
   omega.
 
   intros.
@@ -371,47 +347,35 @@ Theorem computeDependencesInRange: forall (n: nat) (c: com n),
 Qed.
 
 
-(* Stuck in dependent type hell. Going to try non dependent typed version. *)
-Theorem computeDependencesAlias: forall (n: nat) (c: com n), forall (d: dependence) (witness: List.In d (computeDependences n c)), dependenceAliases d n c (computeDependencesInRange _ _  d witness).
+
+Lemma getWriteAt'RangeConsistent: forall (c: com) (i: nat) (w: write), getWriteAt' c i  = Some w -> i >= 1 /\ i <= comlen c.
 Proof.
-  intros.
-  generalize dependent d.
-  dependent induction c.
-  intros.
-  unfold computeDependences in witness.
-  fold computeDependences in witness.
-  unfold dependenceAliases.
-  unfold getWriteAt.
-Abort.
-
-
-
-Lemma getWriteAt'RangeConsistent: forall (n: nat) (c: com n) (i: nat) (w: write), getWriteAt' n c i  = Some w -> i >= 1 /\ i <= n.
-Proof.
-  intros n c.
-  dependent induction c.
+  intros c.
+  induction c.
   intros.
   unfold getWriteAt' in H.
   fold getWriteAt' in H.
   assert(forall (x y : nat), x < y \/ x = y \/ x > y) as trichotomy. intros. omega.
-  specialize( trichotomy i (n + 1)).
+  unfold comlen in H. fold comlen in H.
+  specialize( trichotomy i ((comlen c) + 1)).
   destruct trichotomy.
   (* i < n + 1 *)
-    assert (i <> n + 1). omega.
+    assert (i <> 1 + (comlen c)). omega.
     fold getWriteAt' in H.
     rewrite <- Nat.eqb_neq in H1.
     rewrite H1 in H.
     specialize (IHc _ _ H).
     destruct IHc.
-    split; try assumption. omega.
+    split; try assumption. unfold comlen. fold comlen. omega.
 
   intros.
      destruct H0.
      (* i = n + 1 *)
+     unfold comlen. fold comlen.
      omega.
 
      (* i > n + 1 *)
-      assert (i <> n + 1). omega.
+      assert (i <> 1 + (comlen c)). omega.
         rewrite <- Nat.eqb_neq in H1.
         rewrite H1 in H.
         specialize (IHc _ _ H).
@@ -423,43 +387,61 @@ Proof.
     inversion H.
 Qed.
 
-Lemma getWriteAt'RangeComplete: forall (n: nat) (c: com n) (i: nat), i >= 1 /\ i <= n -> exists (w: write), getWriteAt' n c i = Some w.
+Lemma getWriteAt'RangeComplete: forall (c: com) (i: nat), i >= 1 /\ i <= (comlen c) -> exists (w: write), getWriteAt' c i = Some w.
 Proof.
-  intros n c.
-  dependent induction c.
+  intros c.
+  induction c.
   intros.
   unfold getWriteAt'. fold getWriteAt'.
-  assert(i = n + 1 \/ i < n + 1 \/ i > n + 1) as trichotomy. omega.
+  remember (comlen c) as n.
+  assert(i = 1 + n\/ i < 1 + n \/ i > 1 + n) as trichotomy. omega.
   (* i = n  + 1 *)
   destruct trichotomy as [tri | tri'].
   rewrite <- Nat.eqb_eq in tri.
+  unfold comlen. fold comlen.
+  rewrite <- Heqn.
+  exists w.
   rewrite tri.
-  exists w. reflexivity.
+  reflexivity.
 
   destruct tri' as [tri' | tri''].
   (* i < n + 1 *)
   assert(i >= 1 /\ i <= n). omega.
   specialize (IHc _ H0).
   destruct IHc.
-  assert (i <> n + 1). omega.
+  assert (i <> 1 + n). omega.
   rewrite <- Nat.eqb_neq in H2.
+  unfold comlen. fold comlen. rewrite <- Heqn.
   rewrite H2.
   exists x.
   assumption.
-
+  assert (i >= 1 /\ i <= n). unfold comlen in H. fold comlen in H. omega.
+  specialize (IHc i H0).
+  assert (i > 1 + n /\ i <= n).
+  omega.
+  inversion H1.
+  assert (i <> 1 + comlen c). omega.
+  rewrite <- Nat.eqb_neq in H4.
+  unfold comlen. fold comlen.
+  rewrite H4.
+  destruct IHc.
+  exists x.
+  assumption.
   (* i > n + 1 *)
-  omega. (* contradiction *)
   intros.
+  unfold comlen in H.
+  inversion H.
   omega.
 Qed.
 
-Lemma getWriteAt'OnCSeq: forall (n: nat) (c: com n) (w: write), getWriteAt' _ (CSeq _ c w) (n + 1) = Some w.
-  intros n c.
+Lemma getWriteAt'OnCSeq: forall (c: com) (w: write), getWriteAt' (CSeq c w) (comlen c + 1) = Some w.
+  intros c.
   dependent induction c.
   intros.
   simpl.
-  assert (n + 1 + 1 =? n + 1 + 1 = true).
-  rewrite Nat.eqb_eq. auto.
+  assert (comlen c + 1  =? S (comlen c) = true).
+  rewrite Nat.eqb_eq. omega.
+  unfold comlen. fold comlen.
   rewrite H.
   reflexivity.
   intros.
@@ -467,36 +449,38 @@ Lemma getWriteAt'OnCSeq: forall (n: nat) (c: com n) (w: write), getWriteAt' _ (C
   reflexivity.
 Qed.
 
-Lemma getWriteAt'DestructOnCSeq: forall (n: nat) (c: com n) (i: nat) (w: write),
-    i <= n /\ i >= 1 -> getWriteAt' (n + 1) (CSeq n c w) i = getWriteAt' n c i.
+Lemma getWriteAt'DestructOnCSeq: forall (c: com ) (i: nat) (w: write),
+    i <= comlen c /\ i >= 1 -> getWriteAt' (CSeq c w) i = getWriteAt' c i.
 Proof.
-  intros n c.
+  intros c.
   dependent induction c.
   intros.
-  assert (i = n + 1 \/ i < n + 1). omega.
+  assert (i = comlen c + 1 \/ i < comlen  c + 1).
+  unfold comlen in H. fold comlen in H. omega.
   destruct H0.
   rewrite H0.
   rewrite getWriteAt'OnCSeq.
   simpl.
-  assert ((n + 1 =? n + 1 + 1) = false).
+  assert (comlen c + 1 =? S (S (comlen c)) = false).
   rewrite Nat.eqb_neq. omega.
   rewrite H1.
-  assert (n +1 =? n + 1 = true). rewrite Nat.eqb_eq. reflexivity.
+  assert (comlen c +1 =? S(comlen c) = true). rewrite Nat.eqb_eq. omega.
   rewrite H2.
   reflexivity.
   simpl.
-  assert (i =? n + 1 + 1 = false). rewrite Nat.eqb_neq. omega.
-  assert (i =? n + 1 = false). rewrite Nat.eqb_neq. omega.
+  assert (i =?  (S (S (comlen c))) = false). rewrite Nat.eqb_neq. omega.
+  assert (i =? S (comlen c) = false). rewrite Nat.eqb_neq. omega.
   rewrite H1. rewrite H2.
   reflexivity.
   intros.
   simpl.
+  unfold comlen in H. fold comlen in H.
   omega.
 Qed.
 
-Lemma computeWriteSetRange: forall (n: nat) (c: com n) (wix: memix) (i: nat), List.In i (((computeWriteSet n c)) wix) -> i >= 1 /\ i <= n.
-  intros n c.
-  dependent induction c.
+Lemma computeWriteSetRange: forall (c: com) (wix: memix) (i: nat), List.In i (((computeWriteSet  c)) wix) -> i >= 1 /\ i <= comlen c.
+  intros c.
+  induction c.
   intros.
   unfold computeWriteSet in H.
   fold computeWriteSet in H.
@@ -505,6 +489,7 @@ Lemma computeWriteSetRange: forall (n: nat) (c: com n) (wix: memix) (i: nat), Li
   destruct H.
   (* induction case - List.In i (computeWriteSet n c wix) *)
   specialize (IHc _ _ H).
+  unfold comlen. fold comlen.
   omega.
   unfold writeToWriteset in H.
   destruct w.
@@ -518,6 +503,8 @@ Lemma computeWriteSetRange: forall (n: nat) (c: com n) (wix: memix) (i: nat), Li
   rewrite <- Nat.eqb_eq in H0.
   rewrite H0 in H.
   destruct H.
+  unfold comlen. fold comlen.
+  unfold comlen in H. fold comlen in H.
   omega.
   destruct H.
   (* wix <> m *)
@@ -587,27 +574,6 @@ Proof.
 Qed.
 
 
-(* Reason about what it means to be in a singleton write set *)
-Lemma destructInSingletonWriteSet:
-  forall (ix curix: memix) (curtp tp: timepoint),
-    List.In curtp ((singletonWriteSet ix tp) curix) -> curtp = tp /\ ix = curix.
-  intros.
-  unfold singletonWriteSet in H.
-  unfold addToWriteSet in H.
-  assert (curix = ix \/ curix <> ix). omega.
-  destruct H0.
-  (* curix = ix *)
-  rewrite <- Nat.eqb_eq in H0.
-  rewrite H0 in H.
-  inversion H.
-  split; auto.
-  rewrite Nat.eqb_eq in H0. auto.
-  inversion H1.
-  (* curix <> ix *)
-  rewrite <- Nat.eqb_neq in H0.
-  rewrite H0 in H.
-  inversion H.
-Qed.
 
 Lemma destructInWriteToWriteSet:
   forall (w: write) (n: nat) (curtp : timepoint) (curix: memix),
@@ -622,15 +588,6 @@ Proof.
 Qed.
 
 
-Lemma destructInWriteToWriteSet':
-  forall (n: nat) (curtp : timepoint) (ix curix: memix) (val: memvalue),
-    List.In curtp (writeToWriteset (Write ix val) n curix) -> curtp = n /\ curix = ix.
-Proof.
-  intros.
-  unfold writeToWriteset in H.
-  apply destructInSingletonWriteSet in H.
-  omega.
-Qed.
 
 
 
