@@ -845,6 +845,18 @@ Proof.
 Qed.
 
 
+(* Show under what conditions we can shorten the range of a dependence *)
+Theorem dependenceInRangeDestructOnCSeq: forall (d: dependence) (n: nat) (c: com n) (w: write), dependenceInRange d (n + 1) (CSeq n c w) -> snd d <> n + 1 ->
+dependenceLexPositive d ->
+dependenceInRange d n c.
+Proof.
+  unfold dependenceInRange.
+  unfold commandIxInRange.
+  unfold dependenceLexPositive.
+  destruct d. simpl.
+  intros.
+  omega.
+Qed.
 
 
 Theorem computeDependenceAlias'Bwd:   forall (n: nat) (c: com n), forall (d: dependence), dependenceAliases' d n c -> dependenceInRange d n c -> dependenceLexPositive d  -> List.In d (computeDependences n c).
@@ -864,3 +876,27 @@ Proof.
     unfold dependencesFromWriteSetAndWrite.
     apply List.in_map_iff.
     exists n0.
+    destruct H.
+    destruct H2.
+    subst.
+    split.
+    auto.
+    eapply computeWriteSetCharacterBwd.
+    exact H2.
+
+  - (* n1 <> n + 1 *)
+    intros.
+    destruct H.
+    unfold computeDependences.
+    fold computeDependences.
+    (* We are in the older computeDependences region *)
+    rewrite List.in_app_iff. right.
+    apply IHc.
+    exact H2.
+    apply dependenceInRangeDestructOnCSeq in H0.
+    exact H0. simpl. exact H. exact H1. exact H1.
+
+
+  - (* CBegin case *)
+    unfold dependenceInRange. unfold dependenceLexPositive. unfold commandIxInRange. simpl. intros. omega.
+Qed.
