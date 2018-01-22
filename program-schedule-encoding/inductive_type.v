@@ -24,6 +24,7 @@ Require Import FSetInterface.
 Require Import FSetList.
 Require Import Coq.Program.Equality.
 Import EqNotations.
+Import EqdepFacts.
 
 (* Require Import CoLoR.Util.FSet.FSetUtil. *)
 (* thank you kind stranger for showing me functorial modules syntax *)
@@ -71,6 +72,11 @@ Qed.
 
 Definition writeToMemory (wix: memix) (wval: memvalue) (mold: memory) : memory :=
   fun ix => if (ix =? wix) then wval else mold ix.
+
+Definition writeToMemory' (w: write) (mold: memory) : memory :=
+  match w with
+  | Write ix val => writeToMemory ix val mold
+  end.
 
 Theorem readFromWriteIdentical : forall (wix: memix) (wval: memvalue) (mem: memory),
     (writeToMemory wix wval mem) wix = wval.
@@ -900,3 +906,107 @@ Proof.
   - (* CBegin case *)
     unfold dependenceInRange. unfold dependenceLexPositive. unfold commandIxInRange. simpl. intros. omega.
 Qed.
+
+
+Fixpoint runProgram (n: nat) (p: com n) (initmemory: memory) : memory :=
+  match p with
+  | CBegin => initmemory
+  | CSeq n' p' w => writeToMemory' w  (runProgram n' p' initmemory)
+  end.
+
+
+(* definition of program equality *)
+Definition ceq (n m : nat) (c: com n) (c' : com m) : Prop :=
+  forall (initmemory : memory), JMeq (runProgram n c initmemory) (runProgram m c' initmemory).
+
+Notation "x '===' y" := (ceq _ _  x y) (at level 70).
+
+Theorem ceq_refl: forall (n: nat) (c: com n), ceq _ _ c c.
+Proof.
+  intros.
+  unfold ceq.
+  intros. reflexivity.
+Qed.
+
+Theorem ceq_symmetric: forall (n m : nat) (c: com n) (c': com m), ceq _ _ c c' <-> ceq _ _ c' c.
+Proof.
+  intros.
+  unfold ceq.
+  split.
+  intros.
+  auto.
+  intros. auto.
+Qed.
+
+Program Fixpoint com_append (n m : nat) (c: com n) (c': com m) : com (n + m) :=
+  match c' in (com m') return com (n + m') with
+  | CBegin => c
+  | CSeq _ c'' w => CSeq _ (com_append n _ c c'') w
+  end.
+Next Obligation.
+  rewrite plus_assoc_reverse.
+  reflexivity.
+Qed.
+
+
+Fixpoint com_append' (n m : nat) (c: com n) (c': com m) : com (n + m) :=
+  match c' in (com m') return com (n + m') with
+  | CBegin => rew plus_n_O n in c
+  | CSeq _ c'' w => rew (plus_assoc_reverse _ _ _) in CSeq _ (com_append n _ c c'') w
+  end.
+
+Notation "x '+++' y"  := (com_append' _ _ x y) (at level 60).
+Theorem ceq_add_cseq: forall (n n': nat) (cn: com n) (cn' : com n') (w: write), cn === cn' -> (CSeq _ cn w) ===  (CSeq _ cn' w).
+Proof.
+  intros.
+  unfold ceq.
+  unfold runProgram.
+  fold runProgram.
+  intros.
+  unfold ceq in H.
+  specialize (H initmemory).
+  rewrite H.
+  reflexivity.
+Qed.
+
+
+(* Should be handy: https://coq.inria.fr/library/Coq.Logic.EqdepFacts.html *)
+
+(* As usual, dependent typed hell *)
+Theorem ceq_append: forall (n n' m m': nat) (cn: com n) (cn' : com n') (cm: com m) (cm' : com m'), ceq _ _ cn cn' -> ceq _ _ cm cm' -> ceq _ _ (com_append  _ _ cn cn') (com_append _ _ cm cm').
+Proof.
+  intros.
+  unfold ceq.
+  intros.
+  dependent induction cn'.
+  unfold com_append.
+  fold com_append.
+Abort.
+
+
+
+Theorem ceq_append'_weak: forall (nl nr nnew : nat) (cl: com nl) (cr: com nr) (cnew: com nnew), cl === cr -> cl +++ cnew === cr +++ cnew.
+Proof.
+  intros.
+  generalize dependent cnew.
+  dependent induction cl.
+  dependent induction cr.
+  intros.
+  assert (n + 1 + nnew = (nnew + n) + 1). omega.
+  assert (n0 + 1 + nnew = (n0 + nnew) + 1). omega.
+  (* how to continue? I need to show that the types can unify :( *)
+  Fail apply ceq_add_cseq.
+Abort.
+
+
+Theorem ceq_append': forall (n n' m m': nat) (cn: com n) (cn' : com n') (cm: com m) (cm' : com m'), ceq _ _ cn cm -> ceq _ _ cn' cm' -> ceq _ _ (com_append'  _ _ cn cn') (com_append' _ _ cm cm').
+Proof.
+  intros.
+  generalize dependent cn'. generalize dependent cm'. generalize dependent n'.
+  generalize dependent m'.
+  dependent induction cn.
+  dependent induction cm.
+  unfold com_append'. fold com_append'.
+  intros.
+
+Abort.
