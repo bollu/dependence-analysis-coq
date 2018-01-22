@@ -518,8 +518,8 @@ Qed.
 
 
 (* All writes are present in write set *)
-Lemma computeWriteSetCharacterBwd :  forall (n: nat) (c: com n) (wix: memix) (wval: memvalue) (i: nat),
-    getWriteAt' n c i  = Some (Write wix wval) -> List.In i ((computeWriteSet n c) wix).
+Lemma computeWriteSetCharacterBwd :  forall (c: com) (wix: memix) (wval: memvalue) (i: nat),
+    getWriteAt' c i  = Some (Write wix wval) -> List.In i ((computeWriteSet c) wix).
 Proof.
   intros.
   generalize dependent i.
@@ -534,7 +534,9 @@ Proof.
   remember H as getWriteAt'Invoke.
   clear HeqgetWriteAt'Invoke.
   apply getWriteAt'RangeConsistent in H.
-  assert (i = n + 1 \/ i < n + 1) as icase. omega.
+  unfold comlen in H. fold comlen in H.
+  assert (i = comlen c + 1 \/ i < comlen c + 1) as icase.
+  omega.
   destruct icase as [i_eq_sn | i_lt_sn].
   - (* i = n + 1*)
   right.
@@ -543,7 +545,7 @@ Proof.
   unfold singletonWriteSet.
   unfold addToWriteSet.
   inversion getWriteAt'Invoke.
-  assert (i =? n + 1 = true). rewrite Nat.eqb_eq. assumption.
+  assert (i =? S(comlen c)= true). rewrite Nat.eqb_eq. omega.
   rewrite H0 in H1. simpl in H1.
   inversion H1.
   assert (wix =? wix = true). exact (Nat.eqb_refl wix).
@@ -554,14 +556,14 @@ Proof.
   auto.
   (* i < n + 1 *)
   -  left.
-     assert (i >= 1 /\ i <= n) as witness. omega.
-     assert(exists (w: write), getWriteAt' n c i = Some w) as writeExists.
-     apply (getWriteAt'RangeComplete _ _ _ witness).
+     assert (i >= 1 /\ i <= comlen c) as witness. omega.
+     assert(exists (w: write), getWriteAt'  c i = Some w) as writeExists.
+     apply (getWriteAt'RangeComplete _ _ witness).
      inversion getWriteAt'Invoke.
      destruct writeExists.
      destruct x.
      specialize (IHc _ _ _ H0).
-     assert (i <> n + 1). omega.
+     assert (i <> S (comlen c)). omega.
      rewrite <- Nat.eqb_neq in H2.
      rewrite H2 in H1.
      rewrite H0 in H1.
@@ -572,8 +574,6 @@ Proof.
   - intros.
     inversion H.
 Qed.
-
-
 
 Lemma destructInWriteToWriteSet:
   forall (w: write) (n: nat) (curtp : timepoint) (curix: memix),
