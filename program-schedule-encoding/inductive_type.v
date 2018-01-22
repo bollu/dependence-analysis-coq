@@ -593,23 +593,24 @@ Qed.
 
 
 (* All writes in write set exist in code *)
-Theorem computeWriteSetCharacterFwd :  forall (n: nat) (c: com n) (wix: memix) (i: nat), List.In i ((computeWriteSet n c) wix) -> exists (wval: memvalue), getWriteAt' n c i = Some (Write wix wval).
+Theorem computeWriteSetCharacterFwd :  forall (c: com) (wix: memix) (i: nat), List.In i ((computeWriteSet  c) wix) -> exists (wval: memvalue), getWriteAt'  c i = Some (Write wix wval).
 Proof.
-  intros n c.
+  intros  c.
   intros H.
   dependent induction c.
 
 
   intros.
-  assert (i >= 1 /\ i <= n + 1).
+  assert (i >= 1 /\ i <= S (comlen c)).
   apply computeWriteSetInBounds in H0.
+  unfold comlen in H0. fold comlen in H0.
   omega.
   unfold computeWriteSet in H0. fold computeWriteSet in H0. unfold mergeWriteSets in H0.
 
   rewrite List.in_app_iff in H0.
   destruct H0.
   - (* in write set till n*)
-    assert (i <= n).
+    assert (i <= comlen c).
     apply computeWriteSetInBounds in H0. omega.
     destruct w.
     specialize (IHc _ _ H0).
@@ -620,7 +621,10 @@ Proof.
     omega.
   - (* in new write set *)
     intros.
-    assert (i = n + 1). apply destructInWriteToWriteSet in H0. assumption.
+    assert (i = comlen c+ 1). apply destructInWriteToWriteSet in H0.
+    unfold comlen in H1. fold comlen in H1.
+    unfold comlen in H0. fold comlen in H0.
+    omega.
     destruct w.
     exists m0.
     apply destructInWriteToWriteSet' in H0.
@@ -638,17 +642,17 @@ Qed.
 (* either the dependence end is pointing to the final instruction, in which case
    the dependence begin must alias with this. *)
 (* Otherwise, the alasing is happening inside *)
-Theorem destructDependenceAliasesInCSeq: forall (n: nat) (c: com n) (tbegin tend: timepoint)  (wix: memix) (wval: memvalue),
+Theorem destructDependenceAliasesInCSeq: forall (c: com) (tbegin tend: timepoint)  (wix: memix) (wval: memvalue),
     dependenceLexPositive (tbegin, tend) ->
-    dependenceInRange (tbegin, tend) (n + 1) (CSeq n c (Write wix wval)) ->
-    dependenceAliases' (tbegin, tend) (n + 1) (CSeq n c (Write wix wval)) <->
-    (tend = n + 1 /\ exists (wval_begin: memvalue), (getWriteAt' n c tbegin) = Some (Write wix wval_begin)) \/
-    (tend <> n + 1 /\ dependenceAliases' (tbegin, tend) n c).
-  intros n c.
+    dependenceInRange (tbegin, tend) (CSeq  c (Write wix wval)) ->
+    dependenceAliases' (tbegin, tend) (CSeq  c (Write wix wval)) <->
+    (tend = comlen c + 1 /\ exists (wval_begin: memvalue), (getWriteAt'  c tbegin) = Some (Write wix wval_begin)) \/
+    (tend <> comlen c + 1 /\ dependenceAliases' (tbegin, tend)  c).
+  intros c.
   split.
   (* -> *)
   intros.
-  assert ((tend = n + 1) \/ (tend < n + 1 /\ tend >= 1)).
+  assert ((tend = comlen c + 1) \/ (tend < comlen c + 1 /\ tend >= 1)).
   unfold dependenceInRange in H0.
   unfold commandIxInRange in H0.
   simpl in H0.
@@ -659,19 +663,18 @@ Theorem destructDependenceAliasesInCSeq: forall (n: nat) (c: com n) (tbegin tend
   unfold dependenceAliases' in H1.
   simpl in H1.
   subst.
-  assert (n + 1 =? n + 1 = true). rewrite Nat.eqb_eq. reflexivity.
+  assert (comlen c + 1 =? S (comlen c) = true). rewrite Nat.eqb_eq. omega.
   rewrite H2 in H1. simpl.
-  assert (tbegin =? n + 1 = false).
+  assert (tbegin =? S (comlen c) = false).
   unfold dependenceLexPositive in H.
   simpl in H.
   rewrite Nat.eqb_neq. omega.
   rewrite H3 in H1.
   simpl in H1.
-  auto.
   split.
   auto.
-  remember (getWriteAt' n c tbegin) as write_at_begin.
-  assert (exists (w: write), getWriteAt' n c tbegin = Some w).
+  remember (getWriteAt' c tbegin) as write_at_begin.
+  assert (exists (w: write), getWriteAt' c tbegin = Some w).
   apply getWriteAt'RangeComplete.
   unfold dependenceInRange in H0. unfold commandIxInRange in H0. simpl in H0.
   unfold dependenceLexPositive in H. simpl in H. omega.
@@ -692,7 +695,7 @@ Theorem destructDependenceAliasesInCSeq: forall (n: nat) (c: com n) (tbegin tend
   unfold dependenceAliases' in H1.
   simpl fst in H1.
   simpl snd in H1.
-  assert (tbegin < n + 1 /\ tbegin >= 1).
+  assert (tbegin < comlen c + 1 /\ tbegin >= 1).
   unfold dependenceLexPositive in H. simpl in H.
   unfold dependenceInRange in H0.
   unfold commandIxInRange in H0. simpl in H0.
@@ -701,7 +704,7 @@ Theorem destructDependenceAliasesInCSeq: forall (n: nat) (c: com n) (tbegin tend
   rewrite getWriteAt'DestructOnCSeq in H1.
   unfold dependenceAliases'.
   simpl.
-  assert (tend <> n + 1). omega.
+  assert (tend <> comlen c + 1). omega.
   auto.
   omega.
   omega.
@@ -713,10 +716,10 @@ Theorem destructDependenceAliasesInCSeq: forall (n: nat) (c: com n) (tbegin tend
   unfold dependenceAliases'.
   simpl fst. simpl snd.
   rewrite H1. rewrite getWriteAt'OnCSeq.
-  assert (tbegin < n + 1 /\ tbegin >= 1).
+  assert (tbegin < comlen c + 1 /\ tbegin >= 1).
   unfold dependenceLexPositive in H. unfold dependenceInRange in H0. unfold commandIxInRange in H0. simpl in H. simpl in H0.
   omega.
-  assert (getWriteAt' (n + 1) (CSeq n c (Write wix wval)) tbegin = getWriteAt' n c tbegin).
+  assert (getWriteAt'  (CSeq c (Write wix wval)) tbegin = getWriteAt' c tbegin).
   apply getWriteAt'DestructOnCSeq.
   omega.
   rewrite H4.
@@ -742,7 +745,7 @@ Theorem destructDependenceAliasesInCSeq: forall (n: nat) (c: com n) (tbegin tend
   omega.
 Qed.
 
-Lemma dependenceInRangeInclusive: forall (d: dependence) (n: nat) (c: com n) (w: write),  dependenceInRange d n c -> dependenceInRange d (n + 1) (CSeq n c w).
+Lemma dependenceInRangeInclusive: forall (d: dependence) (c: com) (w: write),  dependenceInRange d c -> dependenceInRange d  (CSeq c w).
   unfold dependenceInRange. unfold commandIxInRange. destruct d. simpl.
   intros.
   omega.
