@@ -746,10 +746,21 @@ Theorem destructDependenceAlisesInCSeq: forall (n: nat) (c: com n) (tbegin tend:
   (* Note that in A \/ B, when you are in B case, you are not given ~A. That is very interesting, thanks to LEM. So, I need to explicitly state that t <> n + 1
    *)
   destruct H1.
+  unfold dependenceAliases'.
+  rewrite getWriteAt'DestructOnCSeq.
+  rewrite getWriteAt'DestructOnCSeq.
+  unfold dependenceAliases' in H2.
+  exact H2.
+  simpl.
+  unfold dependenceInRange in H0. unfold commandIxInRange in H0. simpl in H0.
+  omega.
+  simpl.
+  unfold dependenceInRange in H0. unfold commandIxInRange in H0. simpl in H0.
+  unfold dependenceLexPositive in H. simpl in H.
+  omega.
+Qed.
 
   
-
-
 Theorem computeDependencesAlias': forall (n: nat) (c: com n), forall (d: dependence), List.In d (computeDependences n c) ->  dependenceAliases' d n c.
 Proof.
   intros n c.
