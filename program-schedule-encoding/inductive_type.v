@@ -928,18 +928,38 @@ Proof.
   reflexivity.
 Qed.
 
+Theorem runprogram_distribute_append: forall (cn cn': com), forall (initmem: memory), runProgram (cn +++ cn') initmem = runProgram cn' (runProgram cn initmem).
+  intros cn cn'. generalize dependent cn. induction cn'.
+  intros.
+  unfold com_append. fold com_append.
+  unfold runProgram. fold runProgram. rewrite IHcn'.
+  reflexivity.
+  intros. unfold com_append.
+  unfold runProgram. fold runProgram. reflexivity.
+Qed.
+
+
 
 (* Should be handy: https://coq.inria.fr/library/Coq.Logic.EqdepFacts.html *)
 
 (* As usual, dependent typed hell *)
-Theorem ceq_append: forall (cl cl' cr cr' : com), cl === cr -> cl' === cr' -> cl +++ cl' === cr +++ cr'.
+Theorem ceq_append_weak: forall (c cl cr : com), cl === cr ->cl +++ c === cr +++ c.
 Proof.
+  intro c.
+  induction c.
   intros.
-  induction cl'.
-  induction cr'.
   unfold com_append. fold com_append.
-  remember (cl +++ cl') as ll.
-  remember (cr +++ cr') as rr.
-  unfold ceq.
+  apply ceq_add_cseq.
+  apply IHc. exact H.
   intros.
-Abort.
+  unfold com_append. exact H.
+Qed.
+
+Theorem ceq_append_strond: forall (cl cl' cr cr': com), cl === cr -> cl' === cr' -> cl +++ cl' === cr +++ cr'.
+  intros.
+  unfold ceq in H.
+  unfold ceq in H0.
+  unfold ceq.
+
+
+
