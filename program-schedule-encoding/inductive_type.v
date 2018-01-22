@@ -955,11 +955,40 @@ Proof.
   unfold com_append. exact H.
 Qed.
 
-Theorem ceq_append_strond: forall (cl cl' cr cr': com), cl === cr -> cl' === cr' -> cl +++ cl' === cr +++ cr'.
+Theorem ceq_append_strong: forall (cl cl' cr cr': com), cl === cr -> cl' === cr' -> cl +++ cl' === cr +++ cr'.
   intros.
   unfold ceq in H.
   unfold ceq in H0.
   unfold ceq.
+  intros.
+  rewrite runprogram_distribute_append.
+  rewrite runprogram_distribute_append.
+  rewrite H.
+  rewrite H0.
+  reflexivity.
+Qed.
 
+Theorem ceq_switch_no_alias: forall (wix1 wix2: memix) (wval1 wval2: memvalue),
+    wix1 <> wix2 ->
+    CSeq (CSeq CBegin (Write wix1 wval1)) (Write wix2 wval2) ===
+         CSeq (CSeq CBegin (Write wix2 wval2)) (Write wix1 wval1).
+  intros.
+  unfold ceq.
+  intros.
+  unfold runProgram.
+  unfold writeToMemory'.
+  apply functional_extensionality.
+  intros.
+  assert (x = wix2 \/ x <> wix2). omega.
+  destruct H0.
+  rewrite H0.
+  unfold writeToMemory.
+  assert (wix2 =? wix2 = true). rewrite Nat.eqb_eq. omega.
+  assert (wix2 =? wix1 = false). rewrite Nat.eqb_neq. omega.
+  rewrite H1. rewrite H2. reflexivity.
 
-
+  unfold writeToMemory.
+  subst.
+  assert (x =? wix2 = false). rewrite Nat.eqb_neq. omega.
+  rewrite H1. reflexivity.
+Qed.
