@@ -675,11 +675,11 @@ Qed.
 (* either the dependence end is pointing to the final instruction, in which case
    the dependence begin must alias with this. *)
 (* Otherwise, the alasing is happening inside *)
-Theorem destructDependenceAlisesInCSeq: forall (n: nat) (c: com n) (tbegin tend: timepoint)  (wix: memix) (wval: memvalue),
+Theorem destructDependenceAliasesInCSeq: forall (n: nat) (c: com n) (tbegin tend: timepoint)  (wix: memix) (wval: memvalue),
     dependenceLexPositive (tbegin, tend) ->
     dependenceInRange (tbegin, tend) (n + 1) (CSeq n c (Write wix wval)) ->
     dependenceAliases' (tbegin, tend) (n + 1) (CSeq n c (Write wix wval)) <->
-    (tend = n + 1 /\ option_map writeIx (getWriteAt' n c tbegin ) = Some wix) \/
+    (tend = n + 1 /\ exists (wval_begin: memvalue), (getWriteAt' n c tbegin) = Some (Write wix wval_begin)) \/
     (tend <> n + 1 /\ dependenceAliases' (tbegin, tend) n c).
   intros n c.
   split.
@@ -705,6 +705,24 @@ Theorem destructDependenceAlisesInCSeq: forall (n: nat) (c: com n) (tbegin tend:
   rewrite H3 in H1.
   simpl in H1.
   auto.
+  split.
+  auto.
+  remember (getWriteAt' n c tbegin) as write_at_begin.
+  assert (exists (w: write), getWriteAt' n c tbegin = Some w).
+  apply getWriteAt'RangeComplete.
+  unfold dependenceInRange in H0. unfold commandIxInRange in H0. simpl in H0.
+  unfold dependenceLexPositive in H. simpl in H. omega.
+  destruct H4.
+  subst.
+  destruct x eqn:xSave.
+  rewrite H4.
+  exists m0.
+  unfold writeIx in H1.
+  rewrite H4 in H1.
+  simpl in H1.
+  subst.
+  assert (m = wix). inversion H1. reflexivity.
+  rewrite H5. reflexivity.
 
   (* tend <>  n + 1 *)
   right.
@@ -739,6 +757,7 @@ Theorem destructDependenceAlisesInCSeq: forall (n: nat) (c: com n) (tbegin tend:
   apply getWriteAt'DestructOnCSeq.
   omega.
   rewrite H4.
+  destruct H2.
   rewrite H2.
   simpl.
   reflexivity.
@@ -767,7 +786,7 @@ Lemma dependenceInRangeInclusive: forall (d: dependence) (n: nat) (c: com n) (w:
 Qed.
   
 
-Theorem computeDependencesAlias': forall (n: nat) (c: com n), forall (d: dependence), List.In d (computeDependences n c) ->  dependenceAliases' d n c.
+Theorem computeDependencesAlias'Fwd: forall (n: nat) (c: com n), forall (d: dependence), List.In d (computeDependences n c) ->  dependenceAliases' d n c.
 Proof.
   intros n c.
   dependent induction c.
@@ -804,7 +823,7 @@ Proof.
     (* inductive case? *)
     destruct d eqn:Dsave.
     rewrite Heqcouter.
-    apply  destructDependenceAlisesInCSeq.
+    apply  destructDependenceAliasesInCSeq.
     apply computeDependencesLexPositive in H. exact H.
     apply computeDependencesInRange in H.
     apply dependenceInRangeInclusive. exact H.
@@ -827,8 +846,21 @@ Qed.
 
 
 
-    
-Abort.
 
-
-
+Theorem computeDependenceAlias'Bwd:   forall (n: nat) (c: com n), forall (d: dependence), dependenceAliases' d n c -> dependenceInRange d n c -> dependenceLexPositive d  -> List.In d (computeDependences n c).
+Proof.
+  intros n c.
+  dependent induction c.
+  intros.
+  destruct d eqn:DSave.
+  destruct w eqn:WSave.
+  rewrite (destructDependenceAliasesInCSeq n c _ _ _ _ H1 H0) in H.
+  destruct H. (* use induction principle on dependence aliasing *)
+  - (* n1 = n + 1 *)
+    unfold computeDependences.
+    fold computeDependences.
+    apply List.in_app_iff.
+    left. (* this dependence comes from dependences at n + 1 *)
+    unfold dependencesFromWriteSetAndWrite.
+    apply List.in_map_iff.
+    exists n0.
