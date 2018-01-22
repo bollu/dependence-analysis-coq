@@ -462,7 +462,7 @@ Lemma getWriteAt'OnCSeq: forall (n: nat) (c: com n) (w: write), getWriteAt' _ (C
 Qed.
 
 Lemma getWriteAt'DestructOnCSeq: forall (n: nat) (c: com n) (i: nat) (w: write),
-    i < n /\ i >= 1 -> getWriteAt' (n + 1) (CSeq n c w) i = getWriteAt' n c i.
+    i <= n /\ i >= 1 -> getWriteAt' (n + 1) (CSeq n c w) i = getWriteAt' n c i.
 Proof.
   intros n c.
   dependent induction c.
@@ -488,6 +488,40 @@ Proof.
   omega.
 Qed.
 
+Lemma computeWriteSetRange: forall (n: nat) (c: com n) (wix: memix) (i: nat), List.In i (((computeWriteSet n c)) wix) -> i >= 1 /\ i <= n.
+  intros n c.
+  dependent induction c.
+  intros.
+  unfold computeWriteSet in H.
+  fold computeWriteSet in H.
+  unfold mergeWriteSets in H.
+  rewrite List.in_app_iff in H.
+  destruct H.
+  (* induction case - List.In i (computeWriteSet n c wix) *)
+  specialize (IHc _ _ H).
+  omega.
+  unfold writeToWriteset in H.
+  destruct w.
+  (* new case - List.In i (singletonWriteSet m (n + 1) wix ) *)
+  unfold singletonWriteSet in H.
+  unfold addToWriteSet in H.
+  assert (wix = m \/ wix <> m).
+  omega.
+  destruct H0.
+  (* wix = m *)
+  rewrite <- Nat.eqb_eq in H0.
+  rewrite H0 in H.
+  destruct H.
+  omega.
+  destruct H.
+  (* wix <> m *)
+  rewrite <- Nat.eqb_neq in H0.
+  rewrite H0 in H.
+  inversion H.
+  (* CBegin case *)
+  intros.
+  inversion H.
+Qed.
 
 (* All writes are present in write set *)
 Lemma computeWriteSetCharacterBwd :  forall (n: nat) (c: com n) (wix: memix) (wval: memvalue) (i: nat),
@@ -546,36 +580,104 @@ Proof.
 Qed.
 
 
+(* Reason about what it means to be in a singleton write set *)
+Lemma destructInSingletonWriteSet:
+  forall (ix curix: memix) (n: nat) (curtp tp: timepoint),
+    List.In curtp ((singletonWriteSet ix tp) curix) -> curtp = tp /\ ix = curix.
+  intros.
+  unfold singletonWriteSet in H.
+  unfold addToWriteSet in H.
+  assert (curix = ix \/ curix <> ix). omega.
+  destruct H0.
+  (* curix = ix *)
+  rewrite <- Nat.eqb_eq in H0.
+  rewrite H0 in H.
+  inversion H.
+  split; auto.
+  rewrite Nat.eqb_eq in H0. auto.
+  inversion H1.
+  (* curix <> ix *)
+  rewrite <- Nat.eqb_neq in H0.
+  rewrite H0 in H.
+  inversion H.
+Qed.
+
+
 
 (* All writes in write set exist in code *)
 Theorem computeWriteSetCharacterFwd :  forall (n: nat) (c: com n) (wix: memix) (i: nat), List.In i ((computeWriteSet n c) wix) -> exists (wval: memvalue), getWriteAt' n c i = Some (Write wix wval).
 Proof.
-  intros n c wix i.
+  intros n c.
   intros H.
   dependent induction c.
-  unfold computeWriteSet in H. fold computeWriteSet in H. unfold mergeWriteSets in H.
-  rewrite List.in_app_iff in H.
-  destruct H.
 
-  assert(i = n + 1 \/ (i < n + 1 /\ i >= 1)).
-  apply computeWriteSetInBounds in H.
+
+  intros.
+  unfold computeWriteSet in H0. fold computeWriteSet in H0. unfold mergeWriteSets in H0.
+  assert(i = n + 1 \/ i < n + 1 \/ i > n + 1). omega.
+  destruct H1.
+  (* i = n + 1 *)
+  unfold writeToWriteset in H0.
+  destruct w.
+
+  (* When i = n + 1, i will be part of singletonWriteSet from (n + 1).
+  So, show that List.in i (computeWriteSet n c H ) will lead to contradiction *)
+  assert ( List.In i (computeWriteSet n c H) -> False).
+  intros.
+  apply computeWriteSetInBounds in H2.
   omega.
-  destruct H.
-  destruct H0.
-  assert (i <= n).
-  apply computeWriteSetInBounds in H. omega.
-  omega.
-  simpl.
-  assert ((i =? n + 1) = false).
-  rewrite Nat.eqb_neq. omega.
+
+  rewrite List.in_app_iff in H0.
+  destruct H0. contradiction.
+
+  (* Now we have List.in i singletonWriteSet m (n + 1) H *)
+  unfold singletonWriteSet.
+  
+  assert (getWriteAt' (n + 1) (CSeq n c (Write m m0)) (n + 1) = Some (Write m m0)).
+  apply getWriteAt'OnCSeq.
   rewrite H1.
-  specialize (IHc wix i H).
+  rewrite H3.
+
+  unfold singletonWriteSet in H0. unfold emptyWriteSet in H0.
+  unfold addToWriteSet in H0.
+  simpl in H0.
+  (* We need to show that H = m. If H <> m, then List.In will give us contraidiction *)
+  assert (H = m \/ H <> m). omega.
+  (* H = m *)
+  destruct H4.
+  subst.
+  exists m0.
+  reflexivity.
+
+  (* H <> m *)
+  rewrite <- Nat.eqb_neq in H4.
+  subst.
+  rewrite H4 in H0. simpl in H0. contradiction.
+
+  (* i < n + 1 \/ i  n + 1. Break this *)
+  destruct H1.
+
+  (* i < n + 1 *)
+  assert (i <= n ).
+  omega.
+  (* We know that List.In i (computeWriteSet n c H). *)
+  (* writeToWriteset will be empty of (n + 1) will be empty *)
+  rewrite List.in_app_iff in H0.
+  destruct H0.
+  (* List.In i computeWriteSet n c H *)
+  assert (getWriteAt' (n + 1) (CSeq n c w) i = getWriteAt' n c i).
+  apply getWriteAt'DestructOnCSeq.
+  assert (i <= n /\ i >= 1).
+  apply computeWriteSetRange in H0.
+  omega.
+  exact H3.
+  rewrite H3.
+  specialize (IHc H i H0).
   exact IHc.
 
-
-
-Abort.
-.
+  (* List.In i (writeToWriteset w (n + 1) H) *)
+  unfold writeToWriteset in H0.
+  destruct w.
 
 
 Theorem computeDependencesAlias': forall (n: nat) (c: com n), forall (d: dependence), List.In d (computeDependences n c) ->  dependenceAliases' d n c.
