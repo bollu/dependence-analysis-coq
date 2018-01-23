@@ -1186,6 +1186,40 @@ Definition NoAliasingBetweenSubprogramAndWrite (c: com) (wix: memix) : Prop :=
   forall (i: nat), commandIxInRange c i ->
                    option_map writeIx (getWriteAt' c i) <> Some wix.
 
+
+Lemma NoAliasingBetweenSubprogramAndWriteDestructOnCSeq:
+  forall (c: com) (wix wixalias: memix) (wval: memvalue),
+    NoAliasingBetweenSubprogramAndWrite (CSeq c (Write wix wval)) wixalias ->
+    NoAliasingBetweenSubprogramAndWrite c wixalias /\ wix <> wixalias.
+Proof.
+  intros.
+  split.
+  - (* No aliasing between c and wixalias *)
+    unfold NoAliasingBetweenSubprogramAndWrite.
+    unfold NoAliasingBetweenSubprogramAndWrite in H.
+    intros.
+    specialize (H i).
+    simpl in H.
+    assert (i =? S (comlen c ) = false).
+    rewrite Nat.eqb_neq. unfold commandIxInRange in H0. omega.
+    rewrite H1 in H.
+    apply H.
+    apply commandIxInRangeInclusive.
+    assumption.
+  - (* wix <> wixalias *)
+    intros.
+    unfold NoAliasingBetweenSubprogramAndWrite in H.
+    specialize (H (comlen c + 1)).
+    simpl in H.
+    assert (comlen c + 1 =? S (comlen c) = true). rewrite Nat.eqb_eq. omega.
+    rewrite H0 in H.
+    simpl in H.
+    assert (Some wix <> Some wixalias -> wix <> wixalias). auto.
+    apply H1. apply H.
+    unfold commandIxInRange.
+    unfold comlen. fold comlen. omega.
+Qed.
+
 (* If two subprograms do not alias, we can reorder them freely *)
 Definition NoAliasingBetweenSubprograms (c1 c2: com) : Prop :=
     forall (i j: nat),
@@ -1227,9 +1261,74 @@ Proof.
   simpl in H. auto.
 Qed.
 
+(* If a subprogram does not touch a memory location, then we can use the original
+state of memory at this location *)
+Lemma NoAliasingBetweenSubprogramAndWriteAllowsPunchthrough:
+  forall (c: com) (wix: memix) (mem: memory),
+    NoAliasingBetweenSubprogramAndWrite c wix ->
+    (runProgram c mem) wix = mem wix.
+Proof.
+  intros.
+  induction c.
+  unfold runProgram. fold runProgram.
+  unfold writeToMemory'. destruct w eqn:wsave.
+  unfold writeToMemory.
+  assert (wix = m \/ wix <> m) as wixcases. omega.
+  destruct wixcases.
+  - (* wix = m, but this cannot be possible since the program does not alias *)
+    unfold NoAliasingBetweenSubprogramAndWrite in H.
+    assert (wix <> m).
+    (* pick last instruction *)
+    specialize (H (comlen c + 1)).
+    unfold commandIxInRange in H. unfold comlen in H. fold comlen in H.
+    assert (comlen c + 1 <= 1 + comlen c). omega.
+    assert (comlen c + 1 >= 1). omega.
+    simpl in H.
+    (* TODO: why do I need to prove this?! PROOF AUTOMATION. *)
+    assert (comlen c + 1 =? S (comlen c) = true).  rewrite Nat.eqb_eq. omega.
+    rewrite H3 in H. simpl in H.
+    assert (Some m <> Some wix -> wix <> m). auto.
+    apply H4. apply H; auto.
+    contradiction.
 
-Theorem NoAliasingBetweenSubprogramsAllowsReordering: forall (c1 c2: com), NoAliasingBetweenSubprograms c1 c2 -> 
-                                                                           c1 +++ c2 === c2 +++ c1.
+  - (* wix <> m. We automatically use the written value *)
+    intros.
+    assert (wix =? m = false). rewrite Nat.eqb_neq. omega.
+    apply NoAliasingBetweenSubprogramAndWriteDestructOnCSeq in H.
+    destruct H.
+    specialize (IHc H).
+    rewrite H1.
+    auto.
+
+  - (* runprogram of cbegin *)
+    intros.
+    unfold runProgram. fold runProgram. auto.
+Qed.
+
+
+
+
+
+
+Theorem NoAliasingBetweenSubprogramAndWriteAllowsReordering:
+  forall (c: com) (wix: memix)  (wval: memvalue) (mem: memory),
+    NoAliasingBetweenSubprogramAndWrite c wix ->
+    runProgram c (writeToMemory' (Write wix wval) mem) =
+    writeToMemory' (Write wix wval) (runProgram c mem).
+Proof.
+  intros.
+  apply functional_extensionality.
+  intros.
+  unfold writeToMemory'.
+  unfold writeToMemory.
+  assert (x = wix \/ x <> wix) as xcases. omega.
+  destruct xcases.
+  assert (x =? wix = true). rewrite Nat.eqb_eq. omega.
+  rewrite H1. fold writeToMemory.
+
+Theorem NoAliasingBetweenSubprogramsAllowsReordering: forall (c1 c2: com),
+    NoAliasingBetweenSubprograms c1 c2 -> c1 +++ c2 === c2 +++ c1.
+  Proof.
   intros.
   unfold ceq.
   intros.
@@ -1246,6 +1345,7 @@ Theorem NoAliasingBetweenSubprogramsAllowsReordering: forall (c1 c2: com), NoAli
     remember H as H'. clear HeqH'.
     destruct w eqn:wsave.
     apply NoAliasingBetweenSubprogramsDestructOnCSeq in H.
+    destruct H.
     specialize (IHc1 c2 initmemory H).
     rewrite <- IHc1.
     remember (runProgram c1 initmemory) as c1finalstate.
