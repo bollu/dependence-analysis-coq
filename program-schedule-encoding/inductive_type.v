@@ -1173,13 +1173,21 @@ Abort.
 
   
 
+(* TODO, QUESTION: Why is this not trivial for coq? *)
 Theorem writesEqualDecidable: forall (w w': write), w = w' \/ w <> w'.
   intros.
   destruct w.
   destruct w'.
   assert( m = m1 \/ m <> m1). omega.
   assert (m0 = m2 \/ m0 <> m2). omega.
-Admitted.
+  destruct H.
+  destruct H0.
+  left.
+  congruence.
+  right.
+  congruence.
+  right. congruence.
+Qed.
 
 (* Notion of a subprogram aliasing with a single write *)
 Definition NoAliasingBetweenSubprogramAndWrite (c: com) (wix: memix) : Prop :=
