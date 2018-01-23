@@ -1031,11 +1031,54 @@ Definition completeDependenceSet (c: com) (ds: dependenceset) : Prop :=
     dependenceInRange d c ->
     dependenceLexPositive d  -> List.In d ds.
 
+
+(* If we have an empty dependence set, then it is impossible for instructions to alias. *)
+Theorem emptyDependenceSetHasNoAliases: forall (i j : nat) (c: com), completeDependenceSet c Datatypes.nil -> dependenceLexPositive (i, j) -> dependenceInRange (i, j) c ->  exists (w w': write), getWriteAt' c i = Some w /\ getWriteAt' c j = Some w' /\ writeIx w <> writeIx w'.
+Proof.
+  intros.
+  assert (exists (wi: write), getWriteAt' c i = Some wi).
+  unfold dependenceInRange in H1. destruct H1. simpl in H1.
+  unfold commandIxInRange in H1.
+  apply getWriteAt'RangeComplete.
+  omega.
+  assert (exists (wj: write), getWriteAt' c j = Some wj).
+  unfold dependenceInRange in H1.  simpl in H1. destruct H1.
+  apply getWriteAt'RangeComplete.
+  unfold commandIxInRange in H3.
+  omega.
+  destruct H2. destruct H3.
+  exists x. exists x0.
+  split.
+  assumption.
+  split.
+  assumption.
+  assert (writeIx x = writeIx x0 \/ writeIx x <> writeIx x0) as aliasing_cases. omega.
+  destruct aliasing_cases.
+  (* have alias *)
+  - unfold completeDependenceSet in H.
+    simpl in H.
+    assert (False) as contra.
+    apply H with (d := (i, j)).
+    unfold dependenceAliases'. simpl. rewrite H2. rewrite H3. simpl. rewrite H4.
+    reflexivity.
+    assumption. assumption.
+    inversion contra.
+    (* no alias *)
+    -  exact H4.
+Qed.
+
+
+(* Theorem scheduleMappingWitnessDestruct:  *)
+(* scheduleMappingWitness s sinv (CSeq c w) (CSeq c' w0) *)
+
 (* Main theorem of the day. If a *schedule s* respects a *complete dependence set ds*, then the semantics of the original program is the same as that of the rescheduled program *)
-Theorem reschedulePreservesSemantics: forall (c c': com) (s sinv: nat -> nat) (ds: dependenceset),
+Theorem reschedulePreservesSemantics: forall (ds: dependenceset) (c c': com) (s sinv: nat -> nat) ,
     completeDependenceSet c ds -> scheduleMappingWitness s sinv c c' ->
     scheduleRespectsDependenceSet s ds ->
     c === c'.
+Proof.
+  intros ds.
+  induction ds.
+  intros.
 
-  
-  
+                              
