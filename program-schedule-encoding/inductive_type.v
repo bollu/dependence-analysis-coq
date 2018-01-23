@@ -1305,7 +1305,14 @@ Proof.
     unfold runProgram. fold runProgram. auto.
 Qed.
 
-
+(*
+ NoAliasingBetweenSubprogramAndWrite c wix <- c does not ever write to wix
+H0 : x <> wix <- we are not CURRENTLY accessing wix
+  H1 : (x =? wix) = false
+  ============================
+  runProgram c (writeToMemory' (Write wix wval) mem0) x =
+  writeToMemory' (Write wix wval) (runProgram c mem0) x
+*)
 
 
 
@@ -1319,12 +1326,71 @@ Proof.
   intros.
   apply functional_extensionality.
   intros.
+  assert (x = wix \/ x <> wix) as xcases. omega.
+
+  destruct xcases.
+  (* x = wix. *)
   unfold writeToMemory'.
   unfold writeToMemory.
-  assert (x = wix \/ x <> wix) as xcases. omega.
-  destruct xcases.
   assert (x =? wix = true). rewrite Nat.eqb_eq. omega.
   rewrite H1. fold writeToMemory.
+  remember (fun ix : memix => if ix =? wix then wval else mem0 ix) as oldmem.
+  assert (runProgram c oldmem x = oldmem x).
+  apply NoAliasingBetweenSubprogramAndWriteAllowsPunchthrough.
+  rewrite <- H0 in H. assumption.
+  rewrite H2.
+  rewrite Heqoldmem. rewrite H1. reflexivity.
+  assert (x =? wix = false). rewrite Nat.eqb_neq. omega.
+  (* x <> wix *)
+  generalize dependent wix.
+  generalize dependent wval.
+  generalize dependent x.
+  generalize dependent mem0.
+  induction c.
+  intros.
+  unfold writeToMemory'.
+  rewrite readFromWriteDifferent.
+  unfold runProgram. fold runProgram.
+  specialize (IHc mem0 x wval wix).
+  destruct w eqn:wsave.
+  assert (NoAliasingBetweenSubprogramAndWrite c wix /\ m <> wix).
+  apply NoAliasingBetweenSubprogramAndWriteDestructOnCSeq in H.
+  assumption.
+  destruct H2.
+  specialize (IHc H2 H0 H1).
+  unfold writeToMemory' in IHc.
+  unfold writeToMemory'.
+  assert (m = x \/ m <> x) as mcases.
+  omega.
+  destruct mcases.
+  - (* m = x *)
+    unfold writeToMemory.
+    assert (x =? m = true). rewrite Nat.eqb_eq. omega.
+    rewrite H5.
+    reflexivity.
+  - (* m <> x *)
+    intros.
+    assert (writeToMemory m m0 (runProgram c mem0) x = runProgram c mem0 x).
+    unfold writeToMemory. assert (x =?m = false). rewrite Nat.eqb_neq. omega.
+    rewrite H5.
+    reflexivity.
+    rewrite H5.
+    assert (writeToMemory m m0 (runProgram c (writeToMemory wix wval mem0)) x = runProgram c mem0 x).
+    setoid_rewrite readFromWriteDifferent.
+    rewrite IHc.
+    setoid_rewrite readFromWriteDifferent.
+    reflexivity. omega. omega.
+    rewrite H6.
+    reflexivity.
+    (* CBegin case *)
+  - intros.
+    assumption.
+  - intros.
+    unfold runProgram. fold runProgram.
+    reflexivity.
+Qed.
+
+
 
 Theorem NoAliasingBetweenSubprogramsAllowsReordering: forall (c1 c2: com),
     NoAliasingBetweenSubprograms c1 c2 -> c1 +++ c2 === c2 +++ c1.
@@ -1349,6 +1415,7 @@ Theorem NoAliasingBetweenSubprogramsAllowsReordering: forall (c1 c2: com),
     specialize (IHc1 c2 initmemory H).
     rewrite <- IHc1.
     remember (runProgram c1 initmemory) as c1finalstate.
+    apply 
 
   
 
