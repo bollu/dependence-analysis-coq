@@ -1011,9 +1011,31 @@ Fixpoint mapProgramWithScheduleGo (s: nat -> nat) (witness: Bijective s) (c: com
    and that s and sinv are inverses.
    Equivalently, it witnesses that c is the output of schedule sinv applied to c'
 *)
-Definition scheudleMappingWitness (s sinv: nat -> nat) (c c': com) : Prop :=
+Definition scheduleMappingWitness (s sinv: nat -> nat) (c c': com) : Prop :=
   comlen c = comlen c' /\
   Bijective s /\
   forall (i: nat), i >= 1 /\ i <= comlen c ->
                    getWriteAt' c i = getWriteAt' c' (s i) /\
                    getWriteAt' c (sinv i) = getWriteAt' c' i.
+
+Definition scheduleRespectsDependence (s: nat -> nat) (d: dependence) : Prop := s (fst d) < s (snd d).
+
+Definition scheduleRespectsDependenceSet (s: nat -> nat) (ds: dependenceset) : Prop := forall (d: dependence), List.In d ds -> scheduleRespectsDependence s d.
+
+(* A dependence set is complete if it contains all the dependence we expect
+it to contain. TODO: Rewrite the definition of the completeness of
+our computeDepenedence function using this notion *)
+Definition completeDependenceSet (c: com) (ds: dependenceset) : Prop :=
+  forall (d: dependence),
+    dependenceAliases' d c ->
+    dependenceInRange d c ->
+    dependenceLexPositive d  -> List.In d ds.
+
+(* Main theorem of the day. If a *schedule s* respects a *complete dependence set ds*, then the semantics of the original program is the same as that of the rescheduled program *)
+Theorem reschedulePreservesSemantics: forall (c c': com) (s sinv: nat -> nat) (ds: dependenceset),
+    completeDependenceSet c ds -> scheduleMappingWitness s sinv c c' ->
+    scheduleRespectsDependenceSet s ds ->
+    c === c'.
+
+  
+  
