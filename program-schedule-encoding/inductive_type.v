@@ -1433,11 +1433,13 @@ Fixpoint getAliasingWriteTimepointsForProgram (c: com) (ix: memix) : list timepo
                 if writeIx w =? ix then List.cons (comlen c) rest else rest
   end.
 
-Definition aliasingWriteTimepointsSet (c: com) (ix: memix) (l: list timepoint) : Prop := 
+Definition aliasingWriteTimepointsSet (c: com) (ix: memix) (l: list timepoint) : Prop :=
+  List.NoDup l /\
   forall (t: timepoint),
     List.In t l -> commandIxInRange c t /\ (exists (wval: memvalue), getWriteAt' c t = Some (Write ix wval)).
 
 (* getAliasingWriteTimepoints actually does what it says it does *)
+(* NOTE: I need to change this a little to exhibit NoDup.
 Theorem getAliasingWriteTimepointsForProgramGivesAliasingWrites:
   forall (c: com) (ix: memix),
     aliasingWriteTimepointsSet c
@@ -1495,6 +1497,7 @@ Proof.
     intros.
     inversion H.
 Qed.
+*)
 
 
 (* TODO: has no one really defined these combinators? *)
@@ -1547,7 +1550,6 @@ Theorem emptyDependenceSetWillHaveSingleAliasingWrite:
         lt = List.cons t List.nil) \/ lt = List.nil.
   intros.
   unfold aliasingWriteTimepointsSet in H0.
-  unfold completeDependenceSet in H.
   assert (length lt <= 1 \/ length lt >= 2) as lt_destruct. omega.
   destruct lt_destruct.
   - (* length lt <= 1 *)
@@ -1570,7 +1572,59 @@ Theorem emptyDependenceSetWillHaveSingleAliasingWrite:
     destruct H1.
     destruct H1.
     destruct H1.
-    assert (List.In x lt) as x_in_lt. 
+    assert (List.In x lt) as x_in_lt.
+    rewrite H1. apply in_eq.
+    assert (List.In x0 lt) as x0_in_lt.
+    rewrite H1.
+    unfold List.In.
+    right. left. reflexivity.
+    assert (x = x0 \/ x <> x0).
+    omega.
+    destruct H2.
+    + (* x = x0, will lead to contradiction because set is nodup *)
+      destruct H0.
+      rewrite H2 in H1.
+      rewrite H1 in H0.
+      rewrite List.NoDup_cons_iff in H0.
+      destruct H0.
+      assert (List.In x0 (x0 :: x1)). unfold List.In. left. auto.
+      contradiction.
+    + (* x <> x0, will let me show that I have two aliasing writes. Also contadiction *)
+      intros.
+      destruct H0.
+      assert (commandIxInRange c x /\
+              exists (wval: memvalue), getWriteAt' c x = Some (Write ix wval)).
+      apply (H3 x x_in_lt).
+      assert (commandIxInRange c x0 /\
+              exists (wval: memvalue), getWriteAt' c x0 = Some (Write ix wval)).
+      apply (H3 x0 x0_in_lt).
+      destruct H4.
+      destruct H5.
+      destruct H6.
+      destruct H7.
+      assert (exists (w w': write),
+                 getWriteAt' c x = Some w /\
+                 getWriteAt' c x0 = Some w' /\
+                 writeIx w <> writeIx w').
+      apply (emptyDependenceSetImpliesNoAliasing' _ _ _ H H2 H4 H5).
+      destruct H8.
+      destruct H8.
+      destruct H8.
+      destruct H9.
+      subst.
+      rewrite H6 in H8.
+      rewrite H7 in H9.
+      inversion H8.
+      inversion H9.
+      rewrite <- H11 in H10.
+      rewrite <- H12 in H10.
+      simpl in H10.
+      (* finally, we get a contadiction! ix <> ix *)
+      (* we exhibited an aliasing *)
+      contradiction.
+Qed.
+
+                                  
 
 
 (* Main theorem of the day. If a *schedule s* respects a *complete dependence set ds*, then the semantics of the original program is the same as that of the rescheduled program *)
