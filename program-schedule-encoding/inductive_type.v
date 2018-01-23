@@ -1068,6 +1068,20 @@ Proof.
 Qed.
 
 
+(* Slightly better way of stating theorem *)
+Theorem emptyDependenceSetHasNoAliases': forall (i j : nat) (c: com), completeDependenceSet c Datatypes.nil -> i <> j ->  commandIxInRange c i -> commandIxInRange c j -> exists (w w': write), getWriteAt' c i = Some w /\ getWriteAt' c j = Some w' /\ writeIx w <> writeIx w'.
+  intros.
+  assert (i < j \/ i > j) as ij_order. omega.
+  destruct ij_order as [i_lt_j | i_gt_j].
+  - (* i < j *)
+    apply emptyDependenceSetHasNoAliases.
+    exact H.
+    unfold dependenceLexPositive. simpl. assumption.
+    unfold dependenceInRange. auto.
+  - (* i > j *)
+    intros.
+    assert (exists (w w': write), getWriteAt' c j = Some w /\ getWriteAt' c i = Some w' /\ writeIx w <> writeIx w).
+    apply emptyDependenceSetHasNoAliases.
 (* Theorem scheduleMappingWitnessDestruct:  *)
 (* scheduleMappingWitness s sinv (CSeq c w) (CSeq c' w0) *)
 
