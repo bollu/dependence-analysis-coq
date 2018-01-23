@@ -1194,6 +1194,8 @@ Definition NoAliasingBetweenSubprogramAndWrite (c: com) (wix: memix) : Prop :=
   forall (i: nat), commandIxInRange c i ->
                    option_map writeIx (getWriteAt' c i) <> Some wix.
 
+                                                                  
+
 
 Lemma NoAliasingBetweenSubprogramAndWriteDestructOnCSeq:
   forall (c: com) (wix wixalias: memix) (wval: memvalue),
@@ -1313,15 +1315,6 @@ Proof.
     unfold runProgram. fold runProgram. auto.
 Qed.
 
-(*
- NoAliasingBetweenSubprogramAndWrite c wix <- c does not ever write to wix
-H0 : x <> wix <- we are not CURRENTLY accessing wix
-  H1 : (x =? wix) = false
-  ============================
-  runProgram c (writeToMemory' (Write wix wval) mem0) x =
-  writeToMemory' (Write wix wval) (runProgram c mem0) x
-*)
-
 
 
 
@@ -1432,45 +1425,119 @@ Theorem NoAliasingBetweenSubprogramsAllowsReordering: forall (c1 c2: com),
 Qed.
 
 
+  (* Get the time points of all instructions that alias the given memory index *)
+Fixpoint getAliasingWriteTimepointsForProgram (c: com) (ix: memix) : list timepoint :=
+  match c with
+  | CBegin => List.nil
+  | CSeq c' w => let rest :=  (getAliasingWriteTimepointsForProgram c' ix) in
+                if writeIx w =? ix then List.cons (comlen c) rest else rest
+  end.
+
+Definition aliasingWriteTimepointsSet (c: com) (ix: memix) (l: list timepoint) : Prop := 
+  forall (t: timepoint),
+    List.In t l -> commandIxInRange c t /\ (exists (wval: memvalue), getWriteAt' c t = Some (Write ix wval)).
+
+(* getAliasingWriteTimepoints actually does what it says it does *)
+Theorem getAliasingWriteTimepointsForProgramGivesAliasingWrites:
+  forall (c: com) (ix: memix),
+    aliasingWriteTimepointsSet c
+                     ix
+                     (getAliasingWriteTimepointsForProgram c ix).
+Proof.
+  intros.
+  unfold aliasingWriteTimepointsSet.
+  intros.
+  induction c.
+  (* CSeq *)
+  unfold getAliasingWriteTimepointsForProgram in H.
+  fold getAliasingWriteTimepointsForProgram in H.
+
+  assert (writeIx w = ix \/ writeIx w <> ix) as ix_destruct. omega.
+  destruct ix_destruct.
+  - (* writeIx = w *)
+  assert (writeIx w =? ix = true). rewrite Nat.eqb_eq. omega.
+  rewrite H1 in H.
+  apply List.in_inv in H.
+  destruct H.
+  + (* comlen (CSeq c w) = t0 *)
+    unfold commandIxInRange.
+    split. unfold comlen. fold comlen. unfold comlen in H. fold comlen in H. omega.
+    destruct w eqn:wsave. (* need acess to wval *)
+    exists m0. unfold getWriteAt'.
+    assert (t0 =? comlen (CSeq c (Write m m0)) = true). rewrite Nat.eqb_eq. omega.
+    rewrite H2. auto. unfold writeIx in H0. rewrite H0. reflexivity.
+  +  (*  List.In t0 (getAliasingWriteTimepointsForProgram c ix - induction! *)
+    intros.
+    specialize (IHc H).
+    destruct IHc.
+    split.
+    (* commandIxInRange (CSeq c w) t0 *)
+    *  apply commandIxInRangeInclusive. assumption.
+    *  destruct H3. exists x.
+       assert (getWriteAt' (CSeq c w) t0 = getWriteAt' c t0).
+       unfold commandIxInRange in H2.
+       rewrite (getWriteAt'DestructOnCSeq c t0 w H2). reflexivity.
+       rewrite H4. auto.
+  -  (* writeIx w <> ix *)
+    assert (writeIx w =? ix = false). rewrite Nat.eqb_neq. assumption.
+    rewrite H1 in H. specialize (IHc H). destruct IHc.
+    split.
+    + (* commandIxInRange (Cseq c w) t0 *)
+      apply commandIxInRangeInclusive. assumption.
+    + (* exists ... *)
+      destruct H3.
+      exists x.
+       assert (getWriteAt' (CSeq c w) t0 = getWriteAt' c t0).
+       unfold commandIxInRange in H2.
+       rewrite (getWriteAt'DestructOnCSeq c t0 w H2). reflexivity.
+       rewrite H4. auto.
+  - (* CBegin *)
+    intros.
+    inversion H.
+Qed.
+
+
+
+
+
+
+                   
+Theorem emptyDependenceSetWillHaveSingleAliasingWrite:
+  forall (c: com) (ix: memix), completeDependenceSet c List.nil ->
+         (exists (t: timepoint), getAliasingWriteTimepointsForProgram c ix = List.cons t List.nil) \/
+                                getAliasingWriteTimepointsForProgram c ix = List.nil.
+  intros c. induction c.
+  intros.
+  unfold getAliasingWriteTimepointsForProgram. fold getAliasingWriteTimepointsForProgram.
+  assert (writeIx w = ix \/ writeIx w <> ix) as writeix_choices. omega.
+  destruct writeix_choices.
+  assert (writeIx w =? ix = true). rewrite Nat.eqb_eq. assumption.
+  rewrite H1.
+  left.
+  exists (comlen (CSeq c w)).
+
+  assert (completeDependenceSet c Datatypes.nil) as complete_depset_on_c.
+  apply (completeDependenceSetDestructOnCSeq c w).
+  exact H.
+
+  
 
 
 (* Main theorem of the day. If a *schedule s* respects a *complete dependence set ds*, then the semantics of the original program is the same as that of the rescheduled program *)
-Theorem reschedulePreservesSemantics: forall (ds: dependenceset) (c c': com) (s sinv: nat -> nat) ,
+Theorem reschedulePreservesSemantics: forall (c c': com) (ds: dependenceset) (s sinv: nat -> nat),
     completeDependenceSet c ds -> scheduleMappingWitness s sinv c c' ->
-    scheduleRespectsDependenceSet s ds ->
-    c === c'.
+    scheduleRespectsDependenceSet s ds -> c === c'.
 Proof.
-  intros ds.
+  intros c c' ds.
   induction ds.
-  intros.
-  assert (forall (i j : nat), dependenceLexPositive (i, j) -> dependenceInRange (i, j) c -> i <> j -> commandIxInRange c i -> commandIxInRange c j -> exists (w w': write), getWriteAt' c i = Some w /\ getWriteAt' c j = Some w' /\ writeIx w <> writeIx w') as noalias. intros i j.
-  intros.
-  apply (emptyDependenceSetImpliesNoAliasing i j c H). assumption. assumption.
-  induction c'.
-  unfold scheduleMappingWitness in H0.
-  (* Show that we will always have a corresponding wold for a w. For that,
-     first establish a relationship between getWriteAt and w *)
-  assert (getWriteAt' (CSeq c' w) (comlen c' + 1) = Some w).
-  simpl.  assert (comlen c' + 1 =? S (comlen c') = true). rewrite Nat.eqb_eq. omega.
-  rewrite H2. clear H2. reflexivity.
-  destruct H0 as [leneq  sbijection].
-  unfold comlen in leneq. fold comlen in leneq.
-  assert (comlen c' + 1 = comlen c) as rewH2. omega.
-  rewrite rewH2 in H2. clear rewH2.
-  destruct sbijection as [sbijection sbijectionwitness].
-  specialize (sbijectionwitness (comlen c)).
-  assert (comlen c >= 1 /\ comlen c <= comlen c). omega.
-  specialize (sbijectionwitness H0). clear H0.
-  destruct sbijectionwitness. destruct H3. destruct H4.
-  rewrite <- H5 in H2.
-  (* break program into 0..i-1, {i}, i+1..n *)
-  (* show that if we have no aliasing, then we can apply the effect of w in any order).
-  (* apply sbijection to find the instruction in c that does the same thing as the w *)
+  - (* ds is empty *)
+    intros.
+    unfold ceq.
+    intros.
+    apply functional_extensionality.
+    intros.
+    remember (getAliasingWriteTimepointsForProgram c x) as aliasingwrites.
 
-
-
-  - (* You can't add an instruction and have it work out)
-    (CSeq c w === c' *)
 
 
                               
