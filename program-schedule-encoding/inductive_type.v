@@ -193,6 +193,21 @@ Definition dependenceLexPositive (d: dependence) : Prop :=
 Definition commandIxInRange  (c: com) (i: nat) : Prop :=
   i <= comlen c /\ i >= 1.
 
+Lemma commandIxInRangeDestructOnCSeq: forall (c: com) (w: write) (i: nat), commandIxInRange (CSeq c w) i  -> i <> comlen c + 1  -> commandIxInRange c i.
+Proof.
+  intros.
+  unfold commandIxInRange in H.
+  unfold commandIxInRange. simpl in H.
+  omega.
+Qed.
+
+Lemma commandIxInRangeInclusive: forall (c: com) (w: write) (i: nat), commandIxInRange c i -> commandIxInRange (CSeq c w) i.
+  unfold commandIxInRange. unfold comlen. fold comlen.
+  intros.
+  omega.
+Qed.
+ 
+
 Definition dependenceInRange (d: dependence) (c: com) : Prop :=
   commandIxInRange c (fst d) /\ commandIxInRange c (snd d).
 
@@ -941,6 +956,7 @@ Qed.
 
 
 
+
 (* Should be handy: https://coq.inria.fr/library/Coq.Logic.EqdepFacts.html *)
 
 (* As usual, dependent typed hell *)
@@ -1015,6 +1031,7 @@ Definition scheduleMappingWitness (s sinv: nat -> nat) (c c': com) : Prop :=
   comlen c = comlen c' /\
   Bijective s /\
   forall (i: nat), i >= 1 /\ i <= comlen c ->
+                   s i >= 1 /\ s i <= comlen c' /\
                    getWriteAt' c i = getWriteAt' c' (s i) /\
                    getWriteAt' c (sinv i) = getWriteAt' c' i.
 
@@ -1031,9 +1048,36 @@ Definition completeDependenceSet (c: com) (ds: dependenceset) : Prop :=
     dependenceInRange d c ->
     dependenceLexPositive d  -> List.In d ds.
 
+(* Show that a complete dependence set on (CSeq c w) is a complete
+dependence set on c *)
+Lemma completeDependenceSetDestructOnCSeq: forall (c: com) (w: write) (ds: dependenceset), completeDependenceSet (CSeq c w) ds -> completeDependenceSet c ds.
+  intros.
+  unfold completeDependenceSet.
+  unfold completeDependenceSet in H.
+  intros.
+  destruct d.
+  apply (H (n, n0)).
+  unfold dependenceAliases'.
+  rewrite getWriteAt'DestructOnCSeq.
+  rewrite getWriteAt'DestructOnCSeq.
+  simpl.
+  unfold dependenceAliases' in H0. simpl in H0. exact H0.
+  simpl.
+  unfold dependenceInRange in H1.
+  unfold commandIxInRange in H1. simpl in H1.
+  omega.
+  simpl.
+  unfold dependenceInRange in H1.
+  unfold commandIxInRange in H1. simpl in H1. omega.
+  apply dependenceInRangeInclusive.
+  exact H1.
+  exact H2.
+Qed.
+
+
 
 (* If we have an empty dependence set, then it is impossible for instructions to alias. *)
-Theorem emptyDependenceSetHasNoAliases: forall (i j : nat) (c: com), completeDependenceSet c Datatypes.nil -> dependenceLexPositive (i, j) -> dependenceInRange (i, j) c ->  exists (w w': write), getWriteAt' c i = Some w /\ getWriteAt' c j = Some w' /\ writeIx w <> writeIx w'.
+Theorem emptyDependenceSetImpliesNoAliasing: forall (i j : nat) (c: com), completeDependenceSet c Datatypes.nil -> dependenceLexPositive (i, j) -> dependenceInRange (i, j) c ->  exists (w w': write), getWriteAt' c i = Some w /\ getWriteAt' c j = Some w' /\ writeIx w <> writeIx w'.
 Proof.
   intros.
   assert (exists (wi: write), getWriteAt' c i = Some wi).
@@ -1069,21 +1113,148 @@ Qed.
 
 
 (* Slightly better way of stating theorem *)
-Theorem emptyDependenceSetHasNoAliases': forall (i j : nat) (c: com), completeDependenceSet c Datatypes.nil -> i <> j ->  commandIxInRange c i -> commandIxInRange c j -> exists (w w': write), getWriteAt' c i = Some w /\ getWriteAt' c j = Some w' /\ writeIx w <> writeIx w'.
+Theorem emptyDependenceSetImpliesNoAliasing': forall (i j : nat) (c: com), completeDependenceSet c Datatypes.nil -> i <> j ->  commandIxInRange c i -> commandIxInRange c j -> exists (w w': write), getWriteAt' c i = Some w /\ getWriteAt' c j = Some w' /\ writeIx w <> writeIx w'.
   intros.
   assert (i < j \/ i > j) as ij_order. omega.
   destruct ij_order as [i_lt_j | i_gt_j].
   - (* i < j *)
-    apply emptyDependenceSetHasNoAliases.
+    apply emptyDependenceSetImpliesNoAliasing.
     exact H.
     unfold dependenceLexPositive. simpl. assumption.
     unfold dependenceInRange. auto.
   - (* i > j *)
     intros.
-    assert (exists (w w': write), getWriteAt' c j = Some w /\ getWriteAt' c i = Some w' /\ writeIx w <> writeIx w).
-    apply emptyDependenceSetHasNoAliases.
-(* Theorem scheduleMappingWitnessDestruct:  *)
-(* scheduleMappingWitness s sinv (CSeq c w) (CSeq c' w0) *)
+    assert (exists (w w': write), getWriteAt' c j = Some w /\ getWriteAt' c i = Some w' /\ writeIx w <> writeIx w').
+
+    apply (emptyDependenceSetImpliesNoAliasing j i c).
+    exact H.
+    auto.
+    unfold dependenceInRange. auto.
+    destruct H3.
+    destruct H3.
+    exists x0.
+    exists x.
+    split.
+    destruct H3. destruct H4. assumption.
+    split.
+    destruct H3.  assumption.
+    destruct H3. destruct H4. omega.
+Qed.
+
+
+Theorem scheduleMappingWitnessDestructOnCSeqEqual:
+  forall (c c' : com) (s sinv: nat -> nat) (w: write) (ds: dependenceset),
+    completeDependenceSet c ds ->
+    scheduleMappingWitness s sinv (CSeq c w) (CSeq c' w) ->
+    scheduleRespectsDependenceSet s ds ->
+    scheduleMappingWitness s sinv c c'.
+Proof.
+  intros.
+  unfold scheduleMappingWitness.
+  unfold scheduleMappingWitness in H0.
+  destruct H0.
+  split.
+  - (* lengths equal *)
+    unfold comlen in H0. fold comlen in H0. omega.
+  - split.
+    + (* bijective *)
+      destruct H2.
+      exact H2.
+    + (* range *)
+      intros.
+      destruct H2. specialize (H4 i). destruct H4.
+      unfold comlen. fold comlen. omega.
+      unfold comlen in H5. fold comlen in H5.
+      split. omega. split.
+      unfold comlen in H0. fold comlen in H0.
+      assert (comlen c = comlen c'). omega.
+      unfold scheduleRespectsDependenceSet in H1.
+Abort.
+
+  
+
+Theorem writesEqualDecidable: forall (w w': write), w = w' \/ w <> w'.
+  intros.
+  destruct w.
+  destruct w'.
+  assert( m = m1 \/ m <> m1). omega.
+  assert (m0 = m2 \/ m0 <> m2). omega.
+Admitted.
+
+(* Notion of a subprogram aliasing with a single write *)
+Definition NoAliasingBetweenSubprogramAndWrite (c: com) (wix: memix) : Prop :=
+  forall (i: nat), commandIxInRange c i ->
+                   option_map writeIx (getWriteAt' c i) <> Some wix.
+
+(* If two subprograms do not alias, we can reorder them freely *)
+Definition NoAliasingBetweenSubprograms (c1 c2: com) : Prop :=
+    forall (i j: nat),
+    commandIxInRange c1 i->
+    commandIxInRange c2 j ->
+    option_map writeIx (getWriteAt' c1 i) <> option_map writeIx (getWriteAt' c2 j).
+
+Lemma NoAliasingBetweenSubprogramsDestructOnCSeq: forall (c1 c2: com) (wix: memix) (wval: memvalue),
+    NoAliasingBetweenSubprograms (CSeq c1 (Write wix wval)) c2 ->
+    NoAliasingBetweenSubprograms c1 c2 /\
+    NoAliasingBetweenSubprogramAndWrite c2 wix.
+    
+Proof.
+  intros.
+  split.
+  (* No aliasing between subprograms *)
+  unfold NoAliasingBetweenSubprograms.
+  intros.
+  unfold NoAliasingBetweenSubprograms in H.
+  specialize (H i j).
+  assert (commandIxInRange (CSeq c1 (Write wix wval)) i).
+  apply commandIxInRangeInclusive. auto.
+  specialize (H H2 H1).
+  rewrite getWriteAt'DestructOnCSeq in H.
+  exact H.
+  unfold commandIxInRange in H0. omega.
+  (* No aliasing with write *)
+  unfold NoAliasingBetweenSubprogramAndWrite.
+  unfold NoAliasingBetweenSubprograms in H.
+  specialize (H (comlen c1 + 1)).
+  assert (commandIxInRange (CSeq c1 (Write wix wval)) (comlen c1 + 1)).
+  unfold commandIxInRange. unfold comlen. fold comlen. omega.
+  intros.
+  specialize (H i H0 H1).
+  simpl in H.
+  assert (comlen c1 + 1 =? S(comlen c1) = true).
+  rewrite Nat.eqb_eq. omega.
+  rewrite H2 in H.
+  simpl in H. auto.
+Qed.
+
+
+Theorem NoAliasingBetweenSubprogramsAllowsReordering: forall (c1 c2: com), NoAliasingBetweenSubprograms c1 c2 -> 
+                                                                           c1 +++ c2 === c2 +++ c1.
+  intros.
+  unfold ceq.
+  intros.
+  rewrite runprogram_distribute_append.
+  rewrite runprogram_distribute_append.
+  generalize dependent H. generalize dependent initmemory.
+  generalize dependent c2.
+  induction c1.
+
+  (* Induction over c1 *)
+  - (* c1 = seq *)
+    intros.
+    unfold runProgram. fold runProgram.
+    remember H as H'. clear HeqH'.
+    destruct w eqn:wsave.
+    apply NoAliasingBetweenSubprogramsDestructOnCSeq in H.
+    specialize (IHc1 c2 initmemory H).
+    rewrite <- IHc1.
+    remember (runProgram c1 initmemory) as c1finalstate.
+
+  
+
+
+
+
 
 (* Main theorem of the day. If a *schedule s* respects a *complete dependence set ds*, then the semantics of the original program is the same as that of the rescheduled program *)
 Theorem reschedulePreservesSemantics: forall (ds: dependenceset) (c c': com) (s sinv: nat -> nat) ,
@@ -1094,5 +1265,34 @@ Proof.
   intros ds.
   induction ds.
   intros.
+  assert (forall (i j : nat), dependenceLexPositive (i, j) -> dependenceInRange (i, j) c -> i <> j -> commandIxInRange c i -> commandIxInRange c j -> exists (w w': write), getWriteAt' c i = Some w /\ getWriteAt' c j = Some w' /\ writeIx w <> writeIx w') as noalias. intros i j.
+  intros.
+  apply (emptyDependenceSetImpliesNoAliasing i j c H). assumption. assumption.
+  induction c'.
+  unfold scheduleMappingWitness in H0.
+  (* Show that we will always have a corresponding wold for a w. For that,
+     first establish a relationship between getWriteAt and w *)
+  assert (getWriteAt' (CSeq c' w) (comlen c' + 1) = Some w).
+  simpl.  assert (comlen c' + 1 =? S (comlen c') = true). rewrite Nat.eqb_eq. omega.
+  rewrite H2. clear H2. reflexivity.
+  destruct H0 as [leneq  sbijection].
+  unfold comlen in leneq. fold comlen in leneq.
+  assert (comlen c' + 1 = comlen c) as rewH2. omega.
+  rewrite rewH2 in H2. clear rewH2.
+  destruct sbijection as [sbijection sbijectionwitness].
+  specialize (sbijectionwitness (comlen c)).
+  assert (comlen c >= 1 /\ comlen c <= comlen c). omega.
+  specialize (sbijectionwitness H0). clear H0.
+  destruct sbijectionwitness. destruct H3. destruct H4.
+  rewrite <- H5 in H2.
+  (* break program into 0..i-1, {i}, i+1..n *)
+  (* show that if we have no aliasing, then we can apply the effect of w in any order).
+  (* apply sbijection to find the instruction in c that does the same thing as the w *)
+
+
+
+  - (* You can't add an instruction and have it work out)
+    (CSeq c w === c' *)
+
 
                               
