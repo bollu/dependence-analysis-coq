@@ -434,6 +434,7 @@ Proof.
   omega.
 Qed.
 
+
 Lemma getWriteAt'OnCSeq: forall (c: com) (w: write), getWriteAt' (CSeq c w) (comlen c + 1) = Some w.
   intros c.
   dependent induction c.
@@ -992,3 +993,27 @@ Theorem ceq_switch_no_alias: forall (wix1 wix2: memix) (wval1 wval2: memvalue),
   assert (x =? wix2 = false). rewrite Nat.eqb_neq. omega.
   rewrite H1. reflexivity.
 Qed.
+
+
+(* 
+Fixpoint mapProgramWithScheduleGo (s: nat -> nat) (witness: Bijective s) (c: com) (newc: com) (n: nat): com :=
+  let sinv := inverse s
+                      curw = getWriteAt' c 
+  newc' := 
+  in
+  if loc == n
+  then newc
+  else let 
+                                              
+ *)
+
+(* A proposition that witnesses that c' is the output of schedule s applied to c,
+   and that s and sinv are inverses.
+   Equivalently, it witnesses that c is the output of schedule sinv applied to c'
+*)
+Definition scheudleMappingWitness (s sinv: nat -> nat) (c c': com) : Prop :=
+  comlen c = comlen c' /\
+  Bijective s /\
+  forall (i: nat), i >= 1 /\ i <= comlen c ->
+                   getWriteAt' c i = getWriteAt' c' (s i) /\
+                   getWriteAt' c (sinv i) = getWriteAt' c' i.
