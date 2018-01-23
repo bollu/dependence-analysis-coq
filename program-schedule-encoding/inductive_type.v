@@ -1415,10 +1415,13 @@ Theorem NoAliasingBetweenSubprogramsAllowsReordering: forall (c1 c2: com),
     specialize (IHc1 c2 initmemory H).
     rewrite <- IHc1.
     remember (runProgram c1 initmemory) as c1finalstate.
-    apply 
-
-  
-
+    apply NoAliasingBetweenSubprogramAndWriteAllowsReordering.
+    assumption.
+  - (* CBegin *)
+    intros.
+    unfold runProgram. fold runProgram.
+    reflexivity.
+Qed.
 
 
 
