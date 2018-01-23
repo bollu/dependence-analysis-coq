@@ -1497,30 +1497,80 @@ Proof.
 Qed.
 
 
+(* TODO: has no one really defined these combinators? *)
+Lemma list_length_1_implies_singleton: forall (a: Type) (l: list a), length l = 1 -> exists (x: a), l = List.cons x List.nil.
+  intros a l.
+  destruct l.
+  intros. inversion H.
+  intros.
+  inversion H.
+  rewrite List.length_zero_iff_nil in H1.
+  exists a0.
+  rewrite H1.
+  reflexivity.
+Qed.
 
+(* TODO: has no one really defined these combinators? *)
+Lemma list_length_2_implies_2_elems: forall (a: Type) (l: list a),
+    length l = 2 -> exists (x x': a), l = List.cons x (List.cons x' List.nil).
+  intros a l.
+  destruct l.
+  intros. inversion H.
+  intros.
+  inversion H.
+  apply list_length_1_implies_singleton in H1.
+  destruct H1.
+  exists a0. exists x.
+  rewrite H0.
+  reflexivity.
+Qed.
 
-
+Lemma list_length_gt_2_implies_at_least_2_elems: forall (a: Type) (l: list a),
+    length l >= 2 -> exists (x x' : a) (l': list a), l = List.cons x (List.cons x' l').
+Proof.
+  intros.
+  destruct l.
+  inversion H.
+  destruct l.
+  inversion H.
+  inversion H1.
+  exists a0. exists a1. exists l.
+  reflexivity.
+Qed.
 
                    
 Theorem emptyDependenceSetWillHaveSingleAliasingWrite:
-  forall (c: com) (ix: memix), completeDependenceSet c List.nil ->
-         (exists (t: timepoint), getAliasingWriteTimepointsForProgram c ix = List.cons t List.nil) \/
-                                getAliasingWriteTimepointsForProgram c ix = List.nil.
-  intros c. induction c.
+  forall (c: com) (ix: memix) (lt: list timepoint),
+    completeDependenceSet c List.nil ->
+    aliasingWriteTimepointsSet c ix lt ->
+    (exists (t: timepoint),
+        lt = List.cons t List.nil) \/ lt = List.nil.
   intros.
-  unfold getAliasingWriteTimepointsForProgram. fold getAliasingWriteTimepointsForProgram.
-  assert (writeIx w = ix \/ writeIx w <> ix) as writeix_choices. omega.
-  destruct writeix_choices.
-  assert (writeIx w =? ix = true). rewrite Nat.eqb_eq. assumption.
-  rewrite H1.
-  left.
-  exists (comlen (CSeq c w)).
-
-  assert (completeDependenceSet c Datatypes.nil) as complete_depset_on_c.
-  apply (completeDependenceSetDestructOnCSeq c w).
-  exact H.
-
-  
+  unfold aliasingWriteTimepointsSet in H0.
+  unfold completeDependenceSet in H.
+  assert (length lt <= 1 \/ length lt >= 2) as lt_destruct. omega.
+  destruct lt_destruct.
+  - (* length lt <= 1 *)
+    assert (length lt = 0 \/ length lt = 1) as lt_0_or_1. omega.
+    destruct lt_0_or_1.
+    + (* length lt = 0 *)
+      assert (lt = List.nil).
+      rewrite <- length_zero_iff_nil. assumption.
+      right. assumption.
+    + (* length lt = 1 *)
+      intros.
+      apply list_length_1_implies_singleton in H2.
+      destruct H2.
+      left.
+      exists x.
+      assumption.
+  - (* length >= 2 *)
+    intros.
+    apply list_length_gt_2_implies_at_least_2_elems in H1.
+    destruct H1.
+    destruct H1.
+    destruct H1.
+    assert (List.In x lt) as x_in_lt. 
 
 
 (* Main theorem of the day. If a *schedule s* respects a *complete dependence set ds*, then the semantics of the original program is the same as that of the rescheduled program *)
