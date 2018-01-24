@@ -8,7 +8,6 @@ Require Import Coq.Lists.List.
 Require Import Coq.ZArith.Zbool.
 Require Import Coq.Sorting.Permutation.
 Require Import Coq.Logic.FunctionalExtensionality.
-Require Import Coq.Logic.ExtensionalityFacts.
 Require Import Omega.
 Require Import Coq.Bool.Sumbool.
 Require Import Coq.ZArith.Zhints.
@@ -1030,38 +1029,13 @@ Fixpoint mapProgramWithScheduleGo (s: nat -> nat) (witness: Bijective s) (c: com
 *)
 Definition scheduleMappingWitness (s sinv: nat -> nat) (c c': com) : Prop :=
   comlen c = comlen c' /\
-  is_inverse s sinv /\
+  Bijective s /\
   forall (i: nat), i >= 1 /\ i <= comlen c ->
-                   s i >= 1 /\ s i <= comlen c /\
-                   sinv i >= 1 /\ sinv i <= comlen c' /\
+                   s i >= 1 /\ s i <= comlen c' /\
                    getWriteAt' c i = getWriteAt' c' (s i) /\
                    getWriteAt' c (sinv i) = getWriteAt' c' i.
 
-
-Lemma scheduleMappingWitnessSymmetric: forall (s sinv: nat -> nat) (c c': com),
-    scheduleMappingWitness s sinv c c' -> scheduleMappingWitness sinv s c' c.
-Proof.
-  unfold scheduleMappingWitness.
-  intros.
-  destruct H. destruct H0. 
-  split; try auto.
-  split.
-  unfold is_inverse. unfold is_inverse in H0. destruct H0. split; auto.
-  intros.
-  specialize (H1 i).
-  rewrite H. rewrite H in H1.
-  specialize (H1 H2). destruct H1. destruct H3. destruct H4. destruct H5.
-  destruct H6.
-  split. auto. split. auto. split. auto. auto.
-Qed.
-
-
-Definition applyScheduleToDependence (s: nat -> nat) (d: dependence) : dependence :=
-  match d with
-  | (x0, x1) => (s x0, s x1)
-  end.
-
-Definition scheduleRespectsDependence (s: nat -> nat) (d: dependence) : Prop := dependenceLexPositive (applyScheduleToDependence s d).
+Definition scheduleRespectsDependence (s: nat -> nat) (d: dependence) : Prop := s (fst d) < s (snd d).
 
 Definition scheduleRespectsDependenceSet (s: nat -> nat) (ds: dependenceset) : Prop := forall (d: dependence), List.In d ds -> scheduleRespectsDependence s d.
 
@@ -1464,6 +1438,9 @@ Definition aliasingWriteTimepointsSet (c: com) (ix: memix) (l: list timepoint) :
   forall (t: timepoint),
     List.In t l -> commandIxInRange c t /\ (exists (wval: memvalue), getWriteAt' c t = Some (Write ix wval)).
 
+
+(* getAliasingWriteTimepoints actually does what it says it does *)
+(* NOTE: I need to change this a little to exhibit NoDup. *)
 Theorem getAliasingWriteTimepointsForProgramCorrect:
   forall (c: com) (ix: memix),
     aliasingWriteTimepointsSet c
@@ -1472,9 +1449,7 @@ Theorem getAliasingWriteTimepointsForProgramCorrect:
 Proof.
 Admitted.
 
-(* getAliasingWriteTimepoints actually does what it says it does *)
-(* NOTE: I need to change this a little to exhibit NoDup.
-
+(* NOTE: I need to change this a little to exhibit NoDup. *)
 Theorem getAliasingWriteTimepointsForProgramGivesAliasingWrites:
   forall (c: com) (ix: memix),
     aliasingWriteTimepointsSet c
@@ -1659,165 +1634,7 @@ Theorem emptyDependenceSetWillHaveSingleAliasingWrite:
       contradiction.
 Qed.
 
-  
-Definition applyScheduleToDependenceSet (s: nat -> nat) (ds: dependenceset) : dependenceset :=
-  List.map (applyScheduleToDependence s) ds.
-
-(* TODO: super ugly proof, this is too much of low level algebra. NEED PROOF AUTOMATION! *)
-Theorem dependenceAliasesTransportAcrossValidSchedule:
-  forall (c c': com) (s sinv: nat -> nat) (d: dependence),
-    scheduleMappingWitness s sinv c c' ->
-    dependenceAliases' d c ->
-    dependenceInRange d c -> 
-    dependenceAliases' (applyScheduleToDependence s d) c'.
-Proof.
-  unfold dependenceAliases'.
-  intros.
-  destruct d eqn:dsave.
-  simpl. simpl in H0.
-  unfold scheduleMappingWitness in H.
-  remember (getWriteAt' c n) as w_c_at_n.
-  remember (getWriteAt' c n0) as w_c_at_n0.
-  destruct H. destruct H2.
-  remember (getWriteAt' c' (s n)) as w_c'_at_sn.
-  remember (getWriteAt' c' (s n0)) as w_c'_at_sn0.
-
-  assert (getWriteAt' c' (s n) = getWriteAt' c n).
-  specialize (H3 n).
-  assert (n >= 1 /\ n <= comlen c) as n_inbounds. unfold dependenceInRange in H1. unfold commandIxInRange in H1. simpl in H1. omega.
-  specialize (H3 n_inbounds).
-  destruct H3. destruct H4. destruct H5. intuition. 
-
-  assert (getWriteAt' c' (s n0) = getWriteAt' c n0). specialize (H3 n0). assert (n0 >= 1 /\ n0 <= comlen c). unfold dependenceInRange in H1. unfold commandIxInRange in H1. simpl in H1. omega.
-  specialize (H3 H5). intuition.
-  subst.
-  rewrite H4. rewrite H5. rewrite H0. reflexivity.
-Qed.
-
-Theorem dependenceInRangeTransportAcrossValidSchedule:
-  forall (c c': com) (s sinv: nat -> nat) (d: dependence),
-    scheduleMappingWitness s sinv c c' ->
-    dependenceInRange d c -> 
-    dependenceInRange (applyScheduleToDependence s d) c'.
-Proof.
-  unfold dependenceInRange.
-  unfold scheduleMappingWitness.
-  unfold applyScheduleToDependence.
-  unfold commandIxInRange.
-  destruct d eqn:dsave.
-  simpl.
-  intuition.
-  simpl. specialize (H4 n). cut (n >=1 /\ n <= comlen c). intros.
-  specialize (H4 H3). omega. omega.
-  specialize (H4 n). omega. specialize (H4 n0). omega. specialize (H4 n0). omega.
-Qed.
-
-
-Theorem dependenceLexPositiveTransportAcrossValidSchedule:
-  forall (c: com) (s: nat -> nat) (d: dependence) (ds: dependenceset),
-    completeDependenceSet c ds ->
-    scheduleRespectsDependenceSet s ds ->
-    dependenceLexPositive d ->
-    dependenceAliases' d c ->
-    dependenceInRange d c -> 
-    dependenceLexPositive (applyScheduleToDependence s d).
-Proof.
-  intros.
-  destruct d.
-  specialize (H0 (n, n0)).
-  unfold completeDependenceSet in H.
-  assert(List.In (n, n0) ds).
-  apply H; intuition.
-  unfold scheduleRespectsDependence in H0.
-  apply H0. assumption.
-Qed.
-
-
-
-(* If D is a complete dependence set for c, and c --s--> c', Then s(D) is a valid dependence set for c' *)
-Theorem dependenceSetTransportAcrossValidSchedule:
-  forall (c c': com) (s sinv: nat -> nat) (ds: dependenceset),
-    completeDependenceSet c ds ->
-    scheduleMappingWitness s sinv c c' ->
-    scheduleRespectsDependenceSet s ds ->
-    completeDependenceSet c' (applyScheduleToDependenceSet s ds).
-Proof.
-
-  intros.
-
-  assert (scheduleMappingWitness sinv s c' c) as witness_inv. apply scheduleMappingWitnessSymmetric. intuition.
-
-  unfold completeDependenceSet.
-  intros d'.
-  intros.
-
-  unfold applyScheduleToDependenceSet.
-  rewrite List.in_map_iff.
-  exists (applyScheduleToDependence sinv d').
-
-  split.
-  destruct d'.
-  unfold applyScheduleToDependence.
-  assert (forall (n: nat), s (sinv n) = n). unfold scheduleMappingWitness in H0. intuition. unfold is_inverse in H0. intuition.
-  intuition.
-  apply H.
-  eapply dependenceAliasesTransportAcrossValidSchedule.
-  exact witness_inv.
-  assumption.
-  assumption.
-
-  eapply dependenceInRangeTransportAcrossValidSchedule.
-  exact witness_inv.
-  assumption.
-
-
-
-
-
-                                                                               
-   
-
                                   
-Theorem emptyDependenceSetAllowsAllReschedules: forall (c c': com) (s sinv: nat -> nat),
-    completeDependenceSet c List.nil -> scheduleMappingWitness s sinv c c' -> c === c'.
-    unfold ceq.
-    intros.
-    apply functional_extensionality.
-    intros.
-    (* TODO: is remember the correct way to add a hypothesis to context? *)
-    remember (getAliasingWriteTimepointsForProgram c x) as aliasingwritetps.
-    assert ((exists (t: timepoint),
-                aliasingwritetps = List.cons t List.nil) \/ aliasingwritetps = List.nil).
-    eapply emptyDependenceSetWillHaveSingleAliasingWrite.
-    exact H.
-    rewrite Heqaliasingwritetps.
-    apply getAliasingWriteTimepointsForProgramCorrect.
-
-    destruct H1.
-    + (* have one aliasing write *)
-      destruct H1.
-      induction c.
-      unfold runProgram. fold runProgram. unfold writeToMemory'.
-      destruct w.
-      unfold writeToMemory.
-      assert (x = m \/ x <> m). omega.
-      (* x can't be equal to m, if it is, then this write also aliases which is nonsense *)
-      destruct H2.
-
-      * (* x = m. *)
-        remember Heqaliasingwritetps as Heqaliasingwritetps'.
-        clear HeqHeqaliasingwritetps'.
-        rewrite H2 in Heqaliasingwritetps.
-        unfold getAliasingWriteTimepointsForProgram in Heqaliasingwritetps.
-        fold getAliasingWriteTimepointsForProgram in Heqaliasingwritetps.
-        simpl in Heqaliasingwritetps. assert (m =? m = true). rewrite Nat.eqb_eq. reflexivity.
-        rewrite H3 in Heqaliasingwritetps. rewrite H1 in Heqaliasingwritetps.
-        inversion Heqaliasingwritetps.
-        assert (x =? m = true). rewrite Nat.eqb_eq. omega.
-        rewrite H4. clear H4. clear H3.
-
-        (* now, look for same instruction in c' *)
-        
 
 
 (* Main theorem of the day. If a *schedule s* respects a *complete dependence set ds*, then the semantics of the original program is the same as that of the rescheduled program *)
@@ -1829,6 +1646,16 @@ Proof.
   induction ds.
   - (* ds is empty *)
     intros.
+    unfold ceq.
+    intros.
+    apply functional_extensionality.
+    intros.
+    remember (getAliasingWriteTimepointsForProgram c x) as aliasingwrites.
+    assert ((exists (t: timepoint),
+                aliasingwrites = List.cons t List.nil) \/ aliasingwrites = List.nil).
+    eapply emptyDependenceSetWillHaveSingleAliasingWrite.
+    exact H.
+    apply 
 
 
 
