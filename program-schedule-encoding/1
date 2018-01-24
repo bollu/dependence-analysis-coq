@@ -1811,45 +1811,37 @@ Proof.
       unfold dependenceLexPositive in H5. simpl in H5.
       (* contradiction beween tbegin < tend and tbegin = tend *)
       omega.
-      (* We know that sinv tbegin > sinv tend. So, show that (tend, tbegin)
-         is a valid dependence, and transport it along. This will give us a contradiction *)
-      assert (dependenceLexPositive (applyScheduleToDependence sinv (tend, tbegin))).
-      unfold dependenceLexPositive.
-      simpl. auto. 
-      assert (dependenceInRange (applyScheduleToDependence sinv (tend, tbegin)) c).
-      eapply dependenceInRangeTransportAcrossValidSchedule.
-      apply witness_inv.
-      unfold dependenceInRange.
-      unfold dependenceInRange in H4. intuition.
-      assert (dependenceAliases' (applyScheduleToDependence sinv (tend, tbegin)) c).
-      eapply dependenceAliasesTransportAcrossValidSchedule.
-      apply witness_inv.
-      unfold dependenceAliases'. unfold dependenceAliases' in H3. intuition.
-      unfold dependenceInRange in H4. unfold dependenceInRange. intuition.
-      assert (List.In(applyScheduleToDependence sinv (tend, tbegin)) ds).
-      unfold completeDependenceSet in H. apply H. assumption. assumption.
-      assumption.
-      unfold scheduleRespectsDependenceSet in H1.
-      specialize (H1 ( (applyScheduleToDependence sinv (tend, tbegin)))).
-      specialize (H1 H13).
-      unfold scheduleRespectsDependence in H1.
-      unfold dependenceLexPositive in H1. unfold applyScheduleToDependence in H1.
-      simpl in H1.
-      assert (tend < tbegin).
-      unfold scheduleMappingWitness in H0. intuition.
-      unfold is_inverse in H0. destruct H0.
-      assert(s (sinv tend) = tend). specialize (H0 tend). auto.
-      assert(s (sinv tbegin) = tbegin). specialize (H0 tbegin). auto.
-      rewrite H17 in H1. rewrite H18 in H1. assumption.
-      rewrite H7 in H14.
-      (* YES, CONTRADICTION *)
-      assert (tbegin > comlen c' + 1).
-      unfold scheduleMappingWitness in H0.
-      intuition.
-      specialize (H0 tend).
+      assert (tbegin < tend).
+      (* sinv tbegin > sinv tend. *)
+      (* s (sinv tbegin) ?? s (sinv tend))
+       (* assume s (sinv tbegin) < s (sinv tend) *)
 
 
+Qed.
 
+   
+
+                                  
+Theorem emptyDependenceSetAllowsAllReschedules: forall (c c': com) (s sinv: nat -> nat),
+    completeDependenceSet c List.nil ->
+    scheduleMappingWitness s sinv c c' ->
+    scheduleRespectsDependenceSet s List.nil ->
+    c === c'.
+    unfold ceq.
+    intros.
+    apply functional_extensionality.
+    intros.
+    (* TODO: is remember the correct way to add a hypothesis to context? *)
+    remember (getAliasingWriteTimepointsForProgram c x) as aliasingwritetps.
+    assert ((exists (t: timepoint),
+                aliasingwritetps = List.cons t List.nil) \/ aliasingwritetps = List.nil).
+    eapply emptyDependenceSetWillHaveSingleAliasingWrite.
+    exact H.
+    rewrite Heqaliasingwritetps.
+    apply getAliasingWriteTimepointsForProgramCorrect.
+
+    destruct H1.
+    + (* have one aliasing write *)
       destruct H1.
       induction c.
       unfold runProgram. fold runProgram. unfold writeToMemory'.
@@ -1871,3 +1863,28 @@ Proof.
         assert (x =? m = true). rewrite Nat.eqb_eq. omega.
         rewrite H4. clear H4. clear H3.
         assert (completeDependenceSet c' (applyScheduleToDependenceSet s List.nil)).
+        (* Transport our dependence set to the other program so we can reason the same way *)
+        eapply dependenceSetTransportAcrossValidSchedule.
+        exact H.
+        exact H0.
+        unfold scheduleRespectsDependenceSet. intros. inversion H3.
+        intros.
+
+        (* now, look for same instruction in c' *)
+        
+
+
+(* Main theorem of the day. If a *schedule s* respects a *complete dependence set ds*, then the semantics of the original program is the same as that of the rescheduled program *)
+Theorem reschedulePreservesSemantics: forall (c c': com) (ds: dependenceset) (s sinv: nat -> nat),
+    completeDependenceSet c ds -> scheduleMappingWitness s sinv c c' ->
+    scheduleRespectsDependenceSet s ds -> c === c'.
+Proof.
+  intros c c' ds.
+  induction ds.
+  - (* ds is empty *)
+    intros.
+
+
+
+
+                              
