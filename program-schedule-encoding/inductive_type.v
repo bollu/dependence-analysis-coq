@@ -6,6 +6,7 @@ Require Import Coq.ZArith.BinIntDef.
 Require Import Coq.Numbers.BinNums.
 Require Import Coq.Lists.List.
 Require Import Coq.ZArith.Zbool.
+Require Import Coq.ZArith.Int.
 Require Import Coq.Sorting.Permutation.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Logic.ExtensionalityFacts.
@@ -1735,7 +1736,153 @@ Proof.
   apply H0. assumption.
 Qed.
 
+Theorem dependenceLexPositiveTransportAcrossValidSchedule':
+  forall (c c': com) (s sinv: nat -> nat) (d: dependence) (ds: dependenceset),
+    completeDependenceSet c ds -> 
+    scheduleMappingWitness s sinv c c' ->
+    scheduleRespectsDependenceSet s ds ->
+    dependenceAliases' d c ->
+    dependenceInRange d c ->
+    dependenceLexPositive d ->
+    dependenceLexPositive (applyScheduleToDependence s d).
+Proof.
+  intros c c' s sinv d ds dscomplete mapwitness respectdeps aliases inrange lexpos.
+  induction c.
+  destruct d as [tbegin tend] eqn:dsave.
+  destruct w as [wix wval] eqn:wsavee.
 
+  assert (tend = comlen c + 1 /\
+  (exists wval_begin : memvalue,
+     getWriteAt' c tbegin = Some (Write wix wval_begin)) \/
+  tend <> comlen c + 1 /\ dependenceAliases' (tbegin, tend) c) as
+      destruct_depalias.
+  eapply destructDependenceAliasesInCSeq.
+  assert (dependenceLexPositive (tbegin, tend)) as lexpos_smaller.
+  unfold dependenceLexPositive. unfold dependenceLexPositive in lexpos.
+  intuition.
+  exact lexpos_smaller.
+  exact inrange.
+  exact aliases.
+
+  destruct destruct_depalias.
+  destruct H as [tend_val aliasingw].
+
+  assert (s tbegin < s tend \/ s tbegin = s tend \/ s tbegin > s tend) as tbegin_tend_cases. omega.
+  destruct tbegin_tend_cases as [tbegin_tend_lt | tbegin_tend_eq_or_gt].
+  - (* s tbegin < s tend *)
+    auto.
+
+  - (* s tbegin = s tend.
+        => tbegin = tend.
+    Will be contradiction, because there is a dependence (tbegin, tend)
+   *) 
+  destruct tbegin_tend_eq_or_gt as [tbegin_tend_eq | tbegin_tend_gt].
+  assert (tbegin = tend) as tbegin_eq_tend_by_s_bij.
+  cut (sinv (s tbegin) = sinv (s tend)).
+  unfold scheduleMappingWitness in mapwitness.
+  destruct mapwitness as [_ [isinv _]].
+  unfold is_inverse in isinv. destruct isinv.
+  rewrite (H tbegin), (H tend). auto.
+  rewrite tbegin_tend_eq. auto.
+  unfold dependenceLexPositive in lexpos. simpl in lexpos.
+  assert (tbegin = tend /\ tbegin < tend). auto.
+  omega.
+
+   (* tbegin > tend.
+    *)
+  (* Since we have (tbegin, tend) as a dependence, transport it *)
+  (* This will give us (s tbegin, s tend) as a dependence *)
+  (* this contradicts s tbegin > s tend since all dependences transported by "s"
+     are lex-positive *)
+  unfold scheduleRespectsDependenceSet in respectdeps.
+  assert (scheduleRespectsDependence s (tbegin, tend)) as tbegin_tend_respected_by_s.
+  apply respectdeps.
+  unfold completeDependenceSet in dscomplete.
+  apply dscomplete.
+  assumption. assumption. assumption.
+  unfold scheduleRespectsDependence in tbegin_tend_respected_by_s.
+  unfold dependenceLexPositive in tbegin_tend_respected_by_s.
+  unfold applyScheduleToDependence in tbegin_tend_respected_by_s.
+  simpl in tbegin_tend_respected_by_s.
+  assert (s tbegin > s tend /\ s tbegin < s tend) as contra.
+  omega.
+  omega.
+
+  - destruct H as [end_neq_at_end dep_inside_c].
+    apply IHc.
+    eapply completeDependenceSetDestructOnCSeq.
+    exact dscomplete.
+Abort.
+
+
+
+Theorem dependenceLexPositiveTransportAcrossValidSchedule'':
+  forall (c c': com) (s sinv: nat -> nat) (d: dependence) (ds: dependenceset),
+    completeDependenceSet c ds -> 
+    scheduleMappingWitness s sinv c c' ->
+    scheduleRespectsDependenceSet s ds ->
+    dependenceAliases' d c ->
+    dependenceInRange d c ->
+    dependenceLexPositive d ->
+    dependenceLexPositive (applyScheduleToDependence s d).
+Proof.
+  intros c c' s sinv d ds dscomplete mapwitness respectdeps aliases inrange lexpos.
+  induction c.
+  destruct d as [tbegin tend] eqn:dsave.
+  destruct w as [wix wval] eqn:wsavee.
+
+
+  assert (s tbegin < s tend \/ s tbegin = s tend \/ s tbegin > s tend) as tbegin_tend_cases. omega.
+
+
+  destruct tbegin_tend_cases as [tbegin_tend_lt | tbegin_tend_eq_or_gt].
+  - (* s tbegin < s tend *)
+    auto.
+
+  - (* s tbegin = s tend.
+        => tbegin = tend.
+    Will be contradiction, because there is a dependence (tbegin, tend)
+   *) 
+  destruct tbegin_tend_eq_or_gt as [tbegin_tend_eq | tbegin_tend_gt].
+  assert (tbegin = tend) as tbegin_eq_tend_by_s_bij.
+  cut (sinv (s tbegin) = sinv (s tend)).
+  unfold scheduleMappingWitness in mapwitness.
+  destruct mapwitness as [_ [isinv _]].
+  unfold is_inverse in isinv. destruct isinv.
+  rewrite (H tbegin), (H tend). auto.
+  rewrite tbegin_tend_eq. auto.
+  unfold dependenceLexPositive in lexpos. simpl in lexpos.
+  assert (tbegin = tend /\ tbegin < tend). auto.
+  omega.
+
+
+   (* tbegin > tend.
+    *)
+  (* Since we have (tbegin, tend) as a dependence, transport it *)
+  (* This will give us (s tbegin, s tend) as a dependence *)
+  (* this contradicts s tbegin > s tend since all dependences transported by "s"
+     are lex-positive *)
+  unfold scheduleRespectsDependenceSet in respectdeps.
+  assert (scheduleRespectsDependence s (tbegin, tend)) as tbegin_tend_respected_by_s.
+  apply respectdeps.
+  unfold completeDependenceSet in dscomplete.
+  apply dscomplete.
+  assumption. assumption. assumption.
+  unfold scheduleRespectsDependence in tbegin_tend_respected_by_s.
+  unfold dependenceLexPositive in tbegin_tend_respected_by_s.
+  unfold applyScheduleToDependence in tbegin_tend_respected_by_s.
+  simpl in tbegin_tend_respected_by_s.
+  assert (s tbegin > s tend /\ s tbegin < s tend) as contra.
+  omega.
+  omega.
+
+  -  unfold scheduleRespectsDependenceSet in respectdeps.
+     unfold scheduleRespectsDependence in respectdeps.
+     apply respectdeps.
+     unfold completeDependenceSet in dscomplete.
+     apply dscomplete.
+     auto. auto. auto.
+Qed.
 
 (* If D is a complete dependence set for c, and c --s--> c', Then s(D) is a valid dependence set for c' *)
 (* This is kind of fucked because I need that hypotheiss about lex transport. *)
@@ -1782,6 +1929,16 @@ Proof.
   assumption.
   assumption.
 
+  eapply dependenceLexPositiveTransportAcrossValidSchedule'.
+  assert (scheduleMappingWitness sinv s c' c). apply scheduleMappingWitnessSymmetric. auto.
+  exact H7.
+  auto.
+  auto.
+  auto.
+Qed.
+
+
+(*
   (* ====== *)
   induction c'.
   destruct d' as [tbegin tend].
@@ -1844,30 +2001,9 @@ Proof.
       rewrite H7 in H14.
       (* YES, CONTRADICTION *)
       assert (tbegin > comlen c' + 1).
-      unfold scheduleMappingWitness in H0.
-      intuition.
-      specialize (H0 tend).
-
-
-
-      destruct H1.
-      induction c.
-      unfold runProgram. fold runProgram. unfold writeToMemory'.
-      destruct w.
-      unfold writeToMemory.
-      assert (x = m \/ x <> m). omega.
-      (* x can't be equal to m, if it is, then this write also aliases which is nonsense *)
-      destruct H2.
-
-      * (* x = m. *)
-        remember Heqaliasingwritetps as Heqaliasingwritetps'.
-        clear HeqHeqaliasingwritetps'.
-        rewrite H2 in Heqaliasingwritetps.
-        unfold getAliasingWriteTimepointsForProgram in Heqaliasingwritetps.
-        fold getAliasingWriteTimepointsForProgram in Heqaliasingwritetps.
-        simpl in Heqaliasingwritetps. assert (m =? m = true). rewrite Nat.eqb_eq. reflexivity.
-        rewrite H3 in Heqaliasingwritetps. rewrite H1 in Heqaliasingwritetps.
-        inversion Heqaliasingwritetps.
-        assert (x =? m = true). rewrite Nat.eqb_eq. omega.
-        rewrite H4. clear H4. clear H3.
-        assert (completeDependenceSet c' (applyScheduleToDependenceSet s List.nil)).
+      unfold dependenceInRange in H4. simpl in H4. unfold commandIxInRange in H4. simpl in H4. omega.     unfold dependenceInRange in H4. simpl in H4. unfold commandIxInRange in H4. simpl in H4.
+      assert (tbegin <= comlen c' + 1). omega.
+      assert (tbegin > comlen c' + 1 /\ tbegin <= comlen c' + 1).
+      omega.
+      omega.
+*)
