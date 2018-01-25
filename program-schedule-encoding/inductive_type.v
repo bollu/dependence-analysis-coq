@@ -1998,6 +1998,15 @@ Proof.
     left.
     split; try auto.
     unfold completeDependenceSet in completedepset.
+    specialize (completedepset (tbegin, tend)).
+    destruct completedepset as [_ inListValid].
+    assert (validDependence (CSeq c (Write wix wval)) (tbegin, tend)) as d_is_valid.
+    apply inListValid.
+    unfold List.In. left. reflexivity.
+    unfold validDependence in d_is_valid.
+    destruct d_is_valid as [d_aliases [d_in_range d_lexpos]].
+    assert (exists (w:write), getWriteAt' c tbegin = Some w).
+    apply 
 
     
 
@@ -2022,7 +2031,9 @@ Proof.
     generalize dependent completedepset.
     induction c.
     + (* c = CSeq c w *)
-      intros  initmem.
+      intros  completedepset.
+      intros c' schedulewitness.
+      intros initmem.
       apply functional_extensionality.
       intros readix.
 
