@@ -1984,17 +1984,16 @@ Lemma completeDependenceSetConsDestructOnCSeq:
   forall (c: com) (wix: memix) (wval: memvalue)
          (tbegin tend: timepoint) (ds: dependenceset),
     completeDependenceSet (CSeq c (Write wix wval)) ((tbegin, tend) :: ds) ->
-    (tend = wix /\
-     (exists (wval': memvalue), getWriteAt' c tbegin = Some (Write wix wval')) /\
-     completeDependenceSet c ds) \/
-    (tend <> wix /\ completeDependenceSet c ds).
+    (tend = comlen c + 1 /\
+     (exists (wval': memvalue), getWriteAt' c tbegin = Some (Write wix wval'))) \/
+    (tend <> comlen c + 1).
 Proof.
   intros c wix wval tbegin tend ds completedepset.
-  assert (tend = wix \/ tend <> wix) as wix_cases.
+  assert (tend = comlen c + 1 \/ tend <= comlen c \/ tend > comlen c + 1) as tend_cases.
   omega.
-  destruct wix_cases as [wix_eq_tend | wix_neq_tend].
+  destruct tend_cases as [tend_at_end| tend_not_at_end].
 
-  - (* wix_eq_tend *)
+  - (* tend = comlen c + 1 *)
     left.
     split; try auto.
     unfold completeDependenceSet in completedepset.
@@ -2005,8 +2004,36 @@ Proof.
     unfold List.In. left. reflexivity.
     unfold validDependence in d_is_valid.
     destruct d_is_valid as [d_aliases [d_in_range d_lexpos]].
-    assert (exists (w:write), getWriteAt' c tbegin = Some w).
-    apply 
+    assert (exists (w:write), getWriteAt' c tbegin = Some w) as exists_w_tbegin.
+    apply getWriteAt'RangeComplete.
+    unfold dependenceInRange,commandIxInRange, comlen in d_in_range.
+    fold comlen in d_in_range.
+    simpl in d_in_range.
+    destruct d_in_range as [tbegin_range tend_range].
+    unfold dependenceLexPositive in d_lexpos. simpl in d_lexpos.
+    omega.
+
+
+    destruct exists_w_tbegin as [w_tbegin w_tbegin_witness].
+    destruct w_tbegin as [w_tbegin_ix w_tbegin_val].
+    exists w_tbegin_val.
+    unfold dependenceAliases' in d_aliases.
+    simpl in d_aliases.
+    cut (tbegin =? S(comlen c) = false).
+    cut (tend =? S(comlen c) = true).
+    intros if1 if2. rewrite if1, if2 in d_aliases.
+    inversion d_aliases as [wix_eq_witness].
+    rewrite w_tbegin_witness in wix_eq_witness.
+    simpl in wix_eq_witness. inversion wix_eq_witness.
+    rewrite w_tbegin_witness.
+    rewrite H0. reflexivity.
+    rewrite Nat.eqb_eq. unfold dependenceInRange, commandIxInRange, dependenceLexPositive in d_in_range, d_lexpos. simpl in d_in_range,d_lexpos.
+    omega.
+    rewrite Nat.eqb_neq. unfold dependenceInRange, commandIxInRange, dependenceLexPositive in d_in_range, d_lexpos. simpl in d_in_range,d_lexpos. omega.
+
+  -  intros. right. omega.
+Qed.
+
 
     
 
