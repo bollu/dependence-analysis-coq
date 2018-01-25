@@ -2066,6 +2066,15 @@ Proof.
   -  intros. right. omega.
 Qed.
 
+Theorem latestAliasingWriteWillBeValue: forall (c: com) (readix: memix) (aliasingt: timepoint) (wval: memvalue) (initmem: memory),
+    latestAliasingWriteTimepointSpec c readix (Some aliasingt) ->
+    (getWriteAt' c  aliasingt = Some (Write readix wval)) ->
+    runProgram c initmem readix = wval.
+Proof.
+  intros c.
+  induction c.
+  intros.
+  destruct w as [latestwix latestwval].
 
     
 
@@ -2092,6 +2101,8 @@ Proof.
       [tp_latest_witness
          [tp_latest_in_range
             [tp_latest_has_write no_t_after_tp]]].
+  destruct tp_latest_has_write as [tp_latest_wval tp_latest_wval_witness].
+  assert (runProgram c initmemory readix = tp_latest_wval).
 
 
 
