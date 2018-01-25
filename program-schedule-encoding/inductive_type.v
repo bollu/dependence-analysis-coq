@@ -2024,3 +2024,18 @@ Proof.
     (* blow this up *)
     omega.
 Qed.
+
+Theorem emptyDependenceSetAllowsAllReschedules: forall (c c': com) (s sinv: nat -> nat),
+    completeDependenceSet c List.nil ->
+    scheduleMappingWitness s sinv c c' ->
+    scheduleRespectsDependenceSet s List.nil ->
+    c === c'.
+Proof.
+Admitted.
+
+(* Main theorem of the day. If a *schedule s* respects a *complete dependence set ds*, then the semantics of the original program is the same as that of the rescheduled program *)
+Theorem reschedulePreservesSemantics: forall (c c': com) (ds: dependenceset) (s sinv: nat -> nat),
+    completeDependenceSet c ds -> scheduleMappingWitness s sinv c c' ->
+    scheduleRespectsDependenceSet s ds -> c === c'.
+Proof.
+Abort.
