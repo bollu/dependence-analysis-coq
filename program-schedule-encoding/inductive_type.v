@@ -25,6 +25,7 @@ Require Import MSetWeakList.
 Require Import FSetInterface.
 Require Import FSetList.
 Require Import Coq.Program.Equality.
+Require Import CoLoR.Util.FSet.FSetUtil.
 Import EqNotations.
 Import EqdepFacts.
 
@@ -50,10 +51,10 @@ Require Import
 
 
 (* An index into memory *)
-Definition memix := nat.
+Notation memix := nat.
 
 (* values in memory *)
-Definition memvalue := Z.
+Notation memvalue := Z.
 
 Inductive write : Type :=
   Write: memix -> memvalue -> write.
@@ -130,7 +131,7 @@ Proof. intros. omega. Qed.
 Example c_example' : com := (CSeq (CSeq CBegin (Write 1 100%Z)) (Write 1 100%Z)).
 
 
-Definition timepoint: Type := nat.
+Notation timepoint  := nat.
 Definition writeset: Type := memix -> list timepoint.
 
 Definition emptyWriteSet : writeset := fun ix => List.nil.
@@ -148,7 +149,9 @@ Lemma destructInSingletonWriteSet:
   intros.
   unfold singletonWriteSet in H.
   unfold addToWriteSet in H.
-  assert (curix = ix \/ curix <> ix). omega.
+  assert (curix = ix \/ curix <> ix).
+  omega.
+
   destruct H0.
   (* curix = ix *)
   rewrite <- Nat.eqb_eq in H0.
@@ -541,7 +544,7 @@ Lemma computeWriteSetRange: forall (c: com) (wix: memix) (i: nat), List.In i (((
   (* new case - List.In i (singletonWriteSet m (n + 1) wix ) *)
   unfold singletonWriteSet in H.
   unfold addToWriteSet in H.
-  assert (wix = m \/ wix <> m).
+  assert (wix = n \/ wix <> n).
   omega.
   destruct H0.
   (* wix = m *)
@@ -671,7 +674,7 @@ Proof.
     unfold comlen in H0. fold comlen in H0.
     omega.
     destruct w.
-    exists m0.
+    exists z.
     apply destructInWriteToWriteSet' in H0.
     destruct H0.
     rewrite H3.
@@ -727,12 +730,12 @@ Theorem destructDependenceAliasesInCSeq: forall (c: com) (tbegin tend: timepoint
   subst.
   destruct x eqn:xSave.
   rewrite H4.
-  exists m0.
+  exists z.
   unfold writeIx in H1.
   rewrite H4 in H1.
   simpl in H1.
   subst.
-  assert (m = wix). inversion H1. reflexivity.
+  assert (n = wix). inversion H1. reflexivity.
   rewrite H5. reflexivity.
 
   (* tend <>  n + 1 *)
@@ -817,10 +820,12 @@ Proof.
   simpl.
   subst.
   unfold dependenceAliases'. simpl.
-  assert (n >= 1 /\ n <= comlen c).
-  apply computeWriteSetInBounds in H0. omega.
-  assert (n =? S (comlen c) = false).
-  rewrite Nat.eqb_neq. omega.
+  assert (n0 >= 1 /\ n0 <= comlen c).
+  apply computeWriteSetInBounds in H0.
+  omega.
+  assert (n0 =? S (comlen c) = false).
+  rewrite Nat.eqb_neq.
+  omega.
   assert (comlen c =? comlen c = true).
   rewrite Nat.eqb_eq. omega.
   rewrite H2. rewrite H3.
@@ -837,7 +842,7 @@ Proof.
     apply computeDependencesLexPositive in H. exact H.
     apply computeDependencesInRange in H.
     apply dependenceInRangeInclusive. exact H.
-    assert (n0 = comlen c + 1 \/ n0 <> comlen c+ 1).
+    assert (n1 = comlen c + 1 \/ n1 <> comlen c+ 1).
     omega.
     destruct H0.
     + (* n1 = n + 1 *)
@@ -849,7 +854,8 @@ Proof.
       intros.
       right.
       specialize (IHc _ H).
-      split. assumption. assumption.
+      split.
+      assumption. assumption.
   - intros.
     inversion H.
 Qed.
@@ -877,7 +883,7 @@ Proof.
   destruct d eqn:dsave.
   destruct w eqn:wsave.
   remember H as depAliases. clear HeqdepAliases.
-  apply (destructDependenceAliasesInCSeq c n n0 m m0 H1 H0) in H.
+  apply (destructDependenceAliasesInCSeq c n n0 _ _ H1 H0) in H.
   destruct H.
   - (* n0 = comlen c + 1 *)
     destruct H. destruct H2.
@@ -1214,8 +1220,8 @@ Theorem writesEqualDecidable: forall (w w': write), w = w' \/ w <> w'.
   intros.
   destruct w.
   destruct w'.
-  assert( m = m1 \/ m <> m1). omega.
-  assert (m0 = m2 \/ m0 <> m2). omega.
+  assert( n = n0 \/ n <> n0). omega.
+  assert (z = z0 \/ z <> z0). omega.
   destruct H.
   destruct H0.
   left.
@@ -1319,11 +1325,11 @@ Proof.
   unfold runProgram. fold runProgram.
   unfold writeToMemory'. destruct w eqn:wsave.
   unfold writeToMemory.
-  assert (wix = m \/ wix <> m) as wixcases. omega.
+  assert (wix = n \/ wix <> n) as wixcases. omega.
   destruct wixcases.
   - (* wix = m, but this cannot be possible since the program does not alias *)
     unfold NoAliasingBetweenSubprogramAndWrite in H.
-    assert (wix <> m).
+    assert (wix <> n).
     (* pick last instruction *)
     specialize (H (comlen c + 1)).
     unfold commandIxInRange in H. unfold comlen in H. fold comlen in H.
@@ -1333,13 +1339,13 @@ Proof.
     (* TODO: why do I need to prove this?! PROOF AUTOMATION. *)
     assert (comlen c + 1 =? S (comlen c) = true).  rewrite Nat.eqb_eq. omega.
     rewrite H3 in H. simpl in H.
-    assert (Some m <> Some wix -> wix <> m). auto.
+    assert (Some n <> Some wix -> wix <> n). auto.
     apply H4. apply H; auto.
     contradiction.
 
   - (* wix <> m. We automatically use the written value *)
     intros.
-    assert (wix =? m = false). rewrite Nat.eqb_neq. omega.
+    assert (wix =? n = false). rewrite Nat.eqb_neq. omega.
     apply NoAliasingBetweenSubprogramAndWriteDestructOnCSeq in H.
     destruct H.
     specialize (IHc H).
@@ -1390,29 +1396,29 @@ Proof.
   unfold runProgram. fold runProgram.
   specialize (IHc mem0 x wval wix).
   destruct w eqn:wsave.
-  assert (NoAliasingBetweenSubprogramAndWrite c wix /\ m <> wix).
+  assert (NoAliasingBetweenSubprogramAndWrite c wix /\ n <> wix).
   apply NoAliasingBetweenSubprogramAndWriteDestructOnCSeq in H.
   assumption.
   destruct H2.
   specialize (IHc H2 H0 H1).
   unfold writeToMemory' in IHc.
   unfold writeToMemory'.
-  assert (m = x \/ m <> x) as mcases.
+  assert (n = x \/ n <> x) as mcases.
   omega.
   destruct mcases.
   - (* m = x *)
     unfold writeToMemory.
-    assert (x =? m = true). rewrite Nat.eqb_eq. omega.
+    assert (x =? n = true). rewrite Nat.eqb_eq. omega.
     rewrite H5.
     reflexivity.
   - (* m <> x *)
     intros.
-    assert (writeToMemory m m0 (runProgram c mem0) x = runProgram c mem0 x).
-    unfold writeToMemory. assert (x =?m = false). rewrite Nat.eqb_neq. omega.
+    assert (writeToMemory n z (runProgram c mem0) x = runProgram c mem0 x).
+    unfold writeToMemory. assert (x =? n = false). rewrite Nat.eqb_neq. omega.
     rewrite H5.
     reflexivity.
     rewrite H5.
-    assert (writeToMemory m m0 (runProgram c (writeToMemory wix wval mem0)) x = runProgram c mem0 x).
+    assert (writeToMemory n z (runProgram c (writeToMemory wix wval mem0)) x = runProgram c mem0 x).
     setoid_rewrite readFromWriteDifferent.
     rewrite IHc.
     setoid_rewrite readFromWriteDifferent.
@@ -2063,6 +2069,27 @@ Proof.
       intros initmem.
       apply functional_extensionality.
       intros readix.
+
+      destruct a as [tbegin tend].
+      destruct w as [wix wval].
+
+      assert (readix = wix \/ readix <> wix ) as readix_cases. omega.
+      destruct readix_cases as [readix_eq_wix | readix_neq_wix].
+
+      * (* readix = wix *)
+      rewrite readix_eq_wix.
+      unfold runProgram. fold runProgram. simpl.
+      rewrite readFromWriteIdentical.
+
+
+      assert ((tend = comlen c + 1 /\
+     (exists (wval': memvalue), getWriteAt' c tbegin = Some (Write wix wval'))) \/
+              (tend <> comlen c + 1)).
+      eapply completeDependenceSetConsDestructOnCSeq.
+      exact completedepset.
+
+      destruct H as [tend_at_end | tend_not_at_end].
+      destruct tend_at_end as [tend_at_end  aliasing_write].
 
   
         
