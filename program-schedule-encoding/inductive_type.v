@@ -1475,6 +1475,7 @@ Fixpoint getAliasingWriteTimepointsForProgram (c: com) (ix: memix) : list timepo
                 if writeIx w =? ix then List.cons (comlen c) rest else rest
   end.
 
+
 Definition aliasingWriteTimepointsSet (c: com) (ix: memix) (l: list timepoint) : Prop :=
   List.NoDup l /\
   forall (t: timepoint),
@@ -1591,6 +1592,31 @@ Proof.
   exists a0. exists a1. exists l.
   reflexivity.
 Qed.
+
+Fixpoint getLatestAliasingWriteTimepointForProgram (c: com) (ix: memix) : option timepoint :=
+  match c with
+  | CBegin => None
+  | CSeq c' w => if writeIx w =? ix
+                 then Some (comlen c) 
+                 else  getLatestAliasingWriteTimepointForProgram c' ix
+  end.
+
+Definition latestAliasingWriteTimepointSpec (c: com) (ix: memix) (latest: option timepoint): Prop :=
+  (exists (n: timepoint),
+      (latest = Some n) /\
+      commandIxInRange c n /\
+      (exists (wval: memvalue), getWriteAt' c n = Some (Write ix wval)) /\
+      forall (t: timepoint), t > n -> commandIxInRange c t ->
+     exists (w: write), getWriteAt' c t = Some w /\ writeIx w <> ix) \/
+  (latest = None /\
+   forall (t: timepoint),
+     commandIxInRange c t ->
+     exists (w: write), getWriteAt' c t = Some w /\ writeIx w <> ix).
+
+Theorem getLatestAliasingWriteTimepointForProgramCorrect: forall (c: com) (ix: memix),
+    latestAliasingWriteTimepointSpec c ix (getLatestAliasingWriteTimepointForProgram c ix).
+Admitted.
+
 
                    
 Theorem emptyDependenceSetWillHaveSingleAliasingWrite:
@@ -2048,48 +2074,33 @@ Theorem reschedulePreservesSemantics: forall (c c': com) (ds: dependenceset) (s 
     completeDependenceSet c ds -> scheduleMappingWitness s sinv c c' ->
     scheduleRespectsDependenceSet s ds -> c === c'.
 Proof.
-  intros c c' ds.
-  generalize dependent c'. generalize dependent c.
-  induction ds.
-  intros c c' s sinv dscomplete witness respectsdeps.
-
-  - (* ds = Nil *)
-    eapply emptyDependenceSetAllowsAllReschedules.
-    exact dscomplete.
-    exact witness.
-    exact respectsdeps.
-  - (* ds = d :: ds *)
-    intros c c' s sinv completedepset mapwitness respsectsdepset.
-    generalize dependent c'.
-    generalize dependent completedepset.
-    induction c.
-    + (* c = CSeq c w *)
-      intros  completedepset.
-      intros c' schedulewitness.
-      intros initmem.
-      apply functional_extensionality.
-      intros readix.
-
-      destruct a as [tbegin tend].
-      destruct w as [wix wval].
-
-      assert (readix = wix \/ readix <> wix ) as readix_cases. omega.
-      destruct readix_cases as [readix_eq_wix | readix_neq_wix].
-
-      * (* readix = wix *)
-      rewrite readix_eq_wix.
-      unfold runProgram. fold runProgram. simpl.
-      rewrite readFromWriteIdentical.
+  intros c.
+  intros c' ds.
+  intros s sinv dscomplete witness respectsdeps.
+  unfold ceq.
+  intros initmemory.
+  apply functional_extensionality.
+  intros readix.
+  set (lastaliasingtp := getLatestAliasingWriteTimepointForProgram c readix).
+  induction (getLatestAliasingWriteTimepointForProgram c readix).
+  assert (latestAliasingWriteTimepointSpec c readix (getLatestAliasingWriteTimepointForProgram c readix)) as latesttpspec.
+  apply getLatestAliasingWriteTimepointForProgramCorrect.
+  unfold latestAliasingWriteTimepointSpec in latesttpspec.
+  destruct latesttpspec as [ havelatesttp | nolatesttp].
+  destruct havelatesttp as [tp_of_latest spec_of_tp_latest].
+  destruct spec_of_tp_latest as
+      [tp_latest_witness
+         [tp_latest_in_range
+            [tp_latest_has_write no_t_after_tp]]].
 
 
-      assert ((tend = comlen c + 1 /\
-     (exists (wval': memvalue), getWriteAt' c tbegin = Some (Write wix wval'))) \/
-              (tend <> comlen c + 1)).
-      eapply completeDependenceSetConsDestructOnCSeq.
-      exact completedepset.
 
-      destruct H as [tend_at_end | tend_not_at_end].
-      destruct tend_at_end as [tend_at_end  aliasing_write].
+
+        
+
+        
+
+
 
   
         
