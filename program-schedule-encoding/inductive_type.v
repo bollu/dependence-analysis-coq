@@ -1467,27 +1467,11 @@ Theorem NoAliasingBetweenSubprogramsAllowsReordering: forall (c1 c2: com),
 Qed.
 
 
-  (* Get the time points of all instructions that alias the given memory index *)
-Fixpoint getAliasingWriteTimepointsForProgram (c: com) (ix: memix) : list timepoint :=
-  match c with
-  | CBegin => List.nil
-  | CSeq c' w => let rest :=  (getAliasingWriteTimepointsForProgram c' ix) in
-                if writeIx w =? ix then List.cons (comlen c) rest else rest
-  end.
-
-
 Definition aliasingWriteTimepointsSet (c: com) (ix: memix) (l: list timepoint) : Prop :=
   List.NoDup l /\
   forall (t: timepoint),
     List.In t l -> commandIxInRange c t /\ (exists (wval: memvalue), getWriteAt' c t = Some (Write ix wval)).
 
-Theorem getAliasingWriteTimepointsForProgramCorrect:
-  forall (c: com) (ix: memix),
-    aliasingWriteTimepointsSet c
-                     ix
-                     (getAliasingWriteTimepointsForProgram c ix).
-Proof.
-Admitted.
 
 (* getAliasingWriteTimepoints actually does what it says it does *)
 (* NOTE: I need to change this a little to exhibit NoDup.
@@ -2003,13 +1987,6 @@ Proof.
     auto. auto. auto. auto.
 Qed.
 
-Theorem emptyDependenceSetAllowsAllReschedules: forall (c c': com) (s sinv: nat -> nat),
-    completeDependenceSet c List.nil ->
-    scheduleMappingWitness s sinv c c' ->
-    scheduleRespectsDependenceSet s List.nil ->
-    c === c'.
-Proof.
-Admitted.
 
 
 Lemma completeDependenceSetConsDestructOnCSeq:
@@ -2099,13 +2076,25 @@ Proof.
     rewrite <- H5. unfold commandIxInRange in H1. unfold comlen in H1. fold comlen in H1. omega.
 
     intros.
-    intuition.
-    admit.
+    specialize (H3 t0 H4).
+    cut (commandIxInRange (CSeq c latestw) t0).
+    intros t0_in_range_cseq.
+    specialize (H3 t0_in_range_cseq).
+    destruct H3 as [write_at_t0 write_at_t0_witness].
+    exists write_at_t0.
+    destruct write_at_t0_witness.
+    assert (getWriteAt' (CSeq c latestw) t0 = getWriteAt' c t0).
+    apply getWriteAt'DestructOnCSeq.
+    unfold commandIxInRange in H6. omega.
+    rewrite <- H8.
+    split. exact H3.
+    exact H7.
+    apply commandIxInRangeInclusive. exact H6.
 
   - intros.
-    admit.
-
-Admitted.
+    destruct H.
+    inversion H.
+Qed.
 
 
 Theorem noLatestAliasingWriteDestructOnCSeq:
@@ -2257,7 +2246,7 @@ Proof.
   rewrite readFromWriteIdentical.
   reflexivity.
 
-  (* aliasingt < comlen c + 1 *)
+  (* aliasingt <> comlen c + 1 *)
 
   remember (Write latestwix latestwval) as latestw.
   remember (CSeq c (Write latestwix latestwval)) as ccur.
@@ -2271,8 +2260,96 @@ Proof.
   apply getWriteAt'RangeConsistent in write_at_aliasingt.
   unfold comlen in write_at_aliasingt. fold comlen in write_at_aliasingt.
   unfold commandIxInRange. omega.
+  assert (latestAliasingWriteTimepointSpec c readix (Some aliasingt)) as destruct_tp_spec. admit.
+  assert (getWriteAt' c aliasingt = Some (Write readix wval)) as getwriteat'_destruct. admit.
+  rewrite Heqlatestw.
+  unfold runProgram. fold runProgram.
+  unfold writeToMemory'.
+  rewrite  readFromWriteDifferent.
+  eapply IHc.
+  exact destruct_tp_spec.
+  exact getwriteat'_destruct.
+  assert (readix = latestwix \/ readix <> latestwix) as readix_cmp_latestwix. omega.
+  destruct readix_cmp_latestwix as [readix_eq_latestwix | readix_neq_latestwix].
+  (* readix = latestwix. I can get a contradiction *)
+  (* readix = latestwix means that aliasingt = comlen c + 1. But this is not the case. So, derive contradicion*)
+  unfold latestAliasingWriteTimepointSpec in spec.
+  destruct spec.
+  destruct H.
+  destruct H.
+  destruct H0.
+  destruct H1.
+  assert (S (comlen c) > aliasingt).
+  cut (aliasingt <= comlen c).
+  intros. omega.
+  apply getWriteAt'RangeConsistent in getwriteat'_destruct.
+  omega.
+  inversion H.
+  intros.
+  rewrite <- H5 in H0.
+  assert (comlen c + 1 > x).
+  omega.
+  specialize (H2 _ H4).
+  assert (commandIxInRange (CSeq c latestw) (comlen c + 1)).
+  unfold commandIxInRange, comlen. fold comlen. omega.
+  specialize (H2 H6).
+  destruct H2.
+  destruct H1.
+  destruct H2.
+  assert (latestwix <> readix) as contra1.
+  rewrite H5 in *. clear H5. clear H3. clear H4.
+  assert (writeIx x0 = readix).
+
+  subst.
 Admitted.
 
+
+Theorem noLatestAliasingWriteTimepointTransportAcrossValidSchedule:
+  forall (s sinv: nat -> nat) (c c': com) (readix: memix),
+    scheduleMappingWitness s sinv c c' ->
+    latestAliasingWriteTimepointSpec c readix None -> 
+    latestAliasingWriteTimepointSpec c' readix None.
+Proof.
+  intros s sinv c c' readix schedwitness tpwitness.
+  unfold latestAliasingWriteTimepointSpec in *.
+  destruct tpwitness.
+  - (* useless case, Some n = None *)
+    destruct H.
+    destruct H.
+    inversion H.
+  - (* useful case *)
+    intros.
+    destruct H.
+    right.
+    split. auto.
+    intros t0.
+    intros t0_in_range.
+    specialize (H0 (sinv t0)).
+    assert (commandIxInRange c (sinv t0)).
+    unfold commandIxInRange in *.
+    unfold scheduleMappingWitness in schedwitness.
+    destruct schedwitness.
+    destruct H2.
+    specialize (H3 t0).
+    rewrite H1 in H3.
+    cut (t0 >= 1 /\ t0 <= comlen c'). intros t0_in_range_c.
+    specialize (H3 t0_in_range_c).
+    omega.
+    omega.
+    specialize (H0 H1).
+    destruct H0 as [w_at_sinv_t0 witness_w_at_sinv_t0].
+    exists w_at_sinv_t0.
+    assert (getWriteAt' c' t0 = getWriteAt' c (sinv t0)).
+    unfold scheduleMappingWitness in schedwitness.
+    destruct schedwitness.
+    destruct H2.
+    specialize (H3 t0).
+    assert (t0 >= 1 /\ t0 <= comlen c) as t0_range. unfold commandIxInRange in t0_in_range. rewrite H0 in *. omega.
+    specialize (H3 t0_range).
+    intuition.
+    rewrite H0.
+    auto.
+Qed.
 
 
 Theorem latestAliasingWriteTimepointSpecTransportAcrossValidSchedule:
@@ -2282,6 +2359,7 @@ Theorem latestAliasingWriteTimepointSpecTransportAcrossValidSchedule:
     scheduleRespectsDependenceSet s ds ->
     latestAliasingWriteTimepointSpec c readix (Some latest_tp) ->
     latestAliasingWriteTimepointSpec c' readix (Some (s latest_tp)).
+Proof.
   intros s sinv c c' latest_tp readix ds.
 Admitted.
     
@@ -2335,7 +2413,6 @@ Proof.
   apply functional_extensionality.
   intros readix.
   set (lastaliasingtp := getLatestAliasingWriteTimepointForProgram c readix).
-  induction (getLatestAliasingWriteTimepointForProgram c readix).
   assert (latestAliasingWriteTimepointSpec c readix (getLatestAliasingWriteTimepointForProgram c readix)) as latesttpspec.
   apply getLatestAliasingWriteTimepointForProgramCorrect.
   remember latesttpspec as latesttpspec'.
@@ -2375,5 +2452,21 @@ Proof.
   rewrite H0.
   reflexivity.
 
-  (* This time, we have no aliasing write. We need to prove that this will give us the orignal vale *)
+  assert (runProgram c initmemory readix = (initmemory readix)) as c_val.
+  apply noLatestAliasingWriteAllowsPunchthrough.
+  destruct nolatesttp.
+  rewrite H in latesttpspec'.
+  exact latesttpspec'.
+
+
+  assert (runProgram c' initmemory readix = (initmemory readix)) as c'_val.
+  apply noLatestAliasingWriteAllowsPunchthrough.
+  destruct nolatesttp.
+  rewrite H in latesttpspec'.
+  assert (latestAliasingWriteTimepointSpec c' readix None) as transport_latest_tp_spec.
+  eapply noLatestAliasingWriteTimepointTransportAcrossValidSchedule.
+  exact witness.
+  exact latesttpspec'.
+  exact transport_latest_tp_spec.
+  rewrite c_val. rewrite c'_val. reflexivity.
 Qed.
