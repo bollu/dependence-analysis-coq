@@ -2066,6 +2066,47 @@ Proof.
   -  intros. right. omega.
 Qed.
 
+Lemma latestAliasingWriteTimepointSpecDestructOnCSeq:
+  forall (c: com) (latestw: write) (readix: memix) (latest_aliasingt: timepoint),
+    latestAliasingWriteTimepointSpec (CSeq c latestw) readix (Some latest_aliasingt) ->
+    latest_aliasingt <> comlen c + 1 ->
+    latestAliasingWriteTimepointSpec c readix (Some latest_aliasingt).
+Proof.
+  intros.
+  unfold latestAliasingWriteTimepointSpec.
+  unfold latestAliasingWriteTimepointSpec in H.
+  destruct H.
+  destruct H. destruct H. destruct H1.
+  destruct H2.
+  left.
+  exists latest_aliasingt.
+  inversion H.
+
+  split; try auto.
+  split.
+
+  - (* commandIxInRange c x *)
+    unfold commandIxInRange in *.
+    unfold comlen in *. fold comlen in *. omega.
+
+  - intros. split.
+    destruct H2 as [wval].
+    exists wval.
+    cut (getWriteAt' (CSeq c latestw) x = getWriteAt' c x).
+    intros write_at_destruct.
+    rewrite <- write_at_destruct. rewrite H2. reflexivity.
+    rewrite getWriteAt'DestructOnCSeq. auto.
+    rewrite <- H5. unfold commandIxInRange in H1. unfold comlen in H1. fold comlen in H1. omega.
+
+    intros.
+    intuition.
+    admit.
+
+  - intros.
+    admit.
+
+Admitted.
+
 Theorem latestAliasingWriteWillBeValue: forall (c: com) (readix: memix) (aliasingt: timepoint) (wval: memvalue) (initmem: memory),
     latestAliasingWriteTimepointSpec c readix (Some aliasingt) ->
     (getWriteAt' c  aliasingt = Some (Write readix wval)) ->
@@ -2073,10 +2114,105 @@ Theorem latestAliasingWriteWillBeValue: forall (c: com) (readix: memix) (aliasin
 Proof.
   intros c.
   induction c.
-  intros.
+  intros readix aliasingt wval initmem.
+  intros spec write_at_aliasingt.
   destruct w as [latestwix latestwval].
+  assert (aliasingt = comlen c + 1 \/ aliasingt <> comlen c + 1)
+    as aliasingt_cases. omega.
+  destruct aliasingt_cases as [aliasingt_at_end | aliasingt_not_at_end].
+  remember (Write latestwix latestwval) as latestw.
+  remember (CSeq c (Write latestwix latestwval)) as ccur.
 
+  assert (getWriteAt' ccur (comlen c + 1) = Some latestw) as Hlatest_write_pos.
+  unfold getWriteAt'. rewrite Heqccur. fold getWriteAt'.
+  assert (comlen c + 1 =? S( comlen c) = true).
+  rewrite Nat.eqb_eq. omega.
+  simpl. rewrite H.
+  clear H.
+  rewrite Heqlatestw.
+  reflexivity.
+  
+  assert (latestwix = readix /\ wval = latestwval) as latestalias.
+  rewrite aliasingt_at_end in write_at_aliasingt.
+  rewrite Heqccur in Hlatest_write_pos.
+  rewrite <- Heqlatestw in Hlatest_write_pos.
+  rewrite write_at_aliasingt in Hlatest_write_pos.
+  inversion Hlatest_write_pos as [wixinv ].
+  rewrite Heqlatestw in wixinv. inversion wixinv.
+  auto.
+  rewrite Heqlatestw.
+  destruct latestalias as [Hlatestix Hlatestwval].
+  rewrite Hlatestix.
+  rewrite Hlatestwval.
+  unfold runProgram. fold runProgram.
+  unfold writeToMemory'.
+  rewrite readFromWriteIdentical.
+  reflexivity.
+
+  (* aliasingt < comlen c + 1 *)
+
+  remember (Write latestwix latestwval) as latestw.
+  remember (CSeq c (Write latestwix latestwval)) as ccur.
+  assert (getWriteAt' ccur aliasingt = getWriteAt' c aliasingt) as getWriteAt'Reduced.
+  rewrite Heqccur.
+  eapply getWriteAt'DestructOnCSeq.
+  cut (commandIxInRange c aliasingt).
+  intros aliasingt_inrange_c.
+  unfold commandIxInRange in aliasingt_inrange_c.
+  auto.
+  apply getWriteAt'RangeConsistent in write_at_aliasingt.
+  unfold comlen in write_at_aliasingt. fold comlen in write_at_aliasingt.
+  unfold commandIxInRange. omega.
+Admitted.
+
+
+
+Theorem latestAliasingWriteTimepointSpecTransportAcrossValidSchedule:
+  forall (ds: dependenceset)  (s sinv: nat -> nat) (c c': com) (latest_tp: timepoint) (readix: memix),
+    completeDependenceSet c ds -> 
+    scheduleMappingWitness s sinv c c' ->
+    scheduleRespectsDependenceSet s ds ->
+    latestAliasingWriteTimepointSpec c readix (Some latest_tp) ->
+    latestAliasingWriteTimepointSpec c' readix (Some (s latest_tp)).
+  intros s sinv c c' latest_tp readix ds.
+Admitted.
     
+
+
+Theorem getWriteAt'TransportAlongValidSchedule:
+  forall (s sinv: nat -> nat) (c c': com) (tp: timepoint) (w: write),
+    scheduleMappingWitness s sinv c c' ->
+    getWriteAt' c tp = Some w ->
+    getWriteAt' c' (s tp) = Some w.
+Proof.
+  intros.
+  unfold scheduleMappingWitness in H.
+  destruct H.
+  destruct H.
+  destruct H1. specialize (H1 tp).
+  assert (tp >= 1 /\ tp <= comlen c).
+  eapply getWriteAt'RangeConsistent.
+  exact H0.
+  specialize (H1 H2).
+  destruct H1.
+  destruct H3.
+  destruct H4.
+  destruct H5.
+  destruct H6.
+  rewrite <- H6.
+  auto.
+Qed.
+    
+
+Theorem getWriteAt'TransportAlongValidSchedule':
+  forall (s sinv: nat -> nat) (c c': com) (tp: timepoint) (w: write),
+    scheduleMappingWitness s sinv c c' -> 
+    getWriteAt' c tp = getWriteAt' c' (s tp).
+  intros.
+  assert ((tp >= 1 /\ tp <= comlen c) \/ tp = 0 \/ tp > comlen c) as tp_cases. omega.
+  destruct tp_cases as [tp_in_range | tp_out_of_range].
+Abort.
+
 
 (* Main theorem of the day. If a *schedule s* respects a *complete dependence set ds*, then the semantics of the original program is the same as that of the rescheduled program *)
 Theorem reschedulePreservesSemantics: forall (c c': com) (ds: dependenceset) (s sinv: nat -> nat),
@@ -2094,6 +2230,8 @@ Proof.
   induction (getLatestAliasingWriteTimepointForProgram c readix).
   assert (latestAliasingWriteTimepointSpec c readix (getLatestAliasingWriteTimepointForProgram c readix)) as latesttpspec.
   apply getLatestAliasingWriteTimepointForProgramCorrect.
+  remember latesttpspec as latesttpspec'.
+  clear Heqlatesttpspec'.
   unfold latestAliasingWriteTimepointSpec in latesttpspec.
   destruct latesttpspec as [ havelatesttp | nolatesttp].
   destruct havelatesttp as [tp_of_latest spec_of_tp_latest].
@@ -2103,16 +2241,31 @@ Proof.
             [tp_latest_has_write no_t_after_tp]]].
   destruct tp_latest_has_write as [tp_latest_wval tp_latest_wval_witness].
   assert (runProgram c initmemory readix = tp_latest_wval).
+  eapply latestAliasingWriteWillBeValue.
+  rewrite tp_latest_witness in latesttpspec'.
+  apply latesttpspec'.
+  apply tp_latest_wval_witness.
+  rewrite H.
+
+  assert (runProgram c' initmemory readix = tp_latest_wval).
+  assert (latestAliasingWriteTimepointSpec c' readix (Some (s tp_of_latest))) as latestt'_spec.
+  eapply latestAliasingWriteTimepointSpecTransportAcrossValidSchedule.
+  apply dscomplete.
+  apply witness.
+  apply respectsdeps.
+  rewrite tp_latest_witness in latesttpspec'.
+  apply latesttpspec'.
 
 
+  eapply latestAliasingWriteWillBeValue.
+  apply latestt'_spec.
+  assert (getWriteAt' c' (s tp_of_latest) = Some(Write readix tp_latest_wval)).
+  eapply getWriteAt'TransportAlongValidSchedule.
+  exact witness.
+  exact tp_latest_wval_witness.
+  exact H0.
+  rewrite H0.
+  reflexivity.
 
-
-        
-
-        
-
-
-
-  
-        
-Abort.
+  (* This time, we have no aliasing write. We need to prove that this will give us the orignal vale *)
+Qed.
