@@ -2352,6 +2352,42 @@ Proof.
 Qed.
 
 
+Theorem commandIxInRangeTransportAlongValidSchedule:
+  forall (s sinv: nat -> nat) (c c': com) (tp: timepoint),
+    scheduleMappingWitness s sinv c c' ->
+    (commandIxInRange c tp <->
+    commandIxInRange c' (s tp)).
+Proof.
+  intros s sinv c c' tp witness.
+  split.
+  (* -> *)
+  intros tp_inrange.
+  unfold commandIxInRange in *.
+  unfold scheduleMappingWitness in witness.
+  destruct witness.
+  destruct H0. specialize (H1 tp).
+  cut (tp >= 1 /\ tp <= comlen c).
+  intros tp_inrange'.
+  specialize (H1 tp_inrange').
+  destruct H1. destruct H2.
+  rewrite <- H. omega.
+  omega.
+
+  intros stp_inrange.
+  unfold commandIxInRange in *.
+  unfold scheduleMappingWitness in witness.
+  destruct witness.
+  destruct H0.
+  specialize (H1 (s tp)).
+  assert (sinv (s tp) = tp).
+  unfold is_inverse in H0.
+  destruct H0.
+  apply H0.
+  rewrite H2 in H1.
+  omega.
+Qed.
+
+
 Theorem getWriteAt'TransportAlongValidSchedule:
   forall (s sinv: nat -> nat) (c c': com) (tp: timepoint) (w: write),
     scheduleMappingWitness s sinv c c' ->
@@ -2482,8 +2518,12 @@ Proof.
   destruct sinv_t0_w_witness.
   intros.
   split.
-
-
+  assert (scheduleMappingWitness sinv s c' c).
+  apply scheduleMappingWitnessSymmetric. assumption.
+  erewrite  (getWriteAt'TransportAlongValidSchedule _ _ _ _ _ _ H6).
+  exact H4.
+  exact H5.
+  (* TODO: apply commandInRangeTransportAlongValidSchedule *)
 
   
 Admitted.
