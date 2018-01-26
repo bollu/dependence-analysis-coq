@@ -2170,6 +2170,49 @@ Theorem noLatestAliasingWriteAllowsPunchthrough: forall (c: com) (readix: memix)
 Proof.
   intros c. induction c.
   intros readix initmem no_aliasing_tp.
+  assert (latestAliasingWriteTimepointSpec c readix None) as destruct_H.
+  eapply noLatestAliasingWriteDestructOnCSeq.
+  exact no_aliasing_tp.
+  destruct w as [wix wval].
+  assert (wix = readix \/ wix <> readix) as wix_cases.
+  omega.
+  destruct wix_cases as [wix_eq_readix | wix_neq_readix].
+  (* wix = readix *)
+  (* I can create a contradiction because now the write aliases *)
+  assert (wix <> readix).
+  unfold latestAliasingWriteTimepointSpec in no_aliasing_tp.
+  destruct no_aliasing_tp as [contra | useful].
+  + destruct contra. destruct H. inversion H.
+  + destruct useful. specialize (H0 (comlen c + 1)).
+    assert (commandIxInRange (CSeq c (Write wix wval)) (comlen c + 1)) as inrange.
+    unfold commandIxInRange, comlen. fold comlen. omega.
+    specialize (H0 inrange).
+    destruct H0.
+    destruct H0.
+    inversion H0.
+    assert (comlen c + 1 =? S(comlen c) = true) as eq_dumb.
+    rewrite Nat.eqb_eq. omega.
+    rewrite eq_dumb in H3.
+    clear eq_dumb.
+    destruct x as [xix xval].
+    inversion H3.
+    simpl in H1. exact H1.
+  +  assert (wix = readix /\ wix <> readix) as absurd. auto.
+     omega.
+  + (* wix = readix *)
+    intros.
+    unfold runProgram.
+    fold runProgram.
+    unfold writeToMemory'.
+    rewrite readFromWriteDifferent.
+    apply IHc.
+    exact destruct_H.
+    omega.
+  + (* CBegin case *)
+    intros.
+    unfold runProgram. auto.
+Qed.
+                        
 
 
 Theorem latestAliasingWriteWillBeValue: forall (c: com) (readix: memix) (aliasingt: timepoint) (wval: memvalue) (initmem: memory),
