@@ -2352,25 +2352,15 @@ Proof.
 Qed.
 
 
-Theorem latestAliasingWriteTimepointSpecTransportAcrossValidSchedule:
-  forall (ds: dependenceset)  (s sinv: nat -> nat) (c c': com) (latest_tp: timepoint) (readix: memix),
-    completeDependenceSet c ds -> 
-    scheduleMappingWitness s sinv c c' ->
-    scheduleRespectsDependenceSet s ds ->
-    latestAliasingWriteTimepointSpec c readix (Some latest_tp) ->
-    latestAliasingWriteTimepointSpec c' readix (Some (s latest_tp)).
-Proof.
-  intros s sinv c c' latest_tp readix ds.
-Admitted.
-    
-
-
 Theorem getWriteAt'TransportAlongValidSchedule:
   forall (s sinv: nat -> nat) (c c': com) (tp: timepoint) (w: write),
     scheduleMappingWitness s sinv c c' ->
-    getWriteAt' c tp = Some w ->
-    getWriteAt' c' (s tp) = Some w.
+    (getWriteAt' c tp = Some w <->
+    getWriteAt' c' (s tp) = Some w).
 Proof.
+
+  intros.
+  split.
   intros.
   unfold scheduleMappingWitness in H.
   destruct H.
@@ -2387,7 +2377,119 @@ Proof.
   destruct H6.
   rewrite <- H6.
   auto.
+  (* <- *)
+  intros.
+  unfold scheduleMappingWitness in H.
+  destruct H.
+  destruct H1.
+  rewrite H in H2.
+  specialize (H2 (s tp)).
+  assert (s tp >= 1 /\ s tp <= comlen c').
+  eapply getWriteAt'RangeConsistent.
+  exact H0.
+  specialize (H2 H3).
+  destruct H2.
+  destruct H4.
+  destruct H5.
+  destruct H6.
+  destruct H7.
+  destruct H8.
+  cut (getWriteAt' c tp = getWriteAt' c (sinv (s tp))).
+  intros.
+  rewrite H8.
+  rewrite H0.
+  reflexivity.
+  unfold is_inverse in H1.
+  destruct H1.
+  specialize (H1 tp).
+  rewrite H1.
+  reflexivity.
 Qed.
+
+
+
+Theorem latestAliasingWriteTimepointSpecTransportAcrossValidSchedule:
+  forall (ds: dependenceset)  (s sinv: nat -> nat) (c c': com) (latest_tp: timepoint) (readix: memix),
+    completeDependenceSet c ds -> 
+    scheduleMappingWitness s sinv c c' ->
+    scheduleRespectsDependenceSet s ds ->
+    latestAliasingWriteTimepointSpec c readix (Some latest_tp) ->
+    latestAliasingWriteTimepointSpec c' readix (Some (s latest_tp)).
+Proof.
+  intros ds s sinv c c' latest_tp readix.
+  intros.
+  unfold latestAliasingWriteTimepointSpec in *.
+  destruct H2.
+  left.
+
+  (* some n case *)
+  destruct H2 as [latest_alias_tp  H'].
+  destruct H'.
+  destruct H3.
+  destruct H4 as [latest_wval H'].
+  exists (s latest_alias_tp).
+  assert (Some (s latest_tp) = Some (s latest_alias_tp)).
+  cut (s latest_tp = s latest_alias_tp). intros. auto.
+  inversion H2.
+   reflexivity.
+  split. exact H4. clear H4.
+  split.
+  assert (commandIxInRange c' (s latest_alias_tp)).
+  unfold commandIxInRange in *.
+  unfold scheduleMappingWitness in H0.
+  destruct H0.
+  destruct H4.
+  specialize (H5 latest_alias_tp).
+  cut (latest_alias_tp >= 1 /\ latest_alias_tp <= comlen c).
+  intros.
+  specialize (H5 H6).
+  omega.
+  omega.
+  exact H4.
+  split.
+  destruct latest_wval as [latest_wval latest_wval_witness].
+  exists latest_wval.
+  assert (getWriteAt' c' (s latest_alias_tp) = Some (Write readix latest_wval)).
+  unfold scheduleMappingWitness in H0.
+  destruct H0.
+  destruct H4.
+  specialize (H5 latest_alias_tp).
+  cut (latest_alias_tp >= 1 /\ latest_alias_tp <= comlen c).
+  intros.
+  specialize (H5 H6).
+  destruct H5.
+  destruct H7.
+  destruct H8.
+  destruct H9.
+  destruct H10.
+  rewrite <- H10.
+  rewrite latest_wval_witness.
+  reflexivity.
+  unfold commandIxInRange in *. omega.
+  exact H4.
+  intros t0_cur.
+  intros t0_cur_gt_sinv_alias_tp.
+  intros t0_cur_in_range.
+  specialize (H' (sinv t0_cur)).
+  cut (sinv t0_cur > latest_alias_tp).
+  intros.
+  specialize (H' H4). clear H4.
+  cut (commandIxInRange c (sinv t0_cur)).
+  intros.
+  specialize (H' H4). clear H4.
+  destruct H' as [sinv_t0_w sinv_t0_w_witness].
+  exists sinv_t0_w.
+  destruct sinv_t0_w_witness.
+  intros.
+  split.
+
+
+
+  
+Admitted.
+    
+
+
     
 
 Theorem getWriteAt'TransportAlongValidSchedule':
