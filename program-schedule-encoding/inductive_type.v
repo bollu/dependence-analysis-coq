@@ -2107,6 +2107,71 @@ Proof.
 
 Admitted.
 
+
+Theorem noLatestAliasingWriteDestructOnCSeq:
+  forall (c: com) (w: write) (readix: memix),
+    latestAliasingWriteTimepointSpec (CSeq c w) readix None ->
+    latestAliasingWriteTimepointSpec c readix None.
+Proof.
+  intros c w readix witness_on_cseq.
+  unfold latestAliasingWriteTimepointSpec.
+  right.
+  split.
+  auto.
+  intros t_check.
+  intros t_check_in_c.
+  assert (commandIxInRange (CSeq c w) t_check) as t_check_in_cseq.
+  apply commandIxInRangeInclusive. exact t_check_in_c.
+
+  assert (getWriteAt' c t_check = getWriteAt' (CSeq c w) t_check) as write_inclusive.
+  symmetry.
+  apply getWriteAt'DestructOnCSeq. unfold commandIxInRange in t_check_in_c.
+  omega.
+
+  assert (exists (w_t : write), getWriteAt' (CSeq c w) t_check = Some w_t) as w_at_tcheck_in_cseq.
+  apply (getWriteAt'RangeComplete (CSeq c w) t_check).
+  (* TODO: an "auto" should suffice after this *)
+  unfold commandIxInRange in t_check_in_c.
+  unfold comlen. fold comlen. omega.
+
+  destruct w_at_tcheck_in_cseq as [w_at_tcheck  w_at_tcheck_witness].
+  exists w_at_tcheck.
+  split.
+  rewrite write_inclusive.
+  rewrite w_at_tcheck_witness.
+  reflexivity.
+
+  unfold latestAliasingWriteTimepointSpec in witness_on_cseq.
+  destruct witness_on_cseq as [contra | usefulcase].
+  destruct contra.
+  destruct H.
+  inversion H.
+
+  destruct usefulcase.
+  assert (writeIx w_at_tcheck <> readix) as goal.
+  specialize (H0 t_check).
+  specialize (H0 t_check_in_cseq).
+  destruct H0.
+  destruct H0.
+
+  assert (w_at_tcheck = x).
+  rewrite H0 in w_at_tcheck_witness.
+  inversion w_at_tcheck_witness.
+  auto.
+  rewrite H2.
+  exact H1.
+  exact goal.
+Qed.
+
+
+Theorem noLatestAliasingWriteAllowsPunchthrough: forall (c: com) (readix: memix)  (initmem: memory),
+    latestAliasingWriteTimepointSpec c readix None ->
+    runProgram c initmem readix = (initmem readix).
+Proof.
+  intros c. induction c.
+  intros readix initmem no_aliasing_tp.
+
+
 Theorem latestAliasingWriteWillBeValue: forall (c: com) (readix: memix) (aliasingt: timepoint) (wval: memvalue) (initmem: memory),
     latestAliasingWriteTimepointSpec c readix (Some aliasingt) ->
     (getWriteAt' c  aliasingt = Some (Write readix wval)) ->
