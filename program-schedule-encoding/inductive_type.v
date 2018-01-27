@@ -2692,13 +2692,156 @@ Theorem getLatestAliasingWriteTimepointForProgramCorrect: forall (c: com) (alias
     assert (wix =? aliasix = false). rewrite Nat.eqb_neq. omega.
     unfold getLatestAliasingWriteTimepointForProgram.
     simpl.
-    rewrite H0.
     fold getLatestAliasingWriteTimepointForProgram.
-    + 
+    rewrite H0.
+    destruct H as [aliasingtp aliasingtpwitness].
+    exists aliasingtp.
+    split.
+    + destruct aliasingtpwitness.
+      assumption.
+    + split.
+      destruct aliasingtpwitness.
+      destruct H1.
+      apply commandIxInRangeInclusive.
+      assumption.
+      split.
+      * destruct aliasingtpwitness.
+        destruct H1.
+        destruct H2.
+        destruct H2.
 
 
-  (* wix <> aliasix *)
-Admitted.
+        assert (aliasingtp = S (comlen c) \/ aliasingtp <> S (comlen c)).
+        omega.
+        destruct H4 as [aliasingtp_eq_end | aliasingtp_neq_end].
+        apply getWriteAt'RangeConsistent in H2.
+        rewrite aliasingtp_eq_end in *.
+        clear aliasingtp_eq_end. clear aliasingtp.
+
+
+        assert (S (comlen c) <= comlen c) as contra. omega.
+        omega. (* contradiction *)
+
+
+        assert (aliasingtp =? S (comlen c) = false) as aliasingtp_neq_end'.
+        rewrite Nat.eqb_neq. omega.
+        rewrite aliasingtp_neq_end'.
+        exists x.
+        assumption.
+
+
+      *  intros tp_gt_aliasingtp.
+         intros tp_gt_aliasingtp_witness.
+         intros tp_gt_aliasingtp_inrange.
+         destruct aliasingtpwitness.
+         destruct H1.
+         destruct H2.
+         specialize (H3 _ tp_gt_aliasingtp_witness).
+
+
+         assert (tp_gt_aliasingtp = S (comlen c) \/
+                 tp_gt_aliasingtp < S (comlen c)).
+         unfold commandIxInRange in *.
+         unfold comlen in *. fold comlen in *.
+         omega.
+
+         destruct H4 as [tp_gt_aliasingtp_eq_end |
+                         tp_gt_aliasingtp_neq_end].
+
+
+         assert (tp_gt_aliasingtp =? S(comlen c) = true).
+         rewrite Nat.eqb_eq. omega.
+         rewrite H4. clear H4.
+         exists (Write wix wval).
+         split.
+         reflexivity.
+         simpl. assumption.
+
+
+         assert (tp_gt_aliasingtp =? S (comlen c) = false).
+         rewrite Nat.eqb_neq. omega.
+         rewrite H4.
+
+
+         assert (commandIxInRange c tp_gt_aliasingtp)
+           as tp_gt_aliasingtp_inrange'.
+         unfold commandIxInRange in *.
+         unfold comlen in *. fold comlen in *.
+         omega.
+         specialize (H3 tp_gt_aliasingtp_inrange').
+         assumption.
+
+  - unfold latestAliasingWriteTimepointSpec.
+    destruct w as [wix wval].
+    assert (wix = aliasix \/ wix <> aliasix). omega.
+    destruct H0 as [wix_eq_aliasix | wix_neq_aliasix].
+    left.
+    unfold getLatestAliasingWriteTimepointForProgram.
+    simpl.
+    assert (wix =? aliasix = true). rewrite Nat.eqb_eq. omega.
+    rewrite H0. clear H0.
+    exists (S (comlen c)).
+    split.
+    + reflexivity.
+    + intros.
+      split.
+      * unfold commandIxInRange. unfold comlen. fold comlen. omega.
+      * intros. split.
+        ** exists wval.
+           simpl.
+           assert (comlen c =? comlen c = true).
+           rewrite Nat.eqb_eq. reflexivity.
+           rewrite H0.
+           rewrite wix_eq_aliasix.
+           reflexivity.
+        ** intros.
+           unfold commandIxInRange in H1. unfold comlen in H1. fold comlen in H1.
+           assert (t0 <= 1 + comlen c /\ t0 > S (comlen c)) as contra.
+           omega.
+           omega.
+    +intros.
+     right.
+     assert (wix =? aliasix = false) as wix_neq_aliasix'.
+     rewrite Nat.eqb_neq. omega.
+     unfold getLatestAliasingWriteTimepointForProgram.
+     simpl.
+     fold getLatestAliasingWriteTimepointForProgram.
+     rewrite wix_neq_aliasix'.
+     split.
+     *  destruct H. exact H.
+     * intros.
+       assert (t0 = S (comlen c) \/ t0 <> S (comlen c)). omega.
+       destruct H1 as [t0_eq_end | t0_neq_end].
+        ** assert (t0 =? S (comlen c) = true).
+           rewrite Nat.eqb_eq. omega.
+           rewrite H1. clear H1.
+           exists (Write wix wval).
+           auto.
+
+        ** assert (t0 =? S (comlen c) = false).
+           rewrite Nat.eqb_neq. omega.
+           rewrite H1. clear H1.
+           destruct H.
+           assert (commandIxInRange c t0) as t0_in_c_range.
+           unfold commandIxInRange in *.
+           unfold comlen in *.
+           fold comlen in *.
+           omega.
+           specialize (H1 _ t0_in_c_range).
+           exact H1.
+  - intros.
+    unfold getLatestAliasingWriteTimepointForProgram.
+    unfold latestAliasingWriteTimepointSpec.
+    right.
+    split.
+    + reflexivity.
+    + intros. inversion H.
+      simpl in H0.
+      omega.
+Qed.
+
+
+
 
 Theorem getWriteAt'TransportAlongValidSchedule':
   forall (s sinv: nat -> nat) (c c': com) (tp: timepoint) (w: write),
