@@ -2899,11 +2899,16 @@ Proof.
   apply latestt'_spec.
   assert (getWriteAt' c' (s tp_of_latest) = Some(Write readix tp_latest_wval)).
   eapply getWriteAt'TransportAlongValidSchedule.
+  apply scheduleMappingWitnessSymmetric.
   exact witness.
+  rewrite is_inverse_cancellation.
   exact tp_latest_wval_witness.
+  unfold scheduleMappingWitness in witness.
+  destruct witness. destruct H1.
+  apply is_inverse_symmetric.
+  exact H1.
   exact H0.
-  rewrite H0.
-  reflexivity.
+  auto.
 
   assert (runProgram c initmemory readix = (initmemory readix)) as c_val.
   apply noLatestAliasingWriteAllowsPunchthrough.
