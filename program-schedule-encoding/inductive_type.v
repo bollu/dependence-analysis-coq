@@ -1597,9 +1597,6 @@ Definition latestAliasingWriteTimepointSpec (c: com) (ix: memix) (latest: option
      commandIxInRange c t ->
      exists (w: write), getWriteAt' c t = Some w /\ writeIx w <> ix).
 
-Theorem getLatestAliasingWriteTimepointForProgramCorrect: forall (c: com) (ix: memix),
-    latestAliasingWriteTimepointSpec c ix (getLatestAliasingWriteTimepointForProgram c ix).
-Admitted.
 
 
                    
@@ -2637,10 +2634,71 @@ Proof.
   -  intros.
      destruct H2.
      inversion H2.
-Qed. 
+Qed.
 
 
-    
+
+
+
+
+
+(* Prove this here so we can use all the machinery we have about the abstract spec on this particular instantiation *)
+Theorem getLatestAliasingWriteTimepointForProgramCorrect: forall (c: com) (aliasix: memix),
+    latestAliasingWriteTimepointSpec c aliasix (getLatestAliasingWriteTimepointForProgram c aliasix).
+  intros.
+  induction c.
+  unfold latestAliasingWriteTimepointSpec in IHc.
+  destruct IHc.
+
+  unfold latestAliasingWriteTimepointSpec.
+  destruct w as [wix wval].
+  assert (wix = aliasix \/ wix <> aliasix). omega.
+  destruct H0 as [wix_eq_aliasix | wix_neq_aliasix].
+  (* wix = aliasix *)
+  - left.
+    exists (comlen c + 1).
+    unfold getLatestAliasingWriteTimepointForProgram.
+    fold getLatestAliasingWriteTimepointForProgram.
+    simpl.
+
+
+    assert (wix =? aliasix = true) as wix_eq_aliasix'.
+    rewrite Nat.eqb_eq. omega.
+    rewrite wix_eq_aliasix'. clear wix_eq_aliasix'.
+    split.
+    + assert (S (comlen c) = comlen c + 1).
+      omega.
+      rewrite H0. clear H0.
+      reflexivity.
+    + split.
+      * unfold commandIxInRange. unfold comlen. fold comlen.
+        omega.
+      * split.
+        ** assert (comlen c + 1 =? S (comlen c) = true).
+           rewrite Nat.eqb_eq. omega.
+           rewrite H0. clear H0.
+           exists wval.
+           rewrite wix_eq_aliasix.
+           reflexivity.
+        **  intros.
+            unfold commandIxInRange in H1.
+            unfold comlen in H1.
+            fold comlen in H1.
+            omega.
+
+  (* wix <> aliasix *)
+  - intros.
+    left.
+    assert (wix =? aliasix = false). rewrite Nat.eqb_neq. omega.
+    unfold getLatestAliasingWriteTimepointForProgram.
+    simpl.
+    rewrite H0.
+    fold getLatestAliasingWriteTimepointForProgram.
+    + 
+
+
+  (* wix <> aliasix *)
+Admitted.
 
 Theorem getWriteAt'TransportAlongValidSchedule':
   forall (s sinv: nat -> nat) (c c': com) (tp: timepoint) (w: write),
