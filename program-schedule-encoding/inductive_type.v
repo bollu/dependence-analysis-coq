@@ -1845,6 +1845,12 @@ Proof.
   intuition. intuition.
 Qed.
 
+Theorem is_inverse_symmetric: forall (A B:Set) (f: A -> B) (g: B -> A), is_inverse f g -> is_inverse g f.
+Proof.
+  intros.
+  unfold is_inverse in *.
+  intuition.
+Qed.
 (* If D is a complete dependence set for c, and c --s--> c', Then s(D) is a valid dependence set for c' *)
 (* This is kind of fucked because I need that hypotheiss about lex transport. *)
 (* I need to think about this more carefully *)
@@ -2442,6 +2448,14 @@ Proof.
   reflexivity.
 Qed.
 
+Theorem is_inverse_cancellation: forall (A: Set) (s s': A -> A) (a: A),
+    is_inverse s s' -> ((s (s' a)) = a).
+Proof.
+  intros.
+  unfold is_inverse in H.
+  destruct H.
+  apply H0.
+Qed.
 
 
 Theorem latestAliasingWriteTimepointSpecTransportAcrossValidSchedule:
@@ -2454,78 +2468,106 @@ Theorem latestAliasingWriteTimepointSpecTransportAcrossValidSchedule:
 Proof.
   intros ds s sinv c c' latest_tp readix.
   intros.
-  unfold latestAliasingWriteTimepointSpec in *.
+  remember H2 as H2'. clear HeqH2'.
+  unfold latestAliasingWriteTimepointSpec in H2.
   destruct H2.
-  left.
+  - (* Some case *)
+    intros.
+    unfold latestAliasingWriteTimepointSpec.
+    left. (* Some timepoint exists in goal *)
+    destruct H2.
+    destruct H2.
+    inversion H2.
+    rewrite <- H5 in *. clear H5. clear H2.
+    destruct H3.
+    destruct H3.
 
-  (* some n case *)
-  destruct H2 as [latest_alias_tp  H'].
-  destruct H'.
-  destruct H3.
-  destruct H4 as [latest_wval H'].
-  exists (s latest_alias_tp).
-  assert (Some (s latest_tp) = Some (s latest_alias_tp)).
-  cut (s latest_tp = s latest_alias_tp). intros. auto.
-  inversion H2.
-   reflexivity.
-  split. exact H4. clear H4.
-  split.
-  assert (commandIxInRange c' (s latest_alias_tp)).
-  unfold commandIxInRange in *.
-  unfold scheduleMappingWitness in H0.
-  destruct H0.
-  destruct H4.
-  specialize (H5 latest_alias_tp).
-  cut (latest_alias_tp >= 1 /\ latest_alias_tp <= comlen c).
-  intros.
-  specialize (H5 H6).
-  omega.
-  omega.
-  exact H4.
-  split.
-  destruct latest_wval as [latest_wval latest_wval_witness].
-  exists latest_wval.
-  assert (getWriteAt' c' (s latest_alias_tp) = Some (Write readix latest_wval)).
-  unfold scheduleMappingWitness in H0.
-  destruct H0.
-  destruct H4.
-  specialize (H5 latest_alias_tp).
-  cut (latest_alias_tp >= 1 /\ latest_alias_tp <= comlen c).
-  intros.
-  specialize (H5 H6).
-  destruct H5.
-  destruct H7.
-  destruct H8.
-  destruct H9.
-  destruct H10.
-  rewrite <- H10.
-  rewrite latest_wval_witness.
-  reflexivity.
-  unfold commandIxInRange in *. omega.
-  exact H4.
-  intros t0_cur.
-  intros t0_cur_gt_sinv_alias_tp.
-  intros t0_cur_in_range.
-  specialize (H' (sinv t0_cur)).
-  cut (sinv t0_cur > latest_alias_tp).
-  intros.
-  specialize (H' H4). clear H4.
-  cut (commandIxInRange c (sinv t0_cur)).
-  intros.
-  specialize (H' H4). clear H4.
-  destruct H' as [sinv_t0_w sinv_t0_w_witness].
-  exists sinv_t0_w.
-  destruct sinv_t0_w_witness.
-  intros.
-  split.
-  assert (scheduleMappingWitness sinv s c' c).
-  apply scheduleMappingWitnessSymmetric. assumption.
-  erewrite  (getWriteAt'TransportAlongValidSchedule _ _ _ _ _ _ H6).
-  exact H4.
-  exact H5.
-  (* TODO: apply commandInRangeTransportAlongValidSchedule *)
+    assert (scheduleMappingWitness sinv s c' c).
+    apply scheduleMappingWitnessSymmetric. assumption.
+   
+    assert (is_inverse sinv s) as inv_sinv_s.
+    unfold scheduleMappingWitness in H0.
+    destruct H0. destruct H6. apply is_inverse_symmetric. assumption.
 
-  
+    (* -- cleanup up hypotheis, proceed with goal --*)
+    exists (s latest_tp).
+    split.
+    + reflexivity.
+    + split.
+      * eapply commandIxInRangeTransportAlongValidSchedule.
+        exact H5.
+        erewrite is_inverse_cancellation. assumption.
+        exact inv_sinv_s.
+      * split.
+        ** destruct H3 as [wval c_latest_tp].
+           exists wval.
+           eapply getWriteAt'TransportAlongValidSchedule.
+           exact H5.
+           rewrite is_inverse_cancellation.
+           exact c_latest_tp.
+           exact inv_sinv_s.
+        **  intros t'.
+            intros t'_gt_s_latest_tp.
+            intros t'_in_range.
+            assert (exists (w: write), getWriteAt' c' t' = Some w) as existence_of_write_at_t'.
+            apply getWriteAt'RangeComplete.
+            unfold commandIxInRange in t'_in_range. omega.
+            destruct existence_of_write_at_t' as [w_at_t' witness_w_at_t'].
+            exists w_at_t'.
+            split.
+            ***  rewrite witness_w_at_t'. reflexivity.
+            *** intros.
+                assert (writeIx w_at_t' = readix \/ writeIx w_at_t' <> readix) as
+                    writeIx_w_at_t'_cases.
+                omega.
+                destruct writeIx_w_at_t'_cases as [writeIx_eq | writeIx_neq].
+                **** (* writeIX w_at_t' = readix. Derive contradiction since this will give us a dependence that is not supposed to exist *)
+                  assert (dependenceLexPositive (s latest_tp, t')) as lexpos.
+                  unfold dependenceLexPositive. simpl. omega.
+
+
+                  assert (dependenceAliases' (s latest_tp, t') c') as aliases.
+                  unfold dependenceAliases'.
+                  simpl.
+                  rewrite witness_w_at_t'.
+                  unfold option_map.
+                  rewrite writeIx_eq.
+                  destruct H3 as [w_latest_tp w_latest_tp_witness].
+                  assert (getWriteAt' c' (s latest_tp) = Some (Write readix w_latest_tp)).
+                  eapply getWriteAt'TransportAlongValidSchedule.
+                  exact H5.
+                  rewrite is_inverse_cancellation.
+                  exact w_latest_tp_witness.
+                  exact inv_sinv_s.
+                  rewrite H3.
+                  simpl. reflexivity.
+
+
+                  assert (dependenceInRange (s latest_tp, t') c').
+                  unfold dependenceInRange.
+                  simpl.
+                  split.
+                  eapply commandIxInRangeTransportAlongValidSchedule.
+                  exact H5.
+                  rewrite is_inverse_cancellation.
+                  exact H2.
+                  exact inv_sinv_s.
+                  apply getWriteAt'RangeConsistent in witness_w_at_t'.
+                  unfold commandIxInRange. omega.
+                  assert (completeDependenceSet c' (applyScheduleToDependenceSet s ds)) as ds'_complete.
+                  eapply  dependenceSetTransportAcrossValidSchedule.
+                  exact H.
+                  exact H0.
+                  exact H1.
+
+
+
+    
+    
+  - (* None case *)
+    intros.
+    inversion H2.
+    inversion H3.
 Admitted.
     
 
