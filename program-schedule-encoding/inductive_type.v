@@ -2215,99 +2215,101 @@ Theorem latestAliasingWriteWillBeValue: forall (c: com) (readix: memix) (aliasin
     (getWriteAt' c  aliasingt = Some (Write readix wval)) ->
     runProgram c initmem readix = wval.
 Proof.
-  intros c.
+  intros c readix aliasingt wval initmem.
+  intros tpspec.
+  intros aliasingtwrite.
   induction c.
-  intros readix aliasingt wval initmem.
-  intros spec write_at_aliasingt.
-  destruct w as [latestwix latestwval].
-  assert (aliasingt = comlen c + 1 \/ aliasingt <> comlen c + 1)
-    as aliasingt_cases. omega.
-  destruct aliasingt_cases as [aliasingt_at_end | aliasingt_not_at_end].
-  remember (Write latestwix latestwval) as latestw.
-  remember (CSeq c (Write latestwix latestwval)) as ccur.
+  - (* CSeq *)
+    assert (aliasingt = S(comlen c) \/ aliasingt < S (comlen c)).
+    apply getWriteAt'RangeConsistent in aliasingtwrite.
+    unfold comlen in aliasingtwrite. fold comlen in aliasingtwrite.
+    omega.
+    destruct H as [aliasingt_at_end | aliasingt_before_end].
+    (* aliasingt = S (comlen C) *)
+    + rewrite aliasingt_at_end in *. clear aliasingt_at_end.
+    assert (w = Write readix wval).
+    unfold getWriteAt' in aliasingtwrite.
+    unfold comlen in aliasingtwrite. fold comlen in aliasingtwrite.
+    assert (S (comlen c) =? 1 + comlen c = true) as comlen_c_p_1_equiv.
+    rewrite Nat.eqb_eq. omega.
+    rewrite comlen_c_p_1_equiv in aliasingtwrite.
+    inversion aliasingtwrite.
+    reflexivity.
+    rewrite H.
+    unfold runProgram. fold runProgram.
+    unfold writeToMemory'.
+    apply readFromWriteIdentical.
 
-  assert (getWriteAt' ccur (comlen c + 1) = Some latestw) as Hlatest_write_pos.
-  unfold getWriteAt'. rewrite Heqccur. fold getWriteAt'.
-  assert (comlen c + 1 =? S( comlen c) = true).
-  rewrite Nat.eqb_eq. omega.
-  simpl. rewrite H.
-  clear H.
-  rewrite Heqlatestw.
-  reflexivity.
-  
-  assert (latestwix = readix /\ wval = latestwval) as latestalias.
-  rewrite aliasingt_at_end in write_at_aliasingt.
-  rewrite Heqccur in Hlatest_write_pos.
-  rewrite <- Heqlatestw in Hlatest_write_pos.
-  rewrite write_at_aliasingt in Hlatest_write_pos.
-  inversion Hlatest_write_pos as [wixinv ].
-  rewrite Heqlatestw in wixinv. inversion wixinv.
-  auto.
-  rewrite Heqlatestw.
-  destruct latestalias as [Hlatestix Hlatestwval].
-  rewrite Hlatestix.
-  rewrite Hlatestwval.
-  unfold runProgram. fold runProgram.
-  unfold writeToMemory'.
-  rewrite readFromWriteIdentical.
-  reflexivity.
+  (* aliasingt < S (comlen C) *)
+    + intros.
+      destruct w as [finalwix finalwval].
+      assert (finalwix <> readix).
+      * assert (finalwix <> readix \/ finalwix = readix).
+        omega.
+        destruct H.
+        assumption.
+      (* derive contradition from finalwix = readix *)
+        unfold latestAliasingWriteTimepointSpec in tpspec.
+        destruct tpspec.
+        (* Some tp exists *)
+        destruct H0.
+        destruct H0.
+        inversion H0. rewrite <- H3 in *. clear H3. clear H0. clear x.
+        destruct H1.
+        destruct H1.
+        specialize (H2 (S (comlen c))).
+        assert (S (comlen c) > aliasingt). omega.
+        specialize (H2 H3). clear H3.
+        assert (commandIxInRange (CSeq c (Write finalwix finalwval)) (S (comlen c))).
+        unfold commandIxInRange. unfold comlen. fold comlen. omega.
+        specialize (H2 H3). clear H3.
+        destruct H2.
+        unfold getWriteAt' in H2.
+        assert (S (comlen c) =? comlen (CSeq c (Write finalwix finalwval)) = true).
+        unfold comlen. fold comlen. rewrite Nat.eqb_eq. omega.
+        rewrite H3 in H2. clear H3.
+        destruct H2.
+        inversion H2.
+        rewrite <- H5 in *.
+        clear H5. clear H2.
+        simpl in H3.
+        (* contradiction, baby *)
+        assert (finalwix <> readix /\ finalwix = readix).
+        omega.
+        omega.
+        (* Some tp = None *)
+        destruct H0. inversion H0.
 
-  (* aliasingt <> comlen c + 1 *)
+        (* aliasingt < S (comlen C) \/ finalwix <> read ix *)
+      * intros.
 
-  remember (Write latestwix latestwval) as latestw.
-  remember (CSeq c (Write latestwix latestwval)) as ccur.
-  assert (getWriteAt' ccur aliasingt = getWriteAt' c aliasingt) as getWriteAt'Reduced.
-  rewrite Heqccur.
-  eapply getWriteAt'DestructOnCSeq.
-  cut (commandIxInRange c aliasingt).
-  intros aliasingt_inrange_c.
-  unfold commandIxInRange in aliasingt_inrange_c.
-  auto.
-  apply getWriteAt'RangeConsistent in write_at_aliasingt.
-  unfold comlen in write_at_aliasingt. fold comlen in write_at_aliasingt.
-  unfold commandIxInRange. omega.
-  assert (latestAliasingWriteTimepointSpec c readix (Some aliasingt)) as destruct_tp_spec. admit.
-  assert (getWriteAt' c aliasingt = Some (Write readix wval)) as getwriteat'_destruct. admit.
-  rewrite Heqlatestw.
-  unfold runProgram. fold runProgram.
-  unfold writeToMemory'.
-  rewrite  readFromWriteDifferent.
-  eapply IHc.
-  exact destruct_tp_spec.
-  exact getwriteat'_destruct.
-  assert (readix = latestwix \/ readix <> latestwix) as readix_cmp_latestwix. omega.
-  destruct readix_cmp_latestwix as [readix_eq_latestwix | readix_neq_latestwix].
-  (* readix = latestwix. I can get a contradiction *)
-  (* readix = latestwix means that aliasingt = comlen c + 1. But this is not the case. So, derive contradicion*)
-  unfold latestAliasingWriteTimepointSpec in spec.
-  destruct spec.
-  destruct H.
-  destruct H.
-  destruct H0.
-  destruct H1.
-  assert (S (comlen c) > aliasingt).
-  cut (aliasingt <= comlen c).
-  intros. omega.
-  apply getWriteAt'RangeConsistent in getwriteat'_destruct.
-  omega.
-  inversion H.
-  intros.
-  rewrite <- H5 in H0.
-  assert (comlen c + 1 > x).
-  omega.
-  specialize (H2 _ H4).
-  assert (commandIxInRange (CSeq c latestw) (comlen c + 1)).
-  unfold commandIxInRange, comlen. fold comlen. omega.
-  specialize (H2 H6).
-  destruct H2.
-  destruct H1.
-  destruct H2.
-  assert (latestwix <> readix) as contra1.
-  rewrite H5 in *. clear H5. clear H3. clear H4.
-  assert (writeIx x0 = readix).
 
-  subst.
-Admitted.
+        assert (getWriteAt' c aliasingt = Some (Write readix wval)).
+        rewrite <- aliasingtwrite.
+        symmetry.
+        eapply getWriteAt'DestructOnCSeq.
+        apply getWriteAt'RangeConsistent in aliasingtwrite.
+        omega.
+
+        unfold runProgram. fold runProgram.
+        unfold writeToMemory'.
+        rewrite readFromWriteDifferent.
+        apply IHc.
+
+        (* we need to show that latestAliasingWriteTimepointSpec
+can be destructed *)
+        eapply latestAliasingWriteTimepointSpecDestructOnCSeq.
+        exact tpspec.
+        omega.
+        exact H0.
+        omega.
+
+  - (* CBegin *)
+    intros.
+    unfold getWriteAt' in aliasingtwrite.
+    inversion aliasingtwrite.
+Qed.
+
 
 
 Theorem noLatestAliasingWriteTimepointTransportAcrossValidSchedule:
