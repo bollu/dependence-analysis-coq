@@ -2458,6 +2458,7 @@ Proof.
 Qed.
 
 
+(* TODO, this proof feels "suspect to me". Please check *)
 Theorem latestAliasingWriteTimepointSpecTransportAcrossValidSchedule:
   forall (ds: dependenceset)  (s sinv: nat -> nat) (c c': com) (latest_tp: timepoint) (readix: memix),
     completeDependenceSet c ds -> 
@@ -2522,6 +2523,7 @@ Proof.
                 omega.
                 destruct writeIx_w_at_t'_cases as [writeIx_eq | writeIx_neq].
                 **** (* writeIX w_at_t' = readix. Derive contradiction since this will give us a dependence that is not supposed to exist *)
+                  (* TODO, NOTE: Note that I don't actually derive a contradiction, sow what's going on? *)
                   assert (dependenceLexPositive (s latest_tp, t')) as lexpos.
                   unfold dependenceLexPositive. simpl. omega.
 
@@ -2554,6 +2556,8 @@ Proof.
                   exact inv_sinv_s.
                   apply getWriteAt'RangeConsistent in witness_w_at_t'.
                   unfold commandIxInRange. omega.
+
+
                   assert (completeDependenceSet c' (applyScheduleToDependenceSet s ds)) as ds'_complete.
                   eapply  dependenceSetTransportAcrossValidSchedule.
                   exact H.
@@ -2561,15 +2565,77 @@ Proof.
                   exact H1.
 
 
+                  (* use the fact that ds' is complete to show that this dependence is fucked *)
+                  assert (List.In (s latest_tp, t') (applyScheduleToDependenceSet s ds)) as legit_dep.
+                  unfold completeDependenceSet in ds'_complete.
+                  destruct (ds'_complete (s latest_tp, t')).
+                  apply H7.
+                  unfold validDependence.
+                  intuition.
 
-    
-    
-  - (* None case *)
-    intros.
-    inversion H2.
-    inversion H3.
-Admitted.
-    
+                  unfold applyScheduleToDependenceSet in legit_dep.
+                  rewrite List.in_map_iff in legit_dep.
+                  destruct legit_dep as [legit_dep_in_c legit_dep_in_c_witness].
+
+  (* cool, we have a dependence in c. exploit this to derive contradicction *)
+                  destruct legit_dep_in_c_witness.
+
+                  destruct legit_dep_in_c as [c_dep_begin c_dep_end].
+                  inversion H7. clear H7.
+                  specialize (H4 (sinv t')).
+                  cut (sinv t' > latest_tp).
+                  intros. specialize (H4 H7).
+                  cut (commandIxInRange c (sinv t')).
+                  intros.
+                  specialize (H4 H9).
+                  destruct H4 as [write_at_sinv_t' write_at_sinv_t'_witness].
+                  destruct write_at_sinv_t'_witness.
+
+
+                  assert (Some write_at_sinv_t' = Some w_at_t').
+                  rewrite <- H4.
+                  eapply getWriteAt'TransportAlongValidSchedule.
+                  exact H0.
+                  rewrite is_inverse_cancellation.
+                  assumption.
+                  apply is_inverse_symmetric. assumption.
+                  inversion H13.
+                  rewrite <- H15.
+                  exact H12.
+                  eapply commandIxInRangeTransportAlongValidSchedule.
+                  exact H0.
+                  rewrite is_inverse_cancellation.
+                  assumption.
+                  apply is_inverse_symmetric. assumption.
+                  assert (sinv t' > latest_tp).
+                  assert (c_dep_begin = latest_tp).
+                  eapply is_inverse_injective.
+                  assert (is_inverse s sinv) as inv_s_sinv.
+                  apply is_inverse_symmetric. assumption.
+                  apply inv_s_sinv.
+                  apply H10.
+                  rewrite <- H7.
+                  assert (c_dep_end = sinv t').
+                  rewrite <- H11.
+                  erewrite is_inverse_cancellation.
+                  reflexivity.
+                  exact inv_sinv_s.
+                  rewrite <- H9.
+                  assert (dependenceLexPositive (c_dep_begin, c_dep_end)).
+                  unfold completeDependenceSet in H.
+                  specialize (H (c_dep_begin, c_dep_end)).
+                  destruct H.
+                  specialize (H12 H8).
+                  destruct H12.
+                  intuition.
+                  unfold dependenceLexPositive in H12.
+                  simpl in H12. assumption.
+                  assumption.
+                ****  assumption.
+  -  intros.
+     destruct H2.
+     inversion H2.
+Qed. 
 
 
     
