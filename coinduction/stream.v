@@ -115,7 +115,7 @@ Proof.
   - simpl. auto.
 Qed.
 
-  
+
 
 
 Theorem LAppend_LCons:
@@ -275,6 +275,141 @@ Inductive Finite (A: Set) : LList A -> Prop :=
 | Finite_LNil : Finite A LNil
 | Finite_LCons: forall (a: A) (l: LList A), Finite A l ->
                                        Finite A (LCons a l).
+
+
+Hint Resolve Finite_LNil Finite_LCons : llists.
+
+Theorem Finite_of_LCons: forall (A: Set) (a: A) (l: LList A),
+    Finite A (LCons a l) -> Finite A l.
+Proof.
+  intros. inversion H. auto.
+Qed.
+
+Theorem LAppend_of_finite: forall (A: Set) (l l': LList A),
+    Finite A l ->
+    Finite A l' ->
+    Finite A (LAppend l l').
+Proof.
+  intros until l'.
+  intros LFIN L'FIN.
+  induction LFIN; subst.
+  - rewrite LAppend_LNil.
+    auto.
+  - rewrite LAppend_LCons.
+    constructor.
+    auto.
+Qed.
+
+
+Lemma Finite_not_Infinite: forall (A: Set) (l: LList A),
+    Finite A l -> ~ Infinite A l.
+Proof.
+  intros A l FIN INF.
+  induction FIN.
+  - inversion INF.
+  - inversion INF. subst.
+    apply (IHFIN H0).
+Qed.
+
+
+Lemma Infinite_not_Finite: forall (A: Set) (l: LList A),
+    Infinite A l -> ~ Finite A l.
+Proof.
+  intros A l INF FIN.
+  induction FIN.
+  - inversion INF.
+  - inversion INF. subst.
+    apply (IHFIN H0).
+Qed.
+
+      
+
+(* TODO: This is bugging me, how can I not prove this?! *)
+(* We will know, we must know ;) *)
+Lemma Not_Finite_Infinite: forall (A: Set) (l: LList A),
+    ~ Finite A l -> Infinite A l.
+Proof.
+  cofix.
+  intros A l L_NOT_FINITE.
+  destruct l.
+  Guarded.
+  -- contradiction (L_NOT_FINITE (Finite_LNil A)).
+  Guarded.
+  -- constructor.
+     apply Not_Finite_Infinite.
+     Guarded.
+
+     assert (L_NOT_FIN: ~Finite A l).
+     intros AFIN.
+     assert (CONTRA: Finite A (LCons a l)).
+     constructor. auto.
+     apply (L_NOT_FINITE CONTRA).
+     auto.
+     Guarded.
+Qed.
+
+Theorem LAppend_RNil_finite: forall (A: Set) (l: LList A),
+    Finite A l ->
+    LAppend l LNil = l.
+Proof.
+  intros.
+  induction H.
+  - apply LAppend_LNil.
+  - rewrite LAppend_LCons.
+    rewrite IHFinite.
+    auto.
+Qed.
+
+  
+Theorem general_omega_of_finite:
+  forall (A: Set) (u v: LList A),
+    Finite A u ->
+    Finite A v ->
+    general_omega u v = LAppend u  (general_omega v v).
+Proof.
+  intros.
+  induction H0.
+  - assert (OMEGA_OF_NIL_RIGHT: general_omega u LNil = u).
+    LList_unfold (general_omega u LNil).
+    destruct u; auto.
+    rewrite OMEGA_OF_NIL_RIGHT.
+
+    assert (OMEGA_OF_NIL_BOTH: general_omega LNil LNil = LNil (A := A)).
+    LList_unfold (general_omega LNil LNil (A := A)).
+    simpl.
+    auto.
+    rewrite OMEGA_OF_NIL_BOTH.
+    rewrite LAppend_RNil_finite; auto.
+
+
+  - induction H.
+Abort.
+
+
+    
+Theorem omega_of_finite: forall (A: Set) (u: LList A),
+    Finite A u ->
+    lomega u = LAppend u (lomega u).
+Proof.
+  intros.
+  induction H.
+  - rewrite LAppend_LNil.
+    reflexivity.
+
+  - subst.
+    assert (LAppend (LCons a l) (lomega (LCons a l)) = LNil).
+    LList_unfold (LAppend (LCons a l) (lomega (LCons a l))).
+    simpl.
+    assert (lomega (LCons a l) = LNil).
+    LList_unfold (lomega (LCons a l)).
+    simpl.
+Abort.
+
+
+(* Bisimulation *)
+
+    
+            
   
   
     
