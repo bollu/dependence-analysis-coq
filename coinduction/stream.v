@@ -1,3 +1,4 @@
+(* Exercise from the CoqArt book, chapter 13: Infinite objects and proofs *)
 Require Import List.
 
 CoInductive Stream (A: Set) : Set :=
@@ -210,6 +211,72 @@ Proof.
     apply general_omega_infinite.
     Guarded.
 Qed.
+
+Theorem omega_infinite: forall (A: Set) (a: A) (l: LList A),
+    Infinite A (lomega (LCons a l)).
+Proof.
+  intros.
+  unfold lomega.
+  apply general_omega_infinite.
+Qed.
+
+Inductive BugInfinite (A: Set) : LList A -> Prop :=
+  | BugInfinite_intro: forall (a: A) (l: LList A),
+    BugInfinite A l -> BugInfinite A (LCons a l).
+
+(* Is this correct? This seems to simple to be true *)
+Lemma BugInfinite_contra: forall (A: Set) (l: LList A),
+    BugInfinite A l -> False.
+Proof.
+  intros.
+  induction H.
+  auto.
+Qed.
+
+Theorem LNil_not_Infinite: forall (A: Set), ~Infinite A LNil.
+Proof.
+  intros a H.
+  inversion H.
+Qed.
+
+Theorem Infinite_of_LCons:
+  forall (A: Set) (a: A) (u: LList A),
+    Infinite A (LCons a u) -> Infinite A u.
+Proof.
+  intros.
+  inversion H.
+  subst.
+  auto.
+Qed.
+
+Theorem LAppend_of_infinite:
+  forall (A: Set) (u: LList A),
+    Infinite A u -> forall (v: LList A), Infinite A (LAppend u v).
+Proof.
+  intros until A.
+  cofix.
+
+  intros until u.
+  intros U_INF.
+  destruct u.
+  - inversion U_INF.
+  - intros.
+    assert (APPEND_TO_CONS: LAppend (LCons a u) v = LCons a (LAppend u v)).
+    LList_unfold (LAppend (LCons a u) v).
+    simpl.
+    auto.
+    rewrite APPEND_TO_CONS.
+    constructor.
+    apply LAppend_of_infinite; auto.
+    eapply Infinite_of_LCons; exact U_INF.
+Qed.
+
+Inductive Finite (A: Set) : LList A -> Prop :=
+| Finite_LNil : Finite A LNil
+| Finite_LCons: forall (a: A) (l: LList A), Finite A l ->
+                                       Finite A (LCons a l).
+  
+  
     
 
              
