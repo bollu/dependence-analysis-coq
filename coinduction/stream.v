@@ -613,9 +613,102 @@ Proof.
     eapply bisimilar_of_infinite_is_infinite; eassumption.
     Guarded.
 Qed.
-            
-  
+
+Lemma bimisilar_of_finite_is_eq:
+  forall (A: Set) (l1: LList A),
+    Finite A l1 -> (forall (l2: LList A), bisimilar l1 l2 -> l1 = l2).
+Proof.
+  intros until l1.
+  intros FINL1.
+  induction FINL1; intros; inversion H; subst; auto.
+
+  assert (l = l').
+  apply IHFINL1; auto.
+  subst. auto.
+Qed.
+
+Theorem LAppend_assoc:
+  forall (A: Set)
+    (u v w: LList A),
+    bisimilar (LAppend u (LAppend v w)) (LAppend (LAppend u v) w).
+Proof.
+  intros A.
+  cofix.
+  intros.
+  destruct u.
+  - repeat (rewrite LAppend_LNil).
+    apply bisimilar_reflexive.
+
+  - repeat (rewrite LAppend_LCons).
+    apply bisim1.
+    apply LAppend_assoc.
+Qed.
+
+Lemma LAppend_of_Infinite_bisim: forall (A: Set) (u: LList A),
+    Infinite A u -> forall v: LList A, bisimilar u (LAppend u v).
+Proof.
+  intros A.
+  cofix.
+  intros u INF v.
+  inversion INF.
+  subst.
+  rewrite LAppend_LCons.
+  apply bisim1.
+  apply LAppend_of_Infinite_bisim; auto.
+Qed.
+
+Definition bisimulation {A: Set} (R: LList A -> LList A -> Prop) :=
+  forall (l1 l2: LList A),
+    R l1 l2 ->
+    match l1 with
+    | LNil => l2 = LNil
+    | LCons a l'1  => match l2 with
+                     | LNil => False
+                     | LCons b l'2 => a = b /\ R l'1 l'2
+                     end
+    end.
+
+
+Theorem park_principle:
+  forall (A: Set) (R: LList A -> LList A -> Prop),
+    bisimulation R ->
+    forall (l1 l2: LList A), R l1 l2 -> bisimilar l1 l2.
+Proof.
+  intros A R RBISIM.
+  cofix.
+  intros until l2.
+  intros REL.
+
+  destruct l1.
+
+  - assert (L2NIL: l2 = LNil).
+    unfold bisimulation in RBISIM.
+    specialize (RBISIM LNil l2 REL).
+    simpl in RBISIM.
+    auto.
+    subst.
+    constructor.
+    Guarded.
+
+  - rename l1 into l1'.
+    assert (L2CONS:   exists l2', R l1' l2' /\ l2 = LCons a l2').
+    unfold bisimulation in RBISIM.
+    specialize (RBISIM (LCons a l1') l2 REL).
+    simpl in RBISIM.
+    destruct l2; inversion RBISIM; subst.
+    exists l2. auto.
+
+    destruct L2CONS as [l2'  [RELSMALLER l2'witness]]. subst.
+
+    
+    constructor.
+    Guarded.
+    apply park_principle; auto.
+    Guarded.
+Qed.
+
   
     
-
-             
+      
+            
+  
