@@ -161,9 +161,55 @@ Proof.
   auto.
   Guarded.
 Qed.
-  
 
- 
+CoFixpoint Lrepeat {A: Set} (a: A): (LList A) := LCons a (Lrepeat a).
+
+Lemma Lrepeat_unfold: forall {A: Set} (a: A), Lrepeat a = LCons a (Lrepeat a).
+Proof.
+  intros.
+  LList_unfold (Lrepeat a).
+  simpl.
+  reflexivity.
+Qed.
+
+Lemma repeat_infinite: forall (A: Set) (a: A), Infinite A (Lrepeat a).
+Proof.
+  intros.
+  cofix.
+  rewrite Lrepeat_unfold.
+  constructor.
+  assumption.
+  Guarded.
+Qed.
+  
+Lemma general_omega_infinite: forall (A: Set) (a: A) (l l': LList A),
+    Infinite A (general_omega l  (LCons a l')).
+Proof.
+  intros A.
+  cofix.
+  intros until l'.
+  case l.
+      
+  - assert (UNFOLD_GENERAL_OMEGA: general_omega LNil (LCons a l') =
+          LCons a (general_omega l'  (LCons a l') )).
+    LList_unfold (general_omega LNil (LCons a l')).
+    auto.
+    rewrite UNFOLD_GENERAL_OMEGA.
+    constructor.
+    apply general_omega_infinite.
+    Guarded.
+
+  - intros.
+    assert (UNFOLD_GENERAL_OMEGA: general_omega (LCons a0 l0) (LCons a l') =
+            LCons a0 (general_omega l0 (LCons a l'))).
+    LList_unfold (general_omega (LCons a0 l0) (LCons a l')).
+    simpl; trivial.
+
+    rewrite UNFOLD_GENERAL_OMEGA.
+    constructor.
+    apply general_omega_infinite.
+    Guarded.
+Qed.
     
 
              
