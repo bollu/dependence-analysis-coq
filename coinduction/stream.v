@@ -1,5 +1,6 @@
 (* Exercise from the CoqArt book, chapter 13: Infinite objects and proofs *)
 Require Import List.
+Require Import Relations.
 
 CoInductive Stream (A: Set) : Set :=
 | SCons : A -> Stream A -> Stream A.
@@ -407,6 +408,105 @@ Abort.
 
 
 (* Bisimulation *)
+(* We know that this is a lost cause, we consider it
+   to understand where this fails *)
+Lemma Lappend_of_Infinite_doomed:
+  forall (A: Set) (l: LList A),
+    Infinite A l ->
+    (forall (l': LList A), l = LAppend l l').
+Proof.
+  intros until l.
+  intros L_INF.
+  inversion L_INF.
+  subst.
+  intros.
+  rewrite LAppend_LCons.
+  assert (DESTRUCT_CONSTRUCTOR: l0 = LAppend l0 l' -> LCons a l0 = LCons a (LAppend l0 l')).
+  intros L0_EQ.
+  rewrite <- L0_EQ.
+  auto.
+  apply DESTRUCT_CONSTRUCTOR.
+  (* We were asked to bring the proof to this state *)
+Abort.
+
+
+CoInductive bisimilar {A: Set}: LList A -> LList A -> Prop :=
+| bisim0 : bisimilar LNil LNil
+| bisim1: forall (a: A) (l l': LList A),
+    bisimilar l l' -> bisimilar (LCons a l) (LCons a l').
+
+Check (reflexive).
+Lemma bisimilar_reflexive: forall (A: Set),
+    reflexive (LList A) (bisimilar (A := A)).
+Proof.
+  intros.
+  unfold reflexive.
+  cofix.
+  destruct x.
+  - apply bisim0.
+    Guarded.
+  - constructor.
+    apply bisimilar_reflexive.
+    Guarded.
+Qed.
+
+Lemma bisimilar_symmetric:  forall (A: Set),
+    symmetric (LList A) (bisimilar (A := A)).
+Proof.
+  intros A.
+  unfold symmetric.
+  cofix.
+
+  intros.
+  destruct x.
+  - inversion H.
+    apply bisim0.
+    Guarded.
+  - inversion H.
+    subst.
+    Guarded.
+    apply bisim1.
+    apply bisimilar_symmetric; auto.
+    Guarded.
+Qed.
+
+
+
+Lemma bisimilar_trans:  forall (A: Set),
+    transitive (LList A) (bisimilar (A := A)).
+Proof.
+  intros A.
+  unfold transitive.
+  cofix.
+
+  intros until z.
+  intros XY YZ.
+
+  destruct x.
+  - inversion XY.
+    subst.
+    inversion YZ.
+    subst.
+    apply bisim0.
+    Guarded.
+
+  - inversion XY. subst.
+    inversion YZ. subst.
+    apply bisim1.
+    eapply bisimilar_trans with (y := l'); auto.
+    Guarded.
+Qed.
+
+Lemma bisimilar_equiv: forall (A: Set),
+    equiv (LList A) (bisimilar (A := A)).
+Proof.
+  unfold equiv.
+  intros.
+  repeat split.
+  apply bisimilar_reflexive.
+  apply bisimilar_trans.
+  apply bisimilar_symmetric.
+Qed.
 
     
             
