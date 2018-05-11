@@ -508,7 +508,111 @@ Proof.
   apply bisimilar_symmetric.
 Qed.
 
+Fixpoint LNth {A: Set} (n: nat) (l: LList A) {struct n} : option A :=
+  match l with
+  | LNil => None
+  | LCons a l' => match n with
+                 | O => Some a
+                 | S n' => LNth  n' l'
+                 end
+  end.
+
+Lemma LNth_of_Sn: forall {A: Set} (n: nat) (l: LList A) (a: A),
+    LNth (S n) (LCons a l) = LNth n l.
+Proof.
+  intros.
+  destruct l; auto.
+Qed.
+  
+
+Lemma bisimilar_LNth:
+  forall (A: Set) (n: nat) (l1 l2: LList A),
+    bisimilar l1 l2 -> LNth  n l1 = LNth n l2.
+Proof.
+  intros until n.
+  induction n; intros; destruct l1; inversion H; auto; subst.
+  repeat (rewrite LNth_of_Sn).
+  apply IHn; auto.
+Qed.
+
+Lemma Nth_bisimilar:
+  forall (A: Set)(l1 l2: LList A),
+    (forall (n: nat), LNth n l1 = LNth n l2) -> bisimilar l1 l2.
+Proof.
+  intros A.
+  cofix.
+  intros.
+  destruct l1.
+
+  - specialize (H 0).
+  simpl in H.
+  destruct l2; try (discriminate H).
+  apply bisim0.
+
+  - destruct l2.
+    ++ specialize (H 0). simpl in H. discriminate H.
+       Guarded.
+    ++ 
+      assert (FSTEQ: a0 = a).
+       specialize (H 0). simpl in H. inversion H. reflexivity.
+       subst.
+       Guarded.
+
+       apply bisim1.
+       assert (NTH_ON_SUBLIST: forall n: nat, LNth n l1 = LNth n l2).
+       intros.
+       specialize (H (S n)%nat).
+       repeat (rewrite LNth_of_Sn in H).
+       auto.
+       apply Nth_bisimilar; auto.
+Qed.
+  
     
+Lemma bisimilar_of_finite_is_finite:
+  forall (A: Set) (l1 l2: LList A),
+    Finite A l1 ->
+    bisimilar l1 l2 ->
+    Finite A l2.
+Proof.
+  intros until l2.
+  intros FINL1.
+  
+  generalize dependent l2.
+  induction FINL1.
+
+  - intros.
+    inversion H. subst. constructor.
+
+  - intros.
+    inversion H. subst.
+    constructor.
+    apply IHFINL1; auto.
+Qed.
+
+
+Lemma bisimilar_of_infinite_is_infinite:
+  forall (A: Set) (l1 l2: LList A),
+    Infinite A l1 ->
+    bisimilar l1 l2 ->
+    Infinite A l2.
+Proof.
+  intros A.
+  cofix.
+  
+  intros until l2.
+  intros INFL1.
+  intros  BISIM.
+
+  inversion BISIM; subst.
+  - inversion INFL1.
+    Guarded.
+
+  - inversion INFL1. subst.
+    Guarded.
+    constructor.
+    eapply bisimilar_of_infinite_is_infinite; eassumption.
+    Guarded.
+Qed.
             
   
   
