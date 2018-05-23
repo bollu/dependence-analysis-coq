@@ -154,6 +154,8 @@ Qed.</div>
 <span class="kwd">Lemma</span> <span class="id">destructInSingletonWriteSet</span>:<br/>
 &nbsp;&nbsp;<span class="kwd">forall</span> (<span class="id">ix</span> <span class="id">curix</span>: <span class="id">memix</span>) (<span class="id">curtp</span> <span class="id">tp</span>: <span class="id">timepoint</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">List.In</span> <span class="id">curtp</span> ((<span class="id">singletonWriteSet</span> <span class="id">ix</span> <span class="id">tp</span>) <span class="id">curix</span>) -&gt; <span class="id">curtp</span> = <span class="id">tp</span> /\ <span class="id">ix</span> = <span class="id">curix</span>.<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof5')">Proof.</div>
+<div class="proofscript" id="proof5">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">singletonWriteSet</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">addToWriteSet</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
@@ -161,13 +163,13 @@ Qed.</div>
 &nbsp;&nbsp;<span class="tactic">omega</span>.<br/>
 <br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H0</span>.<br/>
-&nbsp;&nbsp;<span class="tactic">rewrite</span> &lt;- <span class="id">Nat.eqb_eq</span> <span class="kwd">in</span> <span class="id">H0</span>.<br/>
+&nbsp;curix&nbsp;=&nbsp;ix&nbsp;*)</span>&nbsp;&nbsp;<span class="tactic">rewrite</span> &lt;- <span class="id">Nat.eqb_eq</span> <span class="kwd">in</span> <span class="id">H0</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">H0</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">inversion</span> <span class="id">H</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">split</span>; <span class="tactic">auto</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">Nat.eqb_eq</span> <span class="kwd">in</span> <span class="id">H0</span>. <span class="tactic">auto</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">inversion</span> <span class="id">H1</span>.<br/>
-&nbsp;&nbsp;<span class="tactic">rewrite</span> &lt;- <span class="id">Nat.eqb_neq</span> <span class="kwd">in</span> <span class="id">H0</span>.<br/>
+&nbsp;curix&nbsp;&lt;&gt;&nbsp;ix&nbsp;*)</span>&nbsp;&nbsp;<span class="tactic">rewrite</span> &lt;- <span class="id">Nat.eqb_neq</span> <span class="kwd">in</span> <span class="id">H0</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">H0</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">inversion</span> <span class="id">H</span>.<br/>
 Qed.</div>
@@ -185,8 +187,8 @@ Qed.</div>
 <span class="kwd">Lemma</span> <span class="id">destructInWriteToWriteSet</span>':<br/>
 &nbsp;&nbsp;<span class="kwd">forall</span> (<span class="id">n</span>: <span class="id">nat</span>) (<span class="id">curtp</span> : <span class="id">timepoint</span>) (<span class="id">ix</span> <span class="id">curix</span>: <span class="id">memix</span>) (<span class="id">val</span>: <span class="id">memvalue</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">List.In</span> <span class="id">curtp</span> (<span class="id">writeToWriteset</span> (<span class="id">Write</span> <span class="id">ix</span> <span class="id">val</span>) <span class="id">n</span> <span class="id">curix</span>) -&gt; <span class="id">curtp</span> = <span class="id">n</span> /\ <span class="id">curix</span> = <span class="id">ix</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof5')">Proof.</div>
-<div class="proofscript" id="proof5">
+<div class="toggleproof" onclick="toggleDisplay('proof6')">Proof.</div>
+<div class="proofscript" id="proof6">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">writeToWriteset</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">apply</span> <span class="id">destructInSingletonWriteSet</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
@@ -206,8 +208,8 @@ Qed.</div>
 &nbsp;&nbsp;<span class="id">i</span> &lt;= <span class="id">comlen</span> <span class="id">c</span> /\ <span class="id">i</span> &gt;= 1.<br/>
 <br/>
 <span class="kwd">Lemma</span> <span class="id">commandIxInRangeDestructOnCSeq</span>: <span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span>) (<span class="id">w</span>: <span class="id">write</span>) (<span class="id">i</span>: <span class="id">nat</span>), <span class="id">commandIxInRange</span> (<span class="id">CSeq</span> <span class="id">c</span> <span class="id">w</span>) <span class="id">i</span>  -&gt; <span class="id">i</span> &lt;&gt; <span class="id">comlen</span> <span class="id">c</span> + 1  -&gt; <span class="id">commandIxInRange</span> <span class="id">c</span> <span class="id">i</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof6')">Proof.</div>
-<div class="proofscript" id="proof6">
+<div class="toggleproof" onclick="toggleDisplay('proof7')">Proof.</div>
+<div class="proofscript" id="proof7">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">commandIxInRange</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">commandIxInRange</span>. <span class="tactic">simpl</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
@@ -215,6 +217,8 @@ Qed.</div>
 Qed.</div>
 <br/>
 <span class="kwd">Lemma</span> <span class="id">commandIxInRangeInclusive</span>: <span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span>) (<span class="id">w</span>: <span class="id">write</span>) (<span class="id">i</span>: <span class="id">nat</span>), <span class="id">commandIxInRange</span> <span class="id">c</span> <span class="id">i</span> -&gt; <span class="id">commandIxInRange</span> (<span class="id">CSeq</span> <span class="id">c</span> <span class="id">w</span>) <span class="id">i</span>.<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof8')">Proof.</div>
+<div class="proofscript" id="proof8">
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">commandIxInRange</span>. <span class="tactic">unfold</span> <span class="id">comlen</span>. <span class="id">fold</span> <span class="id">comlen</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">omega</span>.<br/>
@@ -226,8 +230,8 @@ Qed.</div>
 <br/>
 <span class="kwd">Lemma</span> <span class="id">dependenceInRangeSymmetric</span>: <span class="kwd">forall</span> (<span class="id">tbegin</span> <span class="id">tend</span>: <span class="id">timepoint</span>) (<span class="id">c</span>: <span class="id">com</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">dependenceInRange</span> (<span class="id">tbegin</span>, <span class="id">tend</span>) <span class="id">c</span> &lt;-&gt; <span class="id">dependenceInRange</span> (<span class="id">tend</span>, <span class="id">tbegin</span>) <span class="id">c</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof7')">Proof.</div>
-<div class="proofscript" id="proof7">
+<div class="toggleproof" onclick="toggleDisplay('proof9')">Proof.</div>
+<div class="proofscript" id="proof9">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">assert</span> (<span class="kwd">forall</span> (<span class="id">tbegin</span> <span class="id">tend</span>: <span class="id">timepoint</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id">dependenceInRange</span> (<span class="id">tbegin</span>, <span class="id">tend</span>) <span class="id">c</span> -&gt;<br/>
@@ -264,6 +268,8 @@ Qed.</div>
 <br/>
 <span class="kwd">Lemma</span> <span class="id">dependenceAliases</span>'<span class="id">Symmetric</span>: <span class="kwd">forall</span> (<span class="id">tbegin</span> <span class="id">tend</span>: <span class="id">timepoint</span>) (<span class="id">c</span>: <span class="id">com</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">dependenceAliases</span>' (<span class="id">tbegin</span>, <span class="id">tend</span>) <span class="id">c</span> &lt;-&gt; <span class="id">dependenceAliases</span>' (<span class="id">tend</span>, <span class="id">tbegin</span>) <span class="id">c</span>.<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof10')">Proof.</div>
+<div class="proofscript" id="proof10">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">assert</span> (<span class="kwd">forall</span> (<span class="id">x</span> <span class="id">y</span>: <span class="id">timepoint</span>), <span class="id">dependenceAliases</span>' (<span class="id">x</span>, <span class="id">y</span>) <span class="id">c</span> -&gt; <span class="id">dependenceAliases</span>' (<span class="id">y</span>, <span class="id">x</span>) <span class="id">c</span>).<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">dependenceAliases</span>'. <span class="tactic">simpl</span>.<br/>
@@ -297,8 +303,8 @@ Qed.</div>
 &nbsp;&nbsp;<span class="kwd">end</span>.<br/>
 <br/>
 <span class="kwd">Theorem</span> <span class="id">computeDependence0IsEmpty</span>: <span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span>), <span class="id">comlen</span> <span class="id">c</span> = 0 -&gt; <span class="id">computeDependences</span> <span class="id">c</span> = <span class="id">List.nil</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof8')">Proof.</div>
-<div class="proofscript" id="proof8">
+<div class="toggleproof" onclick="toggleDisplay('proof11')">Proof.</div>
+<div class="proofscript" id="proof11">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">simpl</span> <span class="kwd">in</span> <span class="id">H</span>. <span class="tactic">inversion</span> <span class="id">H</span>.<br/>
@@ -309,8 +315,8 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<br/>
 <br/>
 <span class="kwd">Theorem</span> <span class="id">computeWriteSetInBounds</span>: <span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span>) (<span class="id">ix</span>: <span class="id">memix</span>) (<span class="id">t</span>: <span class="id">timepoint</span>), <span class="id">List.In</span> <span class="id">t</span> ((<span class="id">computeWriteSet</span>  <span class="id">c</span>) <span class="id">ix</span>) -&gt; <span class="id">t</span> &lt;= (<span class="id">comlen</span> <span class="id">c</span>) /\ <span class="id">t</span> &gt;= 1.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof9')">Proof.</div>
-<div class="proofscript" id="proof9">
+<div class="toggleproof" onclick="toggleDisplay('proof12')">Proof.</div>
+<div class="proofscript" id="proof12">
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">induction</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
@@ -333,8 +339,8 @@ Qed.</div>
 <br/>
 <span class="kwd">Theorem</span> <span class="id">computeDependencesLexPositive</span>: <span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="kwd">forall</span> (<span class="id">d</span>: <span class="id">dependence</span>), <span class="id">List.In</span> <span class="id">d</span> (<span class="id">computeDependences</span> <span class="id">c</span>) -&gt; <span class="id">dependenceLexPositive</span> <span class="id">d</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof10')">Proof.</div>
-<div class="proofscript" id="proof10">
+<div class="toggleproof" onclick="toggleDisplay('proof13')">Proof.</div>
+<div class="proofscript" id="proof13">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">generalize</span> <span class="tactic">dependent</span> <span class="id">d</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">induction</span> <span class="id">c</span>.<br/>
@@ -365,6 +371,8 @@ Qed.</div>
 <br/>
 <span class="kwd">Theorem</span> <span class="id">computeDependencesInRange</span>: <span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="kwd">forall</span> (<span class="id">d</span>: <span class="id">dependence</span>), <span class="id">List.In</span> <span class="id">d</span> (<span class="id">computeDependences</span> <span class="id">c</span>) -&gt; <span class="id">dependenceInRange</span> <span class="id">d</span> <span class="id">c</span>.<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof14')">Proof.</div>
+<div class="proofscript" id="proof14">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">generalize</span> <span class="tactic">dependent</span> <span class="id">d</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">induction</span> <span class="id">c</span>.<br/>
@@ -405,8 +413,8 @@ Qed.</div>
 <br/>
 <br/>
 <span class="kwd">Lemma</span> <span class="id">getWriteAt</span>'<span class="id">RangeConsistent</span>: <span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span>) (<span class="id">i</span>: <span class="id">nat</span>) (<span class="id">w</span>: <span class="id">write</span>), <span class="id">getWriteAt</span>' <span class="id">c</span> <span class="id">i</span>  = <span class="id">Some</span> <span class="id">w</span> -&gt; <span class="id">i</span> &gt;= 1 /\ <span class="id">i</span> &lt;= <span class="id">comlen</span> <span class="id">c</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof11')">Proof.</div>
-<div class="proofscript" id="proof11">
+<div class="toggleproof" onclick="toggleDisplay('proof15')">Proof.</div>
+<div class="proofscript" id="proof15">
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">induction</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
@@ -440,8 +448,8 @@ Qed.</div>
 Qed.</div>
 <br/>
 <span class="kwd">Lemma</span> <span class="id">getWriteAt</span>'<span class="id">RangeComplete</span>: <span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span>) (<span class="id">i</span>: <span class="id">nat</span>), <span class="id">i</span> &gt;= 1 /\ <span class="id">i</span> &lt;= (<span class="id">comlen</span> <span class="id">c</span>) -&gt; <span class="id">exists</span> (<span class="id">w</span>: <span class="id">write</span>), <span class="id">getWriteAt</span>' <span class="id">c</span> <span class="id">i</span> = <span class="id">Some</span> <span class="id">w</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof12')">Proof.</div>
-<div class="proofscript" id="proof12">
+<div class="toggleproof" onclick="toggleDisplay('proof16')">Proof.</div>
+<div class="proofscript" id="proof16">
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">induction</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
@@ -486,6 +494,8 @@ Qed.</div>
 <br/>
 <br/>
 <span class="kwd">Lemma</span> <span class="id">getWriteAt</span>'<span class="id">OnCSeq</span>: <span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span>) (<span class="id">w</span>: <span class="id">write</span>), <span class="id">getWriteAt</span>' (<span class="id">CSeq</span> <span class="id">c</span> <span class="id">w</span>) (<span class="id">comlen</span> <span class="id">c</span> + 1) = <span class="id">Some</span> <span class="id">w</span>.<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof17')">Proof.</div>
+<div class="proofscript" id="proof17">
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">dependent</span> <span class="tactic">induction</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
@@ -502,8 +512,8 @@ Qed.</div>
 <br/>
 <span class="kwd">Lemma</span> <span class="id">getWriteAt</span>'<span class="id">DestructOnCSeq</span>: <span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span> ) (<span class="id">i</span>: <span class="id">nat</span>) (<span class="id">w</span>: <span class="id">write</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">i</span> &lt;= <span class="id">comlen</span> <span class="id">c</span> /\ <span class="id">i</span> &gt;= 1 -&gt; <span class="id">getWriteAt</span>' (<span class="id">CSeq</span> <span class="id">c</span> <span class="id">w</span>) <span class="id">i</span> = <span class="id">getWriteAt</span>' <span class="id">c</span> <span class="id">i</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof13')">Proof.</div>
-<div class="proofscript" id="proof13">
+<div class="toggleproof" onclick="toggleDisplay('proof18')">Proof.</div>
+<div class="proofscript" id="proof18">
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">dependent</span> <span class="tactic">induction</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
@@ -531,6 +541,8 @@ Qed.</div>
 Qed.</div>
 <br/>
 <span class="kwd">Lemma</span> <span class="id">computeWriteSetRange</span>: <span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span>) (<span class="id">wix</span>: <span class="id">memix</span>) (<span class="id">i</span>: <span class="id">nat</span>), <span class="id">List.In</span> <span class="id">i</span> (((<span class="id">computeWriteSet</span>  <span class="id">c</span>)) <span class="id">wix</span>) -&gt; <span class="id">i</span> &gt;= 1 /\ <span class="id">i</span> &lt;= <span class="id">comlen</span> <span class="id">c</span>.<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof19')">Proof.</div>
+<div class="proofscript" id="proof19">
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">induction</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
@@ -539,35 +551,35 @@ Qed.</div>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">mergeWriteSets</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">List.in_app_iff</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H</span>.<br/>
-&nbsp;&nbsp;<span class="id">specialize</span> (<span class="id">IHc</span> <span class="id">_</span> <span class="id">_</span> <span class="id">H</span>).<br/>
+&nbsp;induction&nbsp;case&nbsp;-&nbsp;List.In&nbsp;i&nbsp;(computeWriteSet&nbsp;n&nbsp;c&nbsp;wix)&nbsp;*)</span>&nbsp;&nbsp;<span class="id">specialize</span> (<span class="id">IHc</span> <span class="id">_</span> <span class="id">_</span> <span class="id">H</span>).<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">comlen</span>. <span class="id">fold</span> <span class="id">comlen</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">omega</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">writeToWriteset</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">w</span>.<br/>
-&nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">singletonWriteSet</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
+&nbsp;new&nbsp;case&nbsp;-&nbsp;List.In&nbsp;i&nbsp;(singletonWriteSet&nbsp;m&nbsp;(n&nbsp;+&nbsp;1)&nbsp;wix&nbsp;)&nbsp;*)</span>&nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">singletonWriteSet</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">addToWriteSet</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">assert</span> (<span class="id">wix</span> = <span class="id">n</span> \/ <span class="id">wix</span> &lt;&gt; <span class="id">n</span>).<br/>
 &nbsp;&nbsp;<span class="tactic">omega</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H0</span>.<br/>
-&nbsp;&nbsp;<span class="tactic">rewrite</span> &lt;- <span class="id">Nat.eqb_eq</span> <span class="kwd">in</span> <span class="id">H0</span>.<br/>
+&nbsp;wix&nbsp;=&nbsp;m&nbsp;*)</span>&nbsp;&nbsp;<span class="tactic">rewrite</span> &lt;- <span class="id">Nat.eqb_eq</span> <span class="kwd">in</span> <span class="id">H0</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">H0</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">comlen</span>. <span class="id">fold</span> <span class="id">comlen</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">comlen</span> <span class="kwd">in</span> <span class="id">H</span>. <span class="id">fold</span> <span class="id">comlen</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">omega</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H</span>.<br/>
-&nbsp;&nbsp;<span class="tactic">rewrite</span> &lt;- <span class="id">Nat.eqb_neq</span> <span class="kwd">in</span> <span class="id">H0</span>.<br/>
+&nbsp;wix&nbsp;&lt;&gt;&nbsp;m&nbsp;*)</span>&nbsp;&nbsp;<span class="tactic">rewrite</span> &lt;- <span class="id">Nat.eqb_neq</span> <span class="kwd">in</span> <span class="id">H0</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">H0</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">inversion</span> <span class="id">H</span>.<br/>
-&nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
+&nbsp;CBegin&nbsp;case&nbsp;*)</span>&nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">inversion</span> <span class="id">H</span>.<br/>
 Qed.</div>
 <br/>
 <br/>
 <span class="kwd">Lemma</span> <span class="id">computeWriteSetCharacterBwd</span> :  <span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span>) (<span class="id">wix</span>: <span class="id">memix</span>) (<span class="id">wval</span>: <span class="id">memvalue</span>) (<span class="id">i</span>: <span class="id">nat</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">getWriteAt</span>' <span class="id">c</span> <span class="id">i</span>  = <span class="id">Some</span> (<span class="id">Write</span> <span class="id">wix</span> <span class="id">wval</span>) -&gt; <span class="id">List.In</span> <span class="id">i</span> ((<span class="id">computeWriteSet</span> <span class="id">c</span>) <span class="id">wix</span>).<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof14')">Proof.</div>
-<div class="proofscript" id="proof14">
+<div class="toggleproof" onclick="toggleDisplay('proof20')">Proof.</div>
+<div class="proofscript" id="proof20">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">generalize</span> <span class="tactic">dependent</span> <span class="id">i</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">generalize</span> <span class="tactic">dependent</span> <span class="id">wix</span>.<br/>
@@ -623,8 +635,8 @@ Qed.</div>
 <span class="kwd">Lemma</span> <span class="id">destructInWriteToWriteSet</span>:<br/>
 &nbsp;&nbsp;<span class="kwd">forall</span> (<span class="id">w</span>: <span class="id">write</span>) (<span class="id">n</span>: <span class="id">nat</span>) (<span class="id">curtp</span> : <span class="id">timepoint</span>) (<span class="id">curix</span>: <span class="id">memix</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">List.In</span> <span class="id">curtp</span> (<span class="id">writeToWriteset</span> <span class="id">w</span> <span class="id">n</span> <span class="id">curix</span>) -&gt; <span class="id">curtp</span> = <span class="id">n</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof15')">Proof.</div>
-<div class="proofscript" id="proof15">
+<div class="toggleproof" onclick="toggleDisplay('proof21')">Proof.</div>
+<div class="proofscript" id="proof21">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">writeToWriteset</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">w</span>.<br/>
@@ -639,8 +651,8 @@ Qed.</div>
 <br/>
 <br/>
 <span class="kwd">Theorem</span> <span class="id">computeWriteSetCharacterFwd</span> :  <span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span>) (<span class="id">wix</span>: <span class="id">memix</span>) (<span class="id">i</span>: <span class="id">nat</span>), <span class="id">List.In</span> <span class="id">i</span> ((<span class="id">computeWriteSet</span>  <span class="id">c</span>) <span class="id">wix</span>) -&gt; <span class="id">exists</span> (<span class="id">wval</span>: <span class="id">memvalue</span>), <span class="id">getWriteAt</span>'  <span class="id">c</span> <span class="id">i</span> = <span class="id">Some</span> (<span class="id">Write</span> <span class="id">wix</span> <span class="id">wval</span>).<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof16')">Proof.</div>
-<div class="proofscript" id="proof16">
+<div class="toggleproof" onclick="toggleDisplay('proof22')">Proof.</div>
+<div class="proofscript" id="proof22">
 &nbsp;&nbsp;<span class="tactic">intros</span>  <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">H</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">dependent</span> <span class="tactic">induction</span> <span class="id">c</span>.<br/>
@@ -689,16 +701,18 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">dependenceAliases</span>' (<span class="id">tbegin</span>, <span class="id">tend</span>) (<span class="id">CSeq</span>  <span class="id">c</span> (<span class="id">Write</span> <span class="id">wix</span> <span class="id">wval</span>)) &lt;-&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;(<span class="id">tend</span> = <span class="id">comlen</span> <span class="id">c</span> + 1 /\ <span class="id">exists</span> (<span class="id">wval_begin</span>: <span class="id">memvalue</span>), (<span class="id">getWriteAt</span>'  <span class="id">c</span> <span class="id">tbegin</span>) = <span class="id">Some</span> (<span class="id">Write</span> <span class="id">wix</span> <span class="id">wval_begin</span>)) \/<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;(<span class="id">tend</span> &lt;&gt; <span class="id">comlen</span> <span class="id">c</span> + 1 /\ <span class="id">dependenceAliases</span>' (<span class="id">tbegin</span>, <span class="id">tend</span>)  <span class="id">c</span>).<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof23')">Proof.</div>
+<div class="proofscript" id="proof23">
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">split</span>.<br/>
-&nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
+&nbsp;-&gt;&nbsp;*)</span>&nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">assert</span> ((<span class="id">tend</span> = <span class="id">comlen</span> <span class="id">c</span> + 1) \/ (<span class="id">tend</span> &lt; <span class="id">comlen</span> <span class="id">c</span> + 1 /\ <span class="id">tend</span> &gt;= 1)).<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">dependenceInRange</span> <span class="kwd">in</span> <span class="id">H0</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">commandIxInRange</span> <span class="kwd">in</span> <span class="id">H0</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">simpl</span> <span class="kwd">in</span> <span class="id">H0</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">omega</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H2</span>.<br/>
-&nbsp;&nbsp;<span class="id">left</span>.<br/>
+&nbsp;tend&nbsp;=&nbsp;n&nbsp;+&nbsp;1&nbsp;*)</span>&nbsp;&nbsp;<span class="id">left</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">dependenceAliases</span>' <span class="kwd">in</span> <span class="id">H1</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">simpl</span> <span class="kwd">in</span> <span class="id">H1</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">subst</span>.<br/>
@@ -729,7 +743,7 @@ Qed.</div>
 &nbsp;&nbsp;<span class="tactic">assert</span> (<span class="id">n</span> = <span class="id">wix</span>). <span class="tactic">inversion</span> <span class="id">H1</span>. <span class="tactic">reflexivity</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">H5</span>. <span class="tactic">reflexivity</span>.<br/>
 <br/>
-&nbsp;&nbsp;<span class="id">right</span>.<br/>
+&nbsp;tend&nbsp;&lt;&gt;&nbsp;&nbsp;n&nbsp;+&nbsp;1&nbsp;*)</span>&nbsp;&nbsp;<span class="id">right</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">dependenceAliases</span>' <span class="kwd">in</span> <span class="id">H1</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">simpl</span> <span class="id">fst</span> <span class="kwd">in</span> <span class="id">H1</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">simpl</span> <span class="id">snd</span> <span class="kwd">in</span> <span class="id">H1</span>.<br/>
@@ -746,9 +760,9 @@ Qed.</div>
 &nbsp;&nbsp;<span class="tactic">auto</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">omega</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">omega</span>.<br/>
-&nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
+&nbsp;&lt;-&nbsp;*)</span>&nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H1</span>.<br/>
-&nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H1</span>.<br/>
+&nbsp;tend&nbsp;=&nbsp;n&nbsp;+&nbsp;1&nbsp;*)</span>&nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H1</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">dependenceAliases</span>'.<br/>
 &nbsp;&nbsp;<span class="tactic">simpl</span> <span class="id">fst</span>. <span class="tactic">simpl</span> <span class="id">snd</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">H1</span>. <span class="tactic">rewrite</span> <span class="id">getWriteAt</span>'<span class="id">OnCSeq</span>.<br/>
@@ -763,7 +777,8 @@ Qed.</div>
 &nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">H2</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">simpl</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">reflexivity</span>.<br/>
-&nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H1</span>.<br/>
+&nbsp;tend&nbsp;&lt;&gt;&nbsp;n&nbsp;+&nbsp;1&nbsp;*)</span>&nbsp;Note&nbsp;that&nbsp;in&nbsp;A&nbsp;\/&nbsp;B,&nbsp;when&nbsp;you&nbsp;are&nbsp;in&nbsp;B&nbsp;case,&nbsp;you&nbsp;are&nbsp;not&nbsp;given&nbsp;~A.&nbsp;That&nbsp;is&nbsp;very&nbsp;interesting,&nbsp;thanks&nbsp;to&nbsp;LEM.&nbsp;So,&nbsp;I&nbsp;need&nbsp;to&nbsp;explicitly&nbsp;state&nbsp;that&nbsp;t&nbsp;&lt;&gt;&nbsp;n&nbsp;+&nbsp;1<br/>
+&nbsp;&nbsp;&nbsp;*)</span>&nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H1</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">dependenceAliases</span>'.<br/>
 &nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">getWriteAt</span>'<span class="id">DestructOnCSeq</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">getWriteAt</span>'<span class="id">DestructOnCSeq</span>.<br/>
@@ -779,6 +794,8 @@ Qed.</div>
 Qed.</div>
 <br/>
 <span class="kwd">Lemma</span> <span class="id">dependenceInRangeInclusive</span>: <span class="kwd">forall</span> (<span class="id">d</span>: <span class="id">dependence</span>) (<span class="id">c</span>: <span class="id">com</span>) (<span class="id">w</span>: <span class="id">write</span>),  <span class="id">dependenceInRange</span> <span class="id">d</span> <span class="id">c</span> -&gt; <span class="id">dependenceInRange</span> <span class="id">d</span>  (<span class="id">CSeq</span> <span class="id">c</span> <span class="id">w</span>).<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof24')">Proof.</div>
+<div class="proofscript" id="proof24">
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">dependenceInRange</span>. <span class="tactic">unfold</span> <span class="id">commandIxInRange</span>. <span class="tactic">destruct</span> <span class="id">d</span>. <span class="tactic">simpl</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">omega</span>.<br/>
@@ -786,8 +803,8 @@ Qed.</div>
 &nbsp;&nbsp;<br/>
 <br/>
 <span class="kwd">Theorem</span> <span class="id">computeDependencesAlias</span>'<span class="id">Fwd</span>: <span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span> ), <span class="kwd">forall</span> (<span class="id">d</span>: <span class="id">dependence</span>), <span class="id">List.In</span> <span class="id">d</span> (<span class="id">computeDependences</span> <span class="id">c</span>) -&gt;  <span class="id">dependenceAliases</span>' <span class="id">d</span>  <span class="id">c</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof17')">Proof.</div>
-<div class="proofscript" id="proof17">
+<div class="toggleproof" onclick="toggleDisplay('proof25')">Proof.</div>
+<div class="proofscript" id="proof25">
 &nbsp;&nbsp;<span class="tactic">intros</span>  <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">induction</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
@@ -849,8 +866,8 @@ Qed.</div>
 <span class="kwd">Theorem</span> <span class="id">dependenceInRangeDestructOnCSeq</span>: <span class="kwd">forall</span> (<span class="id">d</span>: <span class="id">dependence</span>) (<span class="id">c</span>: <span class="id">com</span>) (<span class="id">w</span>: <span class="id">write</span>), <span class="id">dependenceInRange</span> <span class="id">d</span> (<span class="id">CSeq</span> <span class="id">c</span> <span class="id">w</span>) -&gt; <span class="id">snd</span> <span class="id">d</span> &lt;&gt; <span class="id">comlen</span> <span class="id">c</span> + 1 -&gt;<br/>
 <span class="id">dependenceLexPositive</span> <span class="id">d</span> -&gt;<br/>
 <span class="id">dependenceInRange</span> <span class="id">d</span> <span class="id">c</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof18')">Proof.</div>
-<div class="proofscript" id="proof18">
+<div class="toggleproof" onclick="toggleDisplay('proof26')">Proof.</div>
+<div class="proofscript" id="proof26">
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">dependenceInRange</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">commandIxInRange</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">dependenceLexPositive</span>.<br/>
@@ -861,8 +878,8 @@ Qed.</div>
 <br/>
 <br/>
 <span class="kwd">Theorem</span> <span class="id">computeDependenceAlias</span>'<span class="id">Bwd</span>:   <span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span>), <span class="kwd">forall</span> (<span class="id">d</span>: <span class="id">dependence</span>), <span class="id">dependenceAliases</span>' <span class="id">d</span> <span class="id">c</span> -&gt; <span class="id">dependenceInRange</span> <span class="id">d</span> <span class="id">c</span> -&gt; <span class="id">dependenceLexPositive</span> <span class="id">d</span>  -&gt; <span class="id">List.In</span> <span class="id">d</span> (<span class="id">computeDependences</span> <span class="id">c</span>).<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof19')">Proof.</div>
-<div class="proofscript" id="proof19">
+<div class="toggleproof" onclick="toggleDisplay('proof27')">Proof.</div>
+<div class="proofscript" id="proof27">
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">induction</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
@@ -927,16 +944,16 @@ Qed.</div>
 <span class="kwd">Notation</span> "<span class="id">x</span> '===' <span class="id">y</span>" := (<span class="id">ceq</span> <span class="id">x</span> <span class="id">y</span>) (<span class="tactic">at</span> <span class="id">level</span> 70).<br/>
 <br/>
 <span class="kwd">Theorem</span> <span class="id">ceq_refl</span>: <span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span>), <span class="id">c</span> === <span class="id">c</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof20')">Proof.</div>
-<div class="proofscript" id="proof20">
+<div class="toggleproof" onclick="toggleDisplay('proof28')">Proof.</div>
+<div class="proofscript" id="proof28">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">ceq</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>. <span class="tactic">reflexivity</span>.<br/>
 Qed.</div>
 <br/>
 <span class="kwd">Theorem</span> <span class="id">ceq_symmetric</span>: <span class="kwd">forall</span>(<span class="id">c</span> <span class="id">c</span>': <span class="id">com</span>), <span class="id">c</span> === <span class="id">c</span>' &lt;-&gt; <span class="id">c</span>' === <span class="id">c</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof21')">Proof.</div>
-<div class="proofscript" id="proof21">
+<div class="toggleproof" onclick="toggleDisplay('proof29')">Proof.</div>
+<div class="proofscript" id="proof29">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">ceq</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">split</span>.<br/>
@@ -954,8 +971,8 @@ Qed.</div>
 <br/>
 <span class="kwd">Notation</span> "<span class="id">x</span> '+++' <span class="id">y</span>"  := (<span class="id">com_append</span>  <span class="id">x</span> <span class="id">y</span>) (<span class="tactic">at</span> <span class="id">level</span> 60).<br/>
 <span class="kwd">Theorem</span> <span class="id">ceq_add_cseq</span>: <span class="kwd">forall</span> (<span class="id">cn</span> <span class="id">cn</span>' : <span class="id">com</span>) (<span class="id">w</span>: <span class="id">write</span>), <span class="id">cn</span> === <span class="id">cn</span>' -&gt; (<span class="id">CSeq</span> <span class="id">cn</span> <span class="id">w</span>) ===  (<span class="id">CSeq</span> <span class="id">cn</span>' <span class="id">w</span>).<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof22')">Proof.</div>
-<div class="proofscript" id="proof22">
+<div class="toggleproof" onclick="toggleDisplay('proof30')">Proof.</div>
+<div class="proofscript" id="proof30">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">ceq</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">runProgram</span>.<br/>
@@ -968,6 +985,8 @@ Qed.</div>
 Qed.</div>
 <br/>
 <span class="kwd">Theorem</span> <span class="id">runprogram_distribute_append</span>: <span class="kwd">forall</span> (<span class="id">cn</span> <span class="id">cn</span>': <span class="id">com</span>), <span class="kwd">forall</span> (<span class="id">initmem</span>: <span class="id">memory</span>), <span class="id">runProgram</span> (<span class="id">cn</span> +++ <span class="id">cn</span>') <span class="id">initmem</span> = <span class="id">runProgram</span> <span class="id">cn</span>' (<span class="id">runProgram</span> <span class="id">cn</span> <span class="id">initmem</span>).<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof31')">Proof.</div>
+<div class="proofscript" id="proof31">
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">cn</span> <span class="id">cn</span>'. <span class="tactic">generalize</span> <span class="tactic">dependent</span> <span class="id">cn</span>. <span class="tactic">induction</span> <span class="id">cn</span>'.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">com_append</span>. <span class="id">fold</span> <span class="id">com_append</span>.<br/>
@@ -982,8 +1001,8 @@ Qed.</div>
 <br/>
 <br/>
 <span class="kwd">Theorem</span> <span class="id">ceq_append_weak</span>: <span class="kwd">forall</span> (<span class="id">c</span> <span class="id">cl</span> <span class="id">cr</span> : <span class="id">com</span>), <span class="id">cl</span> === <span class="id">cr</span> -&gt;<span class="id">cl</span> +++ <span class="id">c</span> === <span class="id">cr</span> +++ <span class="id">c</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof23')">Proof.</div>
-<div class="proofscript" id="proof23">
+<div class="toggleproof" onclick="toggleDisplay('proof32')">Proof.</div>
+<div class="proofscript" id="proof32">
 &nbsp;&nbsp;<span class="tactic">intro</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">induction</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
@@ -995,6 +1014,8 @@ Qed.</div>
 Qed.</div>
 <br/>
 <span class="kwd">Theorem</span> <span class="id">ceq_append_strong</span>: <span class="kwd">forall</span> (<span class="id">cl</span> <span class="id">cl</span>' <span class="id">cr</span> <span class="id">cr</span>': <span class="id">com</span>), <span class="id">cl</span> === <span class="id">cr</span> -&gt; <span class="id">cl</span>' === <span class="id">cr</span>' -&gt; <span class="id">cl</span> +++ <span class="id">cl</span>' === <span class="id">cr</span> +++ <span class="id">cr</span>'.<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof33')">Proof.</div>
+<div class="proofscript" id="proof33">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">ceq</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">ceq</span> <span class="kwd">in</span> <span class="id">H0</span>.<br/>
@@ -1011,6 +1032,8 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">wix1</span> &lt;&gt; <span class="id">wix2</span> -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">CSeq</span> (<span class="id">CSeq</span> <span class="id">CBegin</span> (<span class="id">Write</span> <span class="id">wix1</span> <span class="id">wval1</span>)) (<span class="id">Write</span> <span class="id">wix2</span> <span class="id">wval2</span>) ===<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id">CSeq</span> (<span class="id">CSeq</span> <span class="id">CBegin</span> (<span class="id">Write</span> <span class="id">wix2</span> <span class="id">wval2</span>)) (<span class="id">Write</span> <span class="id">wix1</span> <span class="id">wval1</span>).<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof34')">Proof.</div>
+<div class="proofscript" id="proof34">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">ceq</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
@@ -1046,8 +1069,8 @@ Qed.</div>
 <br/>
 <span class="kwd">Lemma</span> <span class="id">scheduleMappingWitnessSymmetric</span>: <span class="kwd">forall</span> (<span class="id">s</span> <span class="id">sinv</span>: <span class="id">nat</span> -&gt; <span class="id">nat</span>) (<span class="id">c</span> <span class="id">c</span>': <span class="id">com</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">scheduleMappingWitness</span> <span class="id">s</span> <span class="id">sinv</span> <span class="id">c</span> <span class="id">c</span>' -&gt; <span class="id">scheduleMappingWitness</span> <span class="id">sinv</span> <span class="id">s</span> <span class="id">c</span>' <span class="id">c</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof24')">Proof.</div>
-<div class="proofscript" id="proof24">
+<div class="toggleproof" onclick="toggleDisplay('proof35')">Proof.</div>
+<div class="proofscript" id="proof35">
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">scheduleMappingWitness</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H</span>. <span class="tactic">destruct</span> <span class="id">H0</span>. <br/>
@@ -1073,6 +1096,11 @@ Qed.</div>
 <br/>
 <span class="kwd">Definition</span> <span class="id">scheduleRespectsDependenceSet</span> (<span class="id">s</span>: <span class="id">nat</span> -&gt; <span class="id">nat</span>) (<span class="id">ds</span>: <span class="id">dependenceset</span>) : <span class="kwd">Prop</span> := <span class="kwd">forall</span> (<span class="id">d</span>: <span class="id">dependence</span>), <span class="id">List.In</span> <span class="id">d</span> <span class="id">ds</span> -&gt; <span class="id">scheduleRespectsDependence</span> <span class="id">s</span> <span class="id">d</span>.<br/>
 <br/>
+<div class="doc">A dependence set is complete if it contains all the dependence we expect
+it to contain. TODO: Rewrite the definition of the completeness of
+our computeDepenedence function using this notion </div>
+<div class="doc">NOTE: this is not enough, is it? We need a definition that this thing allows us to
+flip assert that if we have a depenendece, then it's present in the list </div>
 <span class="kwd">Definition</span> <span class="id">validDependence</span> (<span class="id">c</span>: <span class="id">com</span>) (<span class="id">d</span>: <span class="id">dependence</span>) : <span class="kwd">Prop</span> :=<br/>
 &nbsp;&nbsp;<span class="id">dependenceAliases</span>' <span class="id">d</span> <span class="id">c</span> /\ <span class="id">dependenceInRange</span> <span class="id">d</span> <span class="id">c</span> /\ <span class="id">dependenceLexPositive</span> <span class="id">d</span>.<br/>
 <span class="kwd">Hint</span> <span class="kwd">Unfold</span> <span class="id">validDependence</span>.<br/>
@@ -1083,9 +1111,10 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;(<span class="id">List.In</span> <span class="id">d</span> <span class="id">ds</span> -&gt; <span class="id">validDependence</span> <span class="id">c</span> <span class="id">d</span>).<br/>
 <br/>
 <br/>
+<div class="doc">If we have an empty dependence set, then it is impossible for instructions to alias. </div>
 <span class="kwd">Theorem</span> <span class="id">emptyDependenceSetImpliesNoAliasing</span>: <span class="kwd">forall</span> (<span class="id">i</span> <span class="id">j</span> : <span class="id">nat</span>) (<span class="id">c</span>: <span class="id">com</span>), <span class="id">completeDependenceSet</span> <span class="id">c</span> <span class="id">Datatypes.nil</span> -&gt; <span class="id">dependenceLexPositive</span> (<span class="id">i</span>, <span class="id">j</span>) -&gt; <span class="id">dependenceInRange</span> (<span class="id">i</span>, <span class="id">j</span>) <span class="id">c</span> -&gt;  <span class="id">exists</span> (<span class="id">w</span> <span class="id">w</span>': <span class="id">write</span>), <span class="id">getWriteAt</span>' <span class="id">c</span> <span class="id">i</span> = <span class="id">Some</span> <span class="id">w</span> /\ <span class="id">getWriteAt</span>' <span class="id">c</span> <span class="id">j</span> = <span class="id">Some</span> <span class="id">w</span>' /\ <span class="id">writeIx</span> <span class="id">w</span> &lt;&gt; <span class="id">writeIx</span> <span class="id">w</span>'.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof25')">Proof.</div>
-<div class="proofscript" id="proof25">
+<div class="toggleproof" onclick="toggleDisplay('proof36')">Proof.</div>
+<div class="proofscript" id="proof36">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">assert</span> (<span class="id">exists</span> (<span class="id">wi</span>: <span class="id">write</span>), <span class="id">getWriteAt</span>' <span class="id">c</span> <span class="id">i</span> = <span class="id">Some</span> <span class="id">wi</span>).<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">dependenceInRange</span> <span class="kwd">in</span> <span class="id">H1</span>. <span class="tactic">destruct</span> <span class="id">H1</span>. <span class="tactic">simpl</span> <span class="kwd">in</span> <span class="id">H1</span>.<br/>
@@ -1120,16 +1149,19 @@ Qed.</div>
 Qed.</div>
 <br/>
 <br/>
+<div class="doc">Slightly better way of stating theorem </div>
 <span class="kwd">Theorem</span> <span class="id">emptyDependenceSetImpliesNoAliasing</span>': <span class="kwd">forall</span> (<span class="id">i</span> <span class="id">j</span> : <span class="id">nat</span>) (<span class="id">c</span>: <span class="id">com</span>), <span class="id">completeDependenceSet</span> <span class="id">c</span> <span class="id">Datatypes.nil</span> -&gt; <span class="id">i</span> &lt;&gt; <span class="id">j</span> -&gt;  <span class="id">commandIxInRange</span> <span class="id">c</span> <span class="id">i</span> -&gt; <span class="id">commandIxInRange</span> <span class="id">c</span> <span class="id">j</span> -&gt; <span class="id">exists</span> (<span class="id">w</span> <span class="id">w</span>': <span class="id">write</span>), <span class="id">getWriteAt</span>' <span class="id">c</span> <span class="id">i</span> = <span class="id">Some</span> <span class="id">w</span> /\ <span class="id">getWriteAt</span>' <span class="id">c</span> <span class="id">j</span> = <span class="id">Some</span> <span class="id">w</span>' /\ <span class="id">writeIx</span> <span class="id">w</span> &lt;&gt; <span class="id">writeIx</span> <span class="id">w</span>'.<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof37')">Proof.</div>
+<div class="proofscript" id="proof37">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">assert</span> (<span class="id">i</span> &lt; <span class="id">j</span> \/ <span class="id">i</span> &gt; <span class="id">j</span>) <span class="kwd">as</span> <span class="id">ij_order</span>. <span class="tactic">omega</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">ij_order</span> <span class="kwd">as</span> [<span class="id">i_lt_j</span> | <span class="id">i_gt_j</span>].<br/>
-&nbsp;&nbsp;- <br/>
+&nbsp;&nbsp;- <span class="comment">(*&nbsp;i&nbsp;&lt;&nbsp;j&nbsp;*)</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">apply</span> <span class="id">emptyDependenceSetImpliesNoAliasing</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">exact</span> <span class="id">H</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">dependenceLexPositive</span>. <span class="tactic">simpl</span>. <span class="tactic">assumption</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">dependenceInRange</span>. <span class="tactic">auto</span>.<br/>
-&nbsp;&nbsp;- <br/>
+&nbsp;&nbsp;- <span class="comment">(*&nbsp;i&nbsp;&gt;&nbsp;j&nbsp;*)</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">assert</span> (<span class="id">exists</span> (<span class="id">w</span> <span class="id">w</span>': <span class="id">write</span>), <span class="id">getWriteAt</span>' <span class="id">c</span> <span class="id">j</span> = <span class="id">Some</span> <span class="id">w</span> /\ <span class="id">getWriteAt</span>' <span class="id">c</span> <span class="id">i</span> = <span class="id">Some</span> <span class="id">w</span>' /\ <span class="id">writeIx</span> <span class="id">w</span> &lt;&gt; <span class="id">writeIx</span> <span class="id">w</span>').<br/>
 <br/>
@@ -1155,8 +1187,8 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">scheduleMappingWitness</span> <span class="id">s</span> <span class="id">sinv</span> (<span class="id">CSeq</span> <span class="id">c</span> <span class="id">w</span>) (<span class="id">CSeq</span> <span class="id">c</span>' <span class="id">w</span>) -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">scheduleRespectsDependenceSet</span> <span class="id">s</span> <span class="id">ds</span> -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">scheduleMappingWitness</span> <span class="id">s</span> <span class="id">sinv</span> <span class="id">c</span> <span class="id">c</span>'.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof26')">Proof.</div>
-<div class="proofscript" id="proof26">
+<div class="toggleproof" onclick="toggleDisplay('proof38')">Proof.</div>
+<div class="proofscript" id="proof38">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">scheduleMappingWitness</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">scheduleMappingWitness</span> <span class="kwd">in</span> <span class="id">H0</span>.<br/>
@@ -1181,7 +1213,13 @@ Abort.</div>
 <br/>
 &nbsp;&nbsp;<br/>
 <br/>
+<div class="doc">Show that writes are decidable </div>
+<div class="doc">TODO, QUESTION: Why is this not trivial for coq? </div>
+<div class="doc">With hindsight, I now know that this is indeed trivial.
+Coq has `decide equality` inbuilt </div>
 <span class="kwd">Theorem</span> <span class="id">writesEqualDecidable</span>: <span class="kwd">forall</span> (<span class="id">w</span> <span class="id">w</span>': <span class="id">write</span>), <span class="id">w</span> = <span class="id">w</span>' \/ <span class="id">w</span> &lt;&gt; <span class="id">w</span>'.<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof39')">Proof.</div>
+<div class="proofscript" id="proof39">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">w</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">w</span>'.<br/>
@@ -1196,6 +1234,7 @@ Abort.</div>
 &nbsp;&nbsp;<span class="id">right</span>. <span class="tactic">congruence</span>.<br/>
 Qed.</div>
 <br/>
+<div class="doc">Notion of a subprogram aliasing with a single write *</div>
 <span class="kwd">Definition</span> <span class="id">NoAliasingBetweenSubprogramAndWrite</span> (<span class="id">c</span>: <span class="id">com</span>) (<span class="id">wix</span>: <span class="id">memix</span>) : <span class="kwd">Prop</span> :=<br/>
 &nbsp;&nbsp;<span class="kwd">forall</span> (<span class="id">i</span>: <span class="id">nat</span>), <span class="id">commandIxInRange</span> <span class="id">c</span> <span class="id">i</span> -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id">option_map</span> <span class="id">writeIx</span> (<span class="id">getWriteAt</span>' <span class="id">c</span> <span class="id">i</span>) &lt;&gt; <span class="id">Some</span> <span class="id">wix</span>.<br/>
@@ -1207,8 +1246,8 @@ Qed.</div>
 &nbsp;&nbsp;<span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span>) (<span class="id">wix</span> <span class="id">wixalias</span>: <span class="id">memix</span>) (<span class="id">wval</span>: <span class="id">memvalue</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">NoAliasingBetweenSubprogramAndWrite</span> (<span class="id">CSeq</span> <span class="id">c</span> (<span class="id">Write</span> <span class="id">wix</span> <span class="id">wval</span>)) <span class="id">wixalias</span> -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">NoAliasingBetweenSubprogramAndWrite</span> <span class="id">c</span> <span class="id">wixalias</span> /\ <span class="id">wix</span> &lt;&gt; <span class="id">wixalias</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof27')">Proof.</div>
-<div class="proofscript" id="proof27">
+<div class="toggleproof" onclick="toggleDisplay('proof40')">Proof.</div>
+<div class="proofscript" id="proof40">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">split</span>.<br/>
 &nbsp;&nbsp;- <span class="comment">(*&nbsp;No&nbsp;aliasing&nbsp;between&nbsp;c&nbsp;and&nbsp;wixalias&nbsp;*)</span><br/>
@@ -1237,6 +1276,7 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">comlen</span>. <span class="id">fold</span> <span class="id">comlen</span>. <span class="tactic">omega</span>.<br/>
 Qed.</div>
 <br/>
+<div class="doc">If two subprograms do not alias, we can reorder them freely *</div>
 <span class="kwd">Definition</span> <span class="id">NoAliasingBetweenSubprograms</span> (<span class="id">c1</span> <span class="id">c2</span>: <span class="id">com</span>) : <span class="kwd">Prop</span> :=<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="kwd">forall</span> (<span class="id">i</span> <span class="id">j</span>: <span class="id">nat</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">commandIxInRange</span> <span class="id">c1</span> <span class="id">i</span>-&gt;<br/>
@@ -1248,8 +1288,8 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">NoAliasingBetweenSubprograms</span> <span class="id">c1</span> <span class="id">c2</span> /\<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">NoAliasingBetweenSubprogramAndWrite</span> <span class="id">c2</span> <span class="id">wix</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof28')">Proof.</div>
-<div class="proofscript" id="proof28">
+<div class="toggleproof" onclick="toggleDisplay('proof41')">Proof.</div>
+<div class="proofscript" id="proof41">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">split</span>.<br/>
 &nbsp;No&nbsp;aliasing&nbsp;between&nbsp;subprograms&nbsp;*)</span>&nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">NoAliasingBetweenSubprograms</span>.<br/>
@@ -1276,12 +1316,14 @@ Qed.</div>
 &nbsp;&nbsp;<span class="tactic">simpl</span> <span class="kwd">in</span> <span class="id">H</span>. <span class="tactic">auto</span>.<br/>
 Qed.</div>
 <br/>
+<div class="doc">If a subprogram does not touch a memory location, then we can use the original
+state of memory at this location *</div>
 <span class="kwd">Lemma</span> <span class="id">NoAliasingBetweenSubprogramAndWriteAllowsPunchthrough</span>:<br/>
 &nbsp;&nbsp;<span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span>) (<span class="id">wix</span>: <span class="id">memix</span>) (<span class="id">mem</span>: <span class="id">memory</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">NoAliasingBetweenSubprogramAndWrite</span> <span class="id">c</span> <span class="id">wix</span> -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;(<span class="id">runProgram</span> <span class="id">c</span> <span class="id">mem</span>) <span class="id">wix</span> = <span class="id">mem</span> <span class="id">wix</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof29')">Proof.</div>
-<div class="proofscript" id="proof29">
+<div class="toggleproof" onclick="toggleDisplay('proof42')">Proof.</div>
+<div class="proofscript" id="proof42">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">induction</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">runProgram</span>. <span class="id">fold</span> <span class="id">runProgram</span>.<br/>
@@ -1325,8 +1367,8 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">NoAliasingBetweenSubprogramAndWrite</span> <span class="id">c</span> <span class="id">wix</span> -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">runProgram</span> <span class="id">c</span> (<span class="id">writeToMemory</span>' (<span class="id">Write</span> <span class="id">wix</span> <span class="id">wval</span>) <span class="id">mem</span>) =<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">writeToMemory</span>' (<span class="id">Write</span> <span class="id">wix</span> <span class="id">wval</span>) (<span class="id">runProgram</span> <span class="id">c</span> <span class="id">mem</span>).<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof30')">Proof.</div>
-<div class="proofscript" id="proof30">
+<div class="toggleproof" onclick="toggleDisplay('proof43')">Proof.</div>
+<div class="proofscript" id="proof43">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">apply</span> <span class="id">functional_extensionality</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
@@ -1395,8 +1437,8 @@ Qed.</div>
 <br/>
 <span class="kwd">Theorem</span> <span class="id">NoAliasingBetweenSubprogramsAllowsReordering</span>: <span class="kwd">forall</span> (<span class="id">c1</span> <span class="id">c2</span>: <span class="id">com</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">NoAliasingBetweenSubprograms</span> <span class="id">c1</span> <span class="id">c2</span> -&gt; <span class="id">c1</span> +++ <span class="id">c2</span> === <span class="id">c2</span> +++ <span class="id">c1</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof31')">Proof.</div>
-<div class="proofscript" id="proof31">
+<div class="toggleproof" onclick="toggleDisplay('proof44')">Proof.</div>
+<div class="proofscript" id="proof44">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">ceq</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
@@ -1431,9 +1473,13 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">List.In</span> <span class="id">t</span> <span class="id">l</span> -&gt; <span class="id">commandIxInRange</span> <span class="id">c</span> <span class="id">t</span> /\ (<span class="id">exists</span> (<span class="id">wval</span>: <span class="id">memvalue</span>), <span class="id">getWriteAt</span>' <span class="id">c</span> <span class="id">t</span> = <span class="id">Some</span> (<span class="id">Write</span> <span class="id">ix</span> <span class="id">wval</span>)).<br/>
 <br/>
 <br/>
+<div class="doc">getAliasingWriteTimepoints actually does what it says it does *</div>
 <br/>
 <br/>
+<div class="doc">TODO: has no one really defined these combinators? *</div>
 <span class="kwd">Lemma</span> <span class="id">list_length_1_implies_singleton</span>: <span class="kwd">forall</span> (<span class="id">a</span>: <span class="kwd">Type</span>) (<span class="id">l</span>: <span class="id">list</span> <span class="id">a</span>), <span class="id">length</span> <span class="id">l</span> = 1 -&gt; <span class="id">exists</span> (<span class="id">x</span>: <span class="id">a</span>), <span class="id">l</span> = <span class="id">List.cons</span> <span class="id">x</span> <span class="id">List.nil</span>.<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof45')">Proof.</div>
+<div class="proofscript" id="proof45">
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">a</span> <span class="id">l</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">l</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>. <span class="tactic">inversion</span> <span class="id">H</span>.<br/>
@@ -1447,6 +1493,8 @@ Qed.</div>
 <br/>
 <span class="kwd">Lemma</span> <span class="id">list_length_2_implies_2_elems</span>: <span class="kwd">forall</span> (<span class="id">a</span>: <span class="kwd">Type</span>) (<span class="id">l</span>: <span class="id">list</span> <span class="id">a</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">length</span> <span class="id">l</span> = 2 -&gt; <span class="id">exists</span> (<span class="id">x</span> <span class="id">x</span>': <span class="id">a</span>), <span class="id">l</span> = <span class="id">List.cons</span> <span class="id">x</span> (<span class="id">List.cons</span> <span class="id">x</span>' <span class="id">List.nil</span>).<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof46')">Proof.</div>
+<div class="proofscript" id="proof46">
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">a</span> <span class="id">l</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">l</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>. <span class="tactic">inversion</span> <span class="id">H</span>.<br/>
@@ -1461,8 +1509,8 @@ Qed.</div>
 <br/>
 <span class="kwd">Lemma</span> <span class="id">list_length_gt_2_implies_at_least_2_elems</span>: <span class="kwd">forall</span> (<span class="id">a</span>: <span class="kwd">Type</span>) (<span class="id">l</span>: <span class="id">list</span> <span class="id">a</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">length</span> <span class="id">l</span> &gt;= 2 -&gt; <span class="id">exists</span> (<span class="id">x</span> <span class="id">x</span>' : <span class="id">a</span>) (<span class="id">l</span>': <span class="id">list</span> <span class="id">a</span>), <span class="id">l</span> = <span class="id">List.cons</span> <span class="id">x</span> (<span class="id">List.cons</span> <span class="id">x</span>' <span class="id">l</span>').<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof32')">Proof.</div>
-<div class="proofscript" id="proof32">
+<div class="toggleproof" onclick="toggleDisplay('proof47')">Proof.</div>
+<div class="proofscript" id="proof47">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">l</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">inversion</span> <span class="id">H</span>.<br/>
@@ -1502,25 +1550,27 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">aliasingWriteTimepointsSet</span> <span class="id">c</span> <span class="id">ix</span> <span class="id">lt</span> -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;(<span class="id">exists</span> (<span class="id">t</span>: <span class="id">timepoint</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id">lt</span> = <span class="id">List.cons</span> <span class="id">t</span> <span class="id">List.nil</span>) \/ <span class="id">lt</span> = <span class="id">List.nil</span>.<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof48')">Proof.</div>
+<div class="proofscript" id="proof48">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">aliasingWriteTimepointsSet</span> <span class="kwd">in</span> <span class="id">H0</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">assert</span> (<span class="id">length</span> <span class="id">lt</span> &lt;= 1 \/ <span class="id">length</span> <span class="id">lt</span> &gt;= 2) <span class="kwd">as</span> <span class="id">lt_destruct</span>. <span class="tactic">omega</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">lt_destruct</span>.<br/>
-&nbsp;&nbsp;- <br/>
+&nbsp;&nbsp;- <span class="comment">(*&nbsp;length&nbsp;lt&nbsp;&lt;=&nbsp;1&nbsp;*)</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">assert</span> (<span class="id">length</span> <span class="id">lt</span> = 0 \/ <span class="id">length</span> <span class="id">lt</span> = 1) <span class="kwd">as</span> <span class="id">lt_0_or_1</span>. <span class="tactic">omega</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">lt_0_or_1</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;+ <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="comment">(*&nbsp;length&nbsp;lt&nbsp;=&nbsp;0&nbsp;*)</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">assert</span> (<span class="id">lt</span> = <span class="id">List.nil</span>).<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">rewrite</span> &lt;- <span class="id">length_zero_iff_nil</span>. <span class="tactic">assumption</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id">right</span>. <span class="tactic">assumption</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;+ <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="comment">(*&nbsp;length&nbsp;lt&nbsp;=&nbsp;1&nbsp;*)</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">apply</span> <span class="id">list_length_1_implies_singleton</span> <span class="kwd">in</span> <span class="id">H2</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H2</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id">left</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id">exists</span> <span class="id">x</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">assumption</span>.<br/>
-&nbsp;&nbsp;- <br/>
+&nbsp;&nbsp;- <span class="comment">(*&nbsp;length&nbsp;&gt;=&nbsp;2&nbsp;*)</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">apply</span> <span class="id">list_length_gt_2_implies_at_least_2_elems</span> <span class="kwd">in</span> <span class="id">H1</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H1</span>.<br/>
@@ -1535,7 +1585,7 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">assert</span> (<span class="id">x</span> = <span class="id">x0</span> \/ <span class="id">x</span> &lt;&gt; <span class="id">x0</span>).<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">omega</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H2</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;+ <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="comment">(*&nbsp;x&nbsp;=&nbsp;x0,&nbsp;will&nbsp;lead&nbsp;to&nbsp;contradiction&nbsp;because&nbsp;set&nbsp;is&nbsp;nodup&nbsp;*)</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H0</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">H2</span> <span class="kwd">in</span> <span class="id">H1</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">H1</span> <span class="kwd">in</span> <span class="id">H0</span>.<br/>
@@ -1543,7 +1593,7 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H0</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">assert</span> (<span class="id">List.In</span> <span class="id">x0</span> (<span class="id">x0</span> :: <span class="id">x1</span>)). <span class="tactic">unfold</span> <span class="id">List.In</span>. <span class="id">left</span>. <span class="tactic">auto</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id">contradiction</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;+ <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;+ <span class="comment">(*&nbsp;x&nbsp;&lt;&gt;&nbsp;x0,&nbsp;will&nbsp;let&nbsp;me&nbsp;show&nbsp;that&nbsp;I&nbsp;have&nbsp;two&nbsp;aliasing&nbsp;writes.&nbsp;Also&nbsp;contadiction&nbsp;*)</span><br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H0</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">assert</span> (<span class="id">commandIxInRange</span> <span class="id">c</span> <span class="id">x</span> /\<br/>
@@ -1573,7 +1623,7 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">rewrite</span> &lt;- <span class="id">H11</span> <span class="kwd">in</span> <span class="id">H10</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">rewrite</span> &lt;- <span class="id">H12</span> <span class="kwd">in</span> <span class="id">H10</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">simpl</span> <span class="kwd">in</span> <span class="id">H10</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id">contradiction</span>.<br/>
+&nbsp;finally,&nbsp;we&nbsp;get&nbsp;a&nbsp;contadiction!&nbsp;ix&nbsp;&lt;&gt;&nbsp;ix&nbsp;*)</span>&nbsp;we&nbsp;exhibited&nbsp;an&nbsp;aliasing&nbsp;*)</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id">contradiction</span>.<br/>
 Qed.</div>
 <br/>
 &nbsp;&nbsp;<br/>
@@ -1586,8 +1636,8 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">dependenceAliases</span>' <span class="id">d</span> <span class="id">c</span> -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">dependenceInRange</span> <span class="id">d</span> <span class="id">c</span> -&gt; <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">dependenceAliases</span>' (<span class="id">applyScheduleToDependence</span> <span class="id">s</span> <span class="id">d</span>) <span class="id">c</span>'.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof33')">Proof.</div>
-<div class="proofscript" id="proof33">
+<div class="toggleproof" onclick="toggleDisplay('proof49')">Proof.</div>
+<div class="proofscript" id="proof49">
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">dependenceAliases</span>'.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">d</span> <span class="id">eqn</span>:<span class="id">dsave</span>.<br/>
@@ -1616,8 +1666,8 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">scheduleMappingWitness</span> <span class="id">s</span> <span class="id">sinv</span> <span class="id">c</span> <span class="id">c</span>' -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">dependenceInRange</span> <span class="id">d</span> <span class="id">c</span> -&gt; <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">dependenceInRange</span> (<span class="id">applyScheduleToDependence</span> <span class="id">s</span> <span class="id">d</span>) <span class="id">c</span>'.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof34')">Proof.</div>
-<div class="proofscript" id="proof34">
+<div class="toggleproof" onclick="toggleDisplay('proof50')">Proof.</div>
+<div class="proofscript" id="proof50">
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">dependenceInRange</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">scheduleMappingWitness</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">applyScheduleToDependence</span>.<br/>
@@ -1639,8 +1689,8 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">dependenceAliases</span>' <span class="id">d</span> <span class="id">c</span> -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">dependenceInRange</span> <span class="id">d</span> <span class="id">c</span> -&gt; <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">dependenceLexPositive</span> (<span class="id">applyScheduleToDependence</span> <span class="id">s</span> <span class="id">d</span>).<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof35')">Proof.</div>
-<div class="proofscript" id="proof35">
+<div class="toggleproof" onclick="toggleDisplay('proof51')">Proof.</div>
+<div class="proofscript" id="proof51">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">d</span>.<br/>
 &nbsp;&nbsp;<span class="id">specialize</span> (<span class="id">H0</span> (<span class="id">n</span>, <span class="id">n0</span>)).<br/>
@@ -1662,8 +1712,8 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">dependenceInRange</span> <span class="id">d</span> <span class="id">c</span> -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">dependenceLexPositive</span> <span class="id">d</span> -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">dependenceLexPositive</span> (<span class="id">applyScheduleToDependence</span> <span class="id">s</span> <span class="id">d</span>).<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof36')">Proof.</div>
-<div class="proofscript" id="proof36">
+<div class="toggleproof" onclick="toggleDisplay('proof52')">Proof.</div>
+<div class="proofscript" id="proof52">
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">c</span> <span class="id">c</span>' <span class="id">s</span> <span class="id">sinv</span> <span class="id">d</span> <span class="id">ds</span> <span class="id">dscomplete</span> <span class="id">mapwitness</span> <span class="id">respectdeps</span> <span class="id">aliases</span> <span class="id">inrange</span> <span class="id">lexpos</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">induction</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">d</span> <span class="kwd">as</span> [<span class="id">tbegin</span> <span class="id">tend</span>] <span class="id">eqn</span>:<span class="id">dsave</span>.<br/>
@@ -1723,8 +1773,8 @@ Qed.</div>
 Qed.</div>
 <br/>
 <span class="kwd">Theorem</span> <span class="id">is_inverse_injective</span>: <span class="kwd">forall</span> (<span class="id">A</span> <span class="id">B</span>:<span class="kwd">Set</span>) (<span class="id">f</span>: <span class="id">A</span> -&gt; <span class="id">B</span>) (<span class="id">g</span>: <span class="id">B</span> -&gt; <span class="id">A</span>) (<span class="id">a</span> <span class="id">b</span>: <span class="id">A</span>), <span class="id">is_inverse</span> <span class="id">f</span> <span class="id">g</span> -&gt; <span class="id">f</span> <span class="id">a</span> = <span class="id">f</span> <span class="id">b</span> -&gt; <span class="id">a</span> = <span class="id">b</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof37')">Proof.</div>
-<div class="proofscript" id="proof37">
+<div class="toggleproof" onclick="toggleDisplay('proof53')">Proof.</div>
+<div class="proofscript" id="proof53">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">assert</span> (<span class="id">g</span> (<span class="id">f</span> <span class="id">a</span>) = <span class="id">g</span> (<span class="id">f</span> <span class="id">b</span>)) <span class="kwd">as</span> <span class="id">gcall</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">H0</span>. <span class="tactic">reflexivity</span>.<br/>
@@ -1737,8 +1787,8 @@ Qed.</div>
 Qed.</div>
 <br/>
 <span class="kwd">Theorem</span> <span class="id">is_inverse_symmetric</span>: <span class="kwd">forall</span> (<span class="id">A</span> <span class="id">B</span>:<span class="kwd">Set</span>) (<span class="id">f</span>: <span class="id">A</span> -&gt; <span class="id">B</span>) (<span class="id">g</span>: <span class="id">B</span> -&gt; <span class="id">A</span>), <span class="id">is_inverse</span> <span class="id">f</span> <span class="id">g</span> -&gt; <span class="id">is_inverse</span> <span class="id">g</span> <span class="id">f</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof38')">Proof.</div>
-<div class="proofscript" id="proof38">
+<div class="toggleproof" onclick="toggleDisplay('proof54')">Proof.</div>
+<div class="proofscript" id="proof54">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">is_inverse</span> <span class="kwd">in</span> *.<br/>
 &nbsp;&nbsp;<span class="tactic">intuition</span>.<br/>
@@ -1749,8 +1799,8 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">scheduleMappingWitness</span> <span class="id">s</span> <span class="id">sinv</span> <span class="id">c</span> <span class="id">c</span>' -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">scheduleRespectsDependenceSet</span> <span class="id">s</span> <span class="id">ds</span> -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">completeDependenceSet</span> <span class="id">c</span>' (<span class="id">applyScheduleToDependenceSet</span> <span class="id">s</span> <span class="id">ds</span>).<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof39')">Proof.</div>
-<div class="proofscript" id="proof39">
+<div class="toggleproof" onclick="toggleDisplay('proof55')">Proof.</div>
+<div class="proofscript" id="proof55">
 <br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 <br/>
@@ -1887,8 +1937,8 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;(<span class="id">tend</span> = <span class="id">comlen</span> <span class="id">c</span> + 1 /\<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id">exists</span> (<span class="id">wval</span>': <span class="id">memvalue</span>), <span class="id">getWriteAt</span>' <span class="id">c</span> <span class="id">tbegin</span> = <span class="id">Some</span> (<span class="id">Write</span> <span class="id">wix</span> <span class="id">wval</span>'))) \/<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;(<span class="id">tend</span> &lt;&gt; <span class="id">comlen</span> <span class="id">c</span> + 1).<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof40')">Proof.</div>
-<div class="proofscript" id="proof40">
+<div class="toggleproof" onclick="toggleDisplay('proof56')">Proof.</div>
+<div class="proofscript" id="proof56">
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">c</span> <span class="id">wix</span> <span class="id">wval</span> <span class="id">tbegin</span> <span class="id">tend</span> <span class="id">ds</span> <span class="id">completedepset</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">assert</span> (<span class="id">tend</span> = <span class="id">comlen</span> <span class="id">c</span> + 1 \/ <span class="id">tend</span> &lt;= <span class="id">comlen</span> <span class="id">c</span> \/ <span class="id">tend</span> &gt; <span class="id">comlen</span> <span class="id">c</span> + 1) <span class="kwd">as</span> <span class="id">tend_cases</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">omega</span>.<br/>
@@ -1940,8 +1990,8 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">latestAliasingWriteTimepointSpec</span> (<span class="id">CSeq</span> <span class="id">c</span> <span class="id">latestw</span>) <span class="id">readix</span> (<span class="id">Some</span> <span class="id">latest_aliasingt</span>) -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">latest_aliasingt</span> &lt;&gt; <span class="id">comlen</span> <span class="id">c</span> + 1 -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">latestAliasingWriteTimepointSpec</span> <span class="id">c</span> <span class="id">readix</span> (<span class="id">Some</span> <span class="id">latest_aliasingt</span>).<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof41')">Proof.</div>
-<div class="proofscript" id="proof41">
+<div class="toggleproof" onclick="toggleDisplay('proof57')">Proof.</div>
+<div class="proofscript" id="proof57">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">latestAliasingWriteTimepointSpec</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">latestAliasingWriteTimepointSpec</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
@@ -1994,8 +2044,8 @@ Qed.</div>
 &nbsp;&nbsp;<span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span>) (<span class="id">w</span>: <span class="id">write</span>) (<span class="id">readix</span>: <span class="id">memix</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">latestAliasingWriteTimepointSpec</span> (<span class="id">CSeq</span> <span class="id">c</span> <span class="id">w</span>) <span class="id">readix</span> <span class="id">None</span> -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">latestAliasingWriteTimepointSpec</span> <span class="id">c</span> <span class="id">readix</span> <span class="id">None</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof42')">Proof.</div>
-<div class="proofscript" id="proof42">
+<div class="toggleproof" onclick="toggleDisplay('proof58')">Proof.</div>
+<div class="proofscript" id="proof58">
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">c</span> <span class="id">w</span> <span class="id">readix</span> <span class="id">witness_on_cseq</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">latestAliasingWriteTimepointSpec</span>.<br/>
 &nbsp;&nbsp;<span class="id">right</span>.<br/>
@@ -2049,8 +2099,8 @@ Qed.</div>
 <span class="kwd">Theorem</span> <span class="id">noLatestAliasingWriteAllowsPunchthrough</span>: <span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span>) (<span class="id">readix</span>: <span class="id">memix</span>)  (<span class="id">initmem</span>: <span class="id">memory</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">latestAliasingWriteTimepointSpec</span> <span class="id">c</span> <span class="id">readix</span> <span class="id">None</span> -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">runProgram</span> <span class="id">c</span> <span class="id">initmem</span> <span class="id">readix</span> = (<span class="id">initmem</span> <span class="id">readix</span>).<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof43')">Proof.</div>
-<div class="proofscript" id="proof43">
+<div class="toggleproof" onclick="toggleDisplay('proof59')">Proof.</div>
+<div class="proofscript" id="proof59">
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">c</span>. <span class="tactic">induction</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">readix</span> <span class="id">initmem</span> <span class="id">no_aliasing_tp</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">assert</span> (<span class="id">latestAliasingWriteTimepointSpec</span> <span class="id">c</span> <span class="id">readix</span> <span class="id">None</span>) <span class="kwd">as</span> <span class="id">destruct_H</span>.<br/>
@@ -2100,8 +2150,8 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">latestAliasingWriteTimepointSpec</span> <span class="id">c</span> <span class="id">readix</span> (<span class="id">Some</span> <span class="id">aliasingt</span>) -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;(<span class="id">getWriteAt</span>' <span class="id">c</span>  <span class="id">aliasingt</span> = <span class="id">Some</span> (<span class="id">Write</span> <span class="id">readix</span> <span class="id">wval</span>)) -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">runProgram</span> <span class="id">c</span> <span class="id">initmem</span> <span class="id">readix</span> = <span class="id">wval</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof44')">Proof.</div>
-<div class="proofscript" id="proof44">
+<div class="toggleproof" onclick="toggleDisplay('proof60')">Proof.</div>
+<div class="proofscript" id="proof60">
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">c</span> <span class="id">readix</span> <span class="id">aliasingt</span> <span class="id">wval</span> <span class="id">initmem</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">tpspec</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">aliasingtwrite</span>.<br/>
@@ -2196,8 +2246,8 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">scheduleMappingWitness</span> <span class="id">s</span> <span class="id">sinv</span> <span class="id">c</span> <span class="id">c</span>' -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">latestAliasingWriteTimepointSpec</span> <span class="id">c</span> <span class="id">readix</span> <span class="id">None</span> -&gt; <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">latestAliasingWriteTimepointSpec</span> <span class="id">c</span>' <span class="id">readix</span> <span class="id">None</span>.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof45')">Proof.</div>
-<div class="proofscript" id="proof45">
+<div class="toggleproof" onclick="toggleDisplay('proof61')">Proof.</div>
+<div class="proofscript" id="proof61">
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">s</span> <span class="id">sinv</span> <span class="id">c</span> <span class="id">c</span>' <span class="id">readix</span> <span class="id">schedwitness</span> <span class="id">tpwitness</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">latestAliasingWriteTimepointSpec</span> <span class="kwd">in</span> *.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">tpwitness</span>.<br/>
@@ -2245,8 +2295,8 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">scheduleMappingWitness</span> <span class="id">s</span> <span class="id">sinv</span> <span class="id">c</span> <span class="id">c</span>' -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;(<span class="id">commandIxInRange</span> <span class="id">c</span> <span class="id">tp</span> &lt;-&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">commandIxInRange</span> <span class="id">c</span>' (<span class="id">s</span> <span class="id">tp</span>)).<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof46')">Proof.</div>
-<div class="proofscript" id="proof46">
+<div class="toggleproof" onclick="toggleDisplay('proof62')">Proof.</div>
+<div class="proofscript" id="proof62">
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">s</span> <span class="id">sinv</span> <span class="id">c</span> <span class="id">c</span>' <span class="id">tp</span> <span class="id">witness</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">split</span>.<br/>
 &nbsp;-&gt;&nbsp;*)</span>&nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">tp_inrange</span>.<br/>
@@ -2281,8 +2331,8 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">scheduleMappingWitness</span> <span class="id">s</span> <span class="id">sinv</span> <span class="id">c</span> <span class="id">c</span>' -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;(<span class="id">getWriteAt</span>' <span class="id">c</span> <span class="id">tp</span> = <span class="id">Some</span> <span class="id">w</span> &lt;-&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">getWriteAt</span>' <span class="id">c</span>' (<span class="id">s</span> <span class="id">tp</span>) = <span class="id">Some</span> <span class="id">w</span>).<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof47')">Proof.</div>
-<div class="proofscript" id="proof47">
+<div class="toggleproof" onclick="toggleDisplay('proof63')">Proof.</div>
+<div class="proofscript" id="proof63">
 <br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">split</span>.<br/>
@@ -2332,8 +2382,8 @@ Qed.</div>
 <br/>
 <span class="kwd">Theorem</span> <span class="id">is_inverse_cancellation</span>: <span class="kwd">forall</span> (<span class="id">A</span>: <span class="kwd">Set</span>) (<span class="id">s</span> <span class="id">s</span>': <span class="id">A</span> -&gt; <span class="id">A</span>) (<span class="id">a</span>: <span class="id">A</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">is_inverse</span> <span class="id">s</span> <span class="id">s</span>' -&gt; ((<span class="id">s</span> (<span class="id">s</span>' <span class="id">a</span>)) = <span class="id">a</span>).<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof48')">Proof.</div>
-<div class="proofscript" id="proof48">
+<div class="toggleproof" onclick="toggleDisplay('proof64')">Proof.</div>
+<div class="proofscript" id="proof64">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">is_inverse</span> <span class="kwd">in</span> <span class="id">H</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H</span>.<br/>
@@ -2348,8 +2398,8 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">scheduleRespectsDependenceSet</span> <span class="id">s</span> <span class="id">ds</span> -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">latestAliasingWriteTimepointSpec</span> <span class="id">c</span> <span class="id">readix</span> (<span class="id">Some</span> <span class="id">latest_tp</span>) -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">latestAliasingWriteTimepointSpec</span> <span class="id">c</span>' <span class="id">readix</span> (<span class="id">Some</span> (<span class="id">s</span> <span class="id">latest_tp</span>)).<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof49')">Proof.</div>
-<div class="proofscript" id="proof49">
+<div class="toggleproof" onclick="toggleDisplay('proof65')">Proof.</div>
+<div class="proofscript" id="proof65">
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">ds</span> <span class="id">s</span> <span class="id">sinv</span> <span class="id">c</span> <span class="id">c</span>' <span class="id">latest_tp</span> <span class="id">readix</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="id">remember</span> <span class="id">H2</span> <span class="kwd">as</span> <span class="id">H2</span>'. <span class="tactic">clear</span> <span class="id">HeqH2</span>'.<br/>
@@ -2524,6 +2574,8 @@ Qed.</div>
 <br/>
 <span class="kwd">Theorem</span> <span class="id">getLatestAliasingWriteTimepointForProgramCorrect</span>: <span class="kwd">forall</span> (<span class="id">c</span>: <span class="id">com</span>) (<span class="id">aliasix</span>: <span class="id">memix</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">latestAliasingWriteTimepointSpec</span> <span class="id">c</span> <span class="id">aliasix</span> (<span class="id">getLatestAliasingWriteTimepointForProgram</span> <span class="id">c</span> <span class="id">aliasix</span>).<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof66')">Proof.</div>
+<div class="proofscript" id="proof66">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">induction</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">latestAliasingWriteTimepointSpec</span> <span class="kwd">in</span> <span class="id">IHc</span>.<br/>
@@ -2533,7 +2585,7 @@ Qed.</div>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">w</span> <span class="kwd">as</span> [<span class="id">wix</span> <span class="id">wval</span>].<br/>
 &nbsp;&nbsp;<span class="tactic">assert</span> (<span class="id">wix</span> = <span class="id">aliasix</span> \/ <span class="id">wix</span> &lt;&gt; <span class="id">aliasix</span>). <span class="tactic">omega</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H0</span> <span class="kwd">as</span> [<span class="id">wix_eq_aliasix</span> | <span class="id">wix_neq_aliasix</span>].<br/>
-&nbsp;&nbsp;- <span class="id">left</span>.<br/>
+&nbsp;wix&nbsp;=&nbsp;aliasix&nbsp;*)</span>&nbsp;&nbsp;- <span class="id">left</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">exists</span> (<span class="id">comlen</span> <span class="id">c</span> + 1).<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">getLatestAliasingWriteTimepointForProgram</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">fold</span> <span class="id">getLatestAliasingWriteTimepointForProgram</span>.<br/>
@@ -2564,7 +2616,7 @@ Qed.</div>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id">fold</span> <span class="id">comlen</span> <span class="kwd">in</span> <span class="id">H1</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">omega</span>.<br/>
 <br/>
-&nbsp;&nbsp;- <span class="tactic">intros</span>.<br/>
+&nbsp;wix&nbsp;&lt;&gt;&nbsp;aliasix&nbsp;*)</span>&nbsp;&nbsp;- <span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">left</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">assert</span> (<span class="id">wix</span> =? <span class="id">aliasix</span> = <span class="id">false</span>). <span class="tactic">rewrite</span> <span class="id">Nat.eqb_neq</span>. <span class="tactic">omega</span>.<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">getLatestAliasingWriteTimepointForProgram</span>.<br/>
@@ -2597,7 +2649,7 @@ Qed.</div>
 <br/>
 <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">assert</span> (<span class="id">S</span> (<span class="id">comlen</span> <span class="id">c</span>) &lt;= <span class="id">comlen</span> <span class="id">c</span>) <span class="kwd">as</span> <span class="id">contra</span>. <span class="tactic">omega</span>.<br/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">omega</span>. <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">omega</span>. <span class="comment">(*&nbsp;contradiction&nbsp;*)</span><br/>
 <br/>
 <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tactic">assert</span> (<span class="id">aliasingtp</span> =? <span class="id">S</span> (<span class="id">comlen</span> <span class="id">c</span>) = <span class="id">false</span>) <span class="kwd">as</span> <span class="id">aliasingtp_neq_end</span>'.<br/>
@@ -2724,17 +2776,20 @@ Qed.</div>
 &nbsp;&nbsp;<span class="kwd">forall</span> (<span class="id">s</span> <span class="id">sinv</span>: <span class="id">nat</span> -&gt; <span class="id">nat</span>) (<span class="id">c</span> <span class="id">c</span>': <span class="id">com</span>) (<span class="id">tp</span>: <span class="id">timepoint</span>) (<span class="id">w</span>: <span class="id">write</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">scheduleMappingWitness</span> <span class="id">s</span> <span class="id">sinv</span> <span class="id">c</span> <span class="id">c</span>' -&gt; <br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">getWriteAt</span>' <span class="id">c</span> <span class="id">tp</span> = <span class="id">getWriteAt</span>' <span class="id">c</span>' (<span class="id">s</span> <span class="id">tp</span>).<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof67')">Proof.</div>
+<div class="proofscript" id="proof67">
 &nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">assert</span> ((<span class="id">tp</span> &gt;= 1 /\ <span class="id">tp</span> &lt;= <span class="id">comlen</span> <span class="id">c</span>) \/ <span class="id">tp</span> = 0 \/ <span class="id">tp</span> &gt; <span class="id">comlen</span> <span class="id">c</span>) <span class="kwd">as</span> <span class="id">tp_cases</span>. <span class="tactic">omega</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">tp_cases</span> <span class="kwd">as</span> [<span class="id">tp_in_range</span> | <span class="id">tp_out_of_range</span>].<br/>
 Abort.</div>
 <br/>
 <br/>
+<div class="doc">Main theorem of the day. If a *schedule s* respects a *complete dependence set ds*, then the semantics of the original program is the same as that of the rescheduled program </div>
 <span class="kwd">Theorem</span> <span class="id">reschedulePreservesSemantics</span>: <span class="kwd">forall</span> (<span class="id">c</span> <span class="id">c</span>': <span class="id">com</span>) (<span class="id">ds</span>: <span class="id">dependenceset</span>) (<span class="id">s</span> <span class="id">sinv</span>: <span class="id">nat</span> -&gt; <span class="id">nat</span>),<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">completeDependenceSet</span> <span class="id">c</span> <span class="id">ds</span> -&gt; <span class="id">scheduleMappingWitness</span> <span class="id">s</span> <span class="id">sinv</span> <span class="id">c</span> <span class="id">c</span>' -&gt;<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="id">scheduleRespectsDependenceSet</span> <span class="id">s</span> <span class="id">ds</span> -&gt; <span class="id">c</span> === <span class="id">c</span>'.<br/>
-<div class="toggleproof" onclick="toggleDisplay('proof50')">Proof.</div>
-<div class="proofscript" id="proof50">
+<div class="toggleproof" onclick="toggleDisplay('proof68')">Proof.</div>
+<div class="proofscript" id="proof68">
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">c</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">c</span>' <span class="id">ds</span>.<br/>
 &nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">s</span> <span class="id">sinv</span> <span class="id">dscomplete</span> <span class="id">witness</span> <span class="id">respectsdeps</span>.<br/>

@@ -146,6 +146,7 @@ Definition singletonWriteSet (ix: memix) (tp: timepoint) : writeset :=
 Lemma destructInSingletonWriteSet:
   forall (ix curix: memix) (curtp tp: timepoint),
     List.In curtp ((singletonWriteSet ix tp) curix) -> curtp = tp /\ ix = curix.
+Proof.
   intros.
   unfold singletonWriteSet in H.
   unfold addToWriteSet in H.
@@ -207,6 +208,7 @@ Proof.
 Qed.
 
 Lemma commandIxInRangeInclusive: forall (c: com) (w: write) (i: nat), commandIxInRange c i -> commandIxInRange (CSeq c w) i.
+Proof.
   unfold commandIxInRange. unfold comlen. fold comlen.
   intros.
   omega.
@@ -256,6 +258,7 @@ Program Definition dependenceAliases' (d: dependence) (c: com) : Prop :=
 
 Lemma dependenceAliases'Symmetric: forall (tbegin tend: timepoint) (c: com),
     dependenceAliases' (tbegin, tend) c <-> dependenceAliases' (tend, tbegin) c.
+Proof.
   intros.
   assert (forall (x y: timepoint), dependenceAliases' (x, y) c -> dependenceAliases' (y, x) c).
   unfold dependenceAliases'. simpl.
@@ -356,6 +359,7 @@ Qed.
 
 Theorem computeDependencesInRange: forall (c: com),
     forall (d: dependence), List.In d (computeDependences c) -> dependenceInRange d c.
+Proof.
   intros.
   generalize dependent d.
   induction c.
@@ -483,6 +487,7 @@ Qed.
 
 
 Lemma getWriteAt'OnCSeq: forall (c: com) (w: write), getWriteAt' (CSeq c w) (comlen c + 1) = Some w.
+Proof.
   intros c.
   dependent induction c.
   intros.
@@ -527,6 +532,7 @@ Proof.
 Qed.
 
 Lemma computeWriteSetRange: forall (c: com) (wix: memix) (i: nat), List.In i (((computeWriteSet  c)) wix) -> i >= 1 /\ i <= comlen c.
+Proof.
   intros c.
   induction c.
   intros.
@@ -696,6 +702,7 @@ Theorem destructDependenceAliasesInCSeq: forall (c: com) (tbegin tend: timepoint
     dependenceAliases' (tbegin, tend) (CSeq  c (Write wix wval)) <->
     (tend = comlen c + 1 /\ exists (wval_begin: memvalue), (getWriteAt'  c tbegin) = Some (Write wix wval_begin)) \/
     (tend <> comlen c + 1 /\ dependenceAliases' (tbegin, tend)  c).
+Proof.
   intros c.
   split.
   (* -> *)
@@ -794,6 +801,7 @@ Theorem destructDependenceAliasesInCSeq: forall (c: com) (tbegin tend: timepoint
 Qed.
 
 Lemma dependenceInRangeInclusive: forall (d: dependence) (c: com) (w: write),  dependenceInRange d c -> dependenceInRange d  (CSeq c w).
+Proof.
   unfold dependenceInRange. unfold commandIxInRange. destruct d. simpl.
   intros.
   omega.
@@ -980,6 +988,7 @@ Proof.
 Qed.
 
 Theorem runprogram_distribute_append: forall (cn cn': com), forall (initmem: memory), runProgram (cn +++ cn') initmem = runProgram cn' (runProgram cn initmem).
+Proof.
   intros cn cn'. generalize dependent cn. induction cn'.
   intros.
   unfold com_append. fold com_append.
@@ -1008,6 +1017,7 @@ Proof.
 Qed.
 
 Theorem ceq_append_strong: forall (cl cl' cr cr': com), cl === cr -> cl' === cr' -> cl +++ cl' === cr +++ cr'.
+Proof.
   intros.
   unfold ceq in H.
   unfold ceq in H0.
@@ -1024,6 +1034,7 @@ Theorem ceq_switch_no_alias: forall (wix1 wix2: memix) (wval1 wval2: memvalue),
     wix1 <> wix2 ->
     CSeq (CSeq CBegin (Write wix1 wval1)) (Write wix2 wval2) ===
          CSeq (CSeq CBegin (Write wix2 wval2)) (Write wix1 wval1).
+ Proof.
   intros.
   unfold ceq.
   intros.
@@ -1100,10 +1111,10 @@ Definition scheduleRespectsDependence (s: nat -> nat) (d: dependence) : Prop :=
 
 Definition scheduleRespectsDependenceSet (s: nat -> nat) (ds: dependenceset) : Prop := forall (d: dependence), List.In d ds -> scheduleRespectsDependence s d.
 
-(* A dependence set is complete if it contains all the dependence we expect
+(** A dependence set is complete if it contains all the dependence we expect
 it to contain. TODO: Rewrite the definition of the completeness of
 our computeDepenedence function using this notion *)
-(* NOTE: this is not enough, is it? We need a definition that this thing allows us to
+(** NOTE: this is not enough, is it? We need a definition that this thing allows us to
 flip assert that if we have a depenendece, then it's present in the list *)
 Definition validDependence (c: com) (d: dependence) : Prop :=
   dependenceAliases' d c /\ dependenceInRange d c /\ dependenceLexPositive d.
@@ -1115,7 +1126,7 @@ Definition completeDependenceSet (c: com) (ds: dependenceset) : Prop :=
     (List.In d ds -> validDependence c d).
 
 
-(* If we have an empty dependence set, then it is impossible for instructions to alias. *)
+(** If we have an empty dependence set, then it is impossible for instructions to alias. *)
 Theorem emptyDependenceSetImpliesNoAliasing: forall (i j : nat) (c: com), completeDependenceSet c Datatypes.nil -> dependenceLexPositive (i, j) -> dependenceInRange (i, j) c ->  exists (w w': write), getWriteAt' c i = Some w /\ getWriteAt' c j = Some w' /\ writeIx w <> writeIx w'.
 Proof.
   intros.
@@ -1154,8 +1165,9 @@ Proof.
 Qed.
 
 
-(* Slightly better way of stating theorem *)
+(** Slightly better way of stating theorem *)
 Theorem emptyDependenceSetImpliesNoAliasing': forall (i j : nat) (c: com), completeDependenceSet c Datatypes.nil -> i <> j ->  commandIxInRange c i -> commandIxInRange c j -> exists (w w': write), getWriteAt' c i = Some w /\ getWriteAt' c j = Some w' /\ writeIx w <> writeIx w'.
+Proof.
   intros.
   assert (i < j \/ i > j) as ij_order. omega.
   destruct ij_order as [i_lt_j | i_gt_j].
@@ -1215,8 +1227,12 @@ Abort.
 
   
 
-(* TODO, QUESTION: Why is this not trivial for coq? *)
+(** Show that writes are decidable *)
+(** TODO, QUESTION: Why is this not trivial for coq? *)
+(** With hindsight, I now know that this is indeed trivial.
+Coq has `decide equality` inbuilt *)
 Theorem writesEqualDecidable: forall (w w': write), w = w' \/ w <> w'.
+Proof.
   intros.
   destruct w.
   destruct w'.
@@ -1231,7 +1247,7 @@ Theorem writesEqualDecidable: forall (w w': write), w = w' \/ w <> w'.
   right. congruence.
 Qed.
 
-(* Notion of a subprogram aliasing with a single write *)
+(** Notion of a subprogram aliasing with a single write **)
 Definition NoAliasingBetweenSubprogramAndWrite (c: com) (wix: memix) : Prop :=
   forall (i: nat), commandIxInRange c i ->
                    option_map writeIx (getWriteAt' c i) <> Some wix.
@@ -1272,7 +1288,7 @@ Proof.
     unfold comlen. fold comlen. omega.
 Qed.
 
-(* If two subprograms do not alias, we can reorder them freely *)
+(** If two subprograms do not alias, we can reorder them freely **)
 Definition NoAliasingBetweenSubprograms (c1 c2: com) : Prop :=
     forall (i j: nat),
     commandIxInRange c1 i->
@@ -1313,8 +1329,8 @@ Proof.
   simpl in H. auto.
 Qed.
 
-(* If a subprogram does not touch a memory location, then we can use the original
-state of memory at this location *)
+(** If a subprogram does not touch a memory location, then we can use the original
+state of memory at this location **)
 Lemma NoAliasingBetweenSubprogramAndWriteAllowsPunchthrough:
   forall (c: com) (wix: memix) (mem: memory),
     NoAliasingBetweenSubprogramAndWrite c wix ->
@@ -1437,7 +1453,7 @@ Qed.
 
 Theorem NoAliasingBetweenSubprogramsAllowsReordering: forall (c1 c2: com),
     NoAliasingBetweenSubprograms c1 c2 -> c1 +++ c2 === c2 +++ c1.
-  Proof.
+Proof.
   intros.
   unfold ceq.
   intros.
@@ -1473,9 +1489,8 @@ Definition aliasingWriteTimepointsSet (c: com) (ix: memix) (l: list timepoint) :
     List.In t l -> commandIxInRange c t /\ (exists (wval: memvalue), getWriteAt' c t = Some (Write ix wval)).
 
 
-(* getAliasingWriteTimepoints actually does what it says it does *)
+(** getAliasingWriteTimepoints actually does what it says it does **)
 (* NOTE: I need to change this a little to exhibit NoDup.
-
 Theorem getAliasingWriteTimepointsForProgramGivesAliasingWrites:
   forall (c: com) (ix: memix),
     aliasingWriteTimepointsSet c
@@ -1536,8 +1551,9 @@ Qed.
 *)
 
 
-(* TODO: has no one really defined these combinators? *)
+(** TODO: has no one really defined these combinators? **)
 Lemma list_length_1_implies_singleton: forall (a: Type) (l: list a), length l = 1 -> exists (x: a), l = List.cons x List.nil.
+Proof.
   intros a l.
   destruct l.
   intros. inversion H.
@@ -1552,6 +1568,7 @@ Qed.
 (* TODO: has no one really defined these combinators? *)
 Lemma list_length_2_implies_2_elems: forall (a: Type) (l: list a),
     length l = 2 -> exists (x x': a), l = List.cons x (List.cons x' List.nil).
+Proof.
   intros a l.
   destruct l.
   intros. inversion H.
@@ -1606,6 +1623,7 @@ Theorem emptyDependenceSetWillHaveSingleAliasingWrite:
     aliasingWriteTimepointsSet c ix lt ->
     (exists (t: timepoint),
         lt = List.cons t List.nil) \/ lt = List.nil.
+Proof.
   intros.
   unfold aliasingWriteTimepointsSet in H0.
   assert (length lt <= 1 \/ length lt >= 2) as lt_destruct. omega.
@@ -2645,6 +2663,7 @@ Qed.
 (* Prove this here so we can use all the machinery we have about the abstract spec on this particular instantiation *)
 Theorem getLatestAliasingWriteTimepointForProgramCorrect: forall (c: com) (aliasix: memix),
     latestAliasingWriteTimepointSpec c aliasix (getLatestAliasingWriteTimepointForProgram c aliasix).
+Proof.
   intros.
   induction c.
   unfold latestAliasingWriteTimepointSpec in IHc.
@@ -2847,13 +2866,14 @@ Theorem getWriteAt'TransportAlongValidSchedule':
   forall (s sinv: nat -> nat) (c c': com) (tp: timepoint) (w: write),
     scheduleMappingWitness s sinv c c' -> 
     getWriteAt' c tp = getWriteAt' c' (s tp).
+Proof.
   intros.
   assert ((tp >= 1 /\ tp <= comlen c) \/ tp = 0 \/ tp > comlen c) as tp_cases. omega.
   destruct tp_cases as [tp_in_range | tp_out_of_range].
 Abort.
 
 
-(* Main theorem of the day. If a *schedule s* respects a *complete dependence set ds*, then the semantics of the original program is the same as that of the rescheduled program *)
+(** Main theorem of the day. If a *schedule s* respects a *complete dependence set ds*, then the semantics of the original program is the same as that of the rescheduled program *)
 Theorem reschedulePreservesSemantics: forall (c c': com) (ds: dependenceset) (s sinv: nat -> nat),
     completeDependenceSet c ds -> scheduleMappingWitness s sinv c c' ->
     scheduleRespectsDependenceSet s ds -> c === c'.
