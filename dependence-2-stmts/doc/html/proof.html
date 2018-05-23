@@ -1,0 +1,162 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Module proof</title>
+<meta name="description" content="Documentation of Coq module proof" />
+<link href="coq2html.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="coq2html.js"> </script>
+</head>
+
+<body onload="hideAll('proofscript')">
+<h1 class="title">Module proof</h1>
+<div class="coq">
+<span class="kwd">Require</span> <span class="kwd">Import</span> <span class="id">Coq.ZArith.BinInt</span>.<br/>
+<span class="kwd">Require</span> <span class="kwd">Import</span> <span class="id">Coq.ZArith.BinIntDef</span>.<br/>
+<span class="kwd">Require</span> <span class="kwd">Import</span> <span class="id">Coq.Numbers.BinNums</span>.<br/>
+<span class="kwd">Require</span> <span class="kwd">Import</span> <span class="id">Coq.Lists.List</span>.<br/>
+<span class="kwd">Require</span> <span class="kwd">Import</span> <span class="id">Coq.ZArith.Zbool</span>.<br/>
+<span class="kwd">Require</span> <span class="kwd">Import</span> <span class="id">Coq.Sorting.Permutation</span>.<br/>
+<span class="kwd">Require</span> <span class="kwd">Import</span> <span class="id">Coq.Logic.FunctionalExtensionality</span>.<br/>
+<span class="kwd">Require</span> <span class="kwd">Import</span> <span class="id">Omega</span>.<br/>
+<span class="kwd">Require</span> <span class="kwd">Import</span> <span class="id">Coq.Bool.Sumbool</span>.<br/>
+<span class="kwd">Require</span> <span class="kwd">Import</span> <span class="id">Coq.ZArith.Zhints</span>.<br/>
+<span class="kwd">Require</span> <span class="kwd">Import</span> <span class="id">Coq.Classes.EquivDec</span>.<br/>
+<span class="kwd">Require</span> <span class="kwd">Import</span> <span class="id">Coq.Structures.Equalities</span>.<br/>
+<br/>
+<span class="kwd">Open</span> <span class="kwd">Scope</span> <span class="id">Z_scope</span>.<br/>
+<br/>
+<br/>
+<div class="doc">An index into memory </div>
+<span class="kwd">Notation</span> <span class="id">Ix</span> := <span class="id">Z</span>.<br/>
+<br/>
+<div class="doc">values in memory </div>
+<span class="kwd">Definition</span> <span class="id">MemValue</span> := <span class="id">Z</span>.<br/>
+<br/>
+<br/>
+<div class="doc">A statement in our grammar </div>
+<span class="kwd">Inductive</span> <span class="id">Stmt</span> : <span class="kwd">Type</span> := <span class="id">Write</span> : <span class="id">Z</span> -&gt; <span class="id">MemValue</span> -&gt; <span class="id">Stmt</span>.<br/>
+<br/>
+<div class="doc">A program is a list of statements </div>
+<span class="kwd">Inductive</span> <span class="kwd">Program</span> : <span class="kwd">Type</span> :=<br/>
+&nbsp;&nbsp;<span class="id">Program2Stmts</span> : <span class="id">Stmt</span> -&gt; <span class="id">Stmt</span> -&gt; <span class="kwd">Program</span>.<br/>
+<br/>
+<div class="doc">Memory is a function from an index to a value </div>
+<span class="kwd">Definition</span> <span class="id">Memory</span> :=  <span class="id">Ix</span> -&gt; <span class="id">MemValue</span>.<br/>
+<br/>
+<div class="doc">initial state of memory </div>
+<span class="kwd">Definition</span> <span class="id">initMemory</span> : <span class="id">Memory</span> := <span class="kwd">fun</span> <span class="id">ix</span> =&gt; <span class="id">Z0</span>.<br/>
+<br/>
+<div class="doc">Lemma that describes the initial state of memory as being zeroed out </div>
+<span class="kwd">Theorem</span> <span class="id">initMemoryAlwaysZero</span> : <span class="kwd">forall</span> (<span class="id">wix</span>: <span class="id">Ix</span>), (<span class="id">initMemory</span> <span class="id">wix</span>) = <span class="id">Z0</span>.<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof1')">Proof.</div>
+<div class="proofscript" id="proof1">
+&nbsp;&nbsp;<span class="tactic">auto</span>.<br/>
+Qed.</div>
+<br/>
+<br/>
+<div class="doc">Implement writing to memory </div>
+<span class="kwd">Definition</span> <span class="id">writeToMemory</span> (<span class="id">wix</span>: <span class="id">Ix</span>) (<span class="id">wval</span>: <span class="id">MemValue</span>) (<span class="id">mold</span>: <span class="id">Memory</span>) : <span class="id">Memory</span> :=<br/>
+&nbsp;&nbsp;<span class="kwd">fun</span> <span class="id">ix</span> =&gt; <span class="kwd">if</span> (<span class="id">ix</span> =? <span class="id">wix</span>)%<span class="id">Z</span> <span class="kwd">then</span> <span class="id">wval</span> <span class="kwd">else</span> <span class="id">mold</span> <span class="id">ix</span>.<br/>
+<br/>
+<span class="kwd">Theorem</span> <span class="id">readFromWriteIdentical</span> : <span class="kwd">forall</span> (<span class="id">wix</span>: <span class="id">Ix</span>) (<span class="id">wval</span>: <span class="id">MemValue</span>) (<span class="id">mem</span>: <span class="id">Memory</span>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id">writeToMemory</span> <span class="id">wix</span> <span class="id">wval</span> <span class="id">mem</span>) <span class="id">wix</span> = <span class="id">wval</span>.<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof2')">Proof.</div>
+<div class="proofscript" id="proof2">
+&nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">wix</span> <span class="id">wval</span> <span class="id">mem</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">writeToMemory</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">Z.eqb_refl</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">reflexivity</span>.<br/>
+Qed.</div>
+<br/>
+<br/>
+<div class="doc">Reading from a memory location that was written to, when the read does not
+alias the write queries the previous state of memory </div>
+<span class="kwd">Theorem</span> <span class="id">readFromWriteDifferent</span> : <span class="kwd">forall</span> (<span class="id">wix</span>: <span class="id">Ix</span>) (<span class="id">rix</span>: <span class="id">Ix</span>) (<span class="id">wval</span> : <span class="id">MemValue</span>) (<span class="id">mem</span>: <span class="id">Memory</span>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="id">rix</span> &lt;&gt; <span class="id">wix</span> -&gt; (<span class="id">writeToMemory</span> <span class="id">wix</span> <span class="id">wval</span> <span class="id">mem</span>) <span class="id">rix</span> = <span class="id">mem</span> <span class="id">rix</span>.<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof3')">Proof.</div>
+<div class="proofscript" id="proof3">
+&nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">wix</span> <span class="id">rix</span> <span class="id">wval</span> <span class="id">mem</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">rix_neq_wix</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">writeToMemory</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">assert</span>((<span class="id">rix</span> =? <span class="id">wix</span>)%<span class="id">Z</span> = <span class="id">false</span>).<br/>
+&nbsp;&nbsp;<span class="tactic">apply</span> <span class="id">Z.eqb_neq</span> <span class="kwd">in</span> <span class="id">rix_neq_wix</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">auto</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">H</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">reflexivity</span>.<br/>
+Qed.</div>
+<br/>
+<br/>
+<div class="doc">Model the effect of memory writes on memory. </div>
+<span class="kwd">Definition</span> <span class="id">modelStmtMemorySideEffect</span> (<span class="id">s</span>: <span class="id">Stmt</span>) (<span class="id">mold</span>: <span class="id">Memory</span>) : <span class="id">Memory</span> :=<br/>
+&nbsp;&nbsp;<span class="kwd">match</span> <span class="id">s</span> <span class="kwd">with</span><br/>
+&nbsp;&nbsp;| <span class="id">Write</span> <span class="id">wix</span> <span class="id">wval</span> =&gt; (<span class="id">writeToMemory</span> <span class="id">wix</span> <span class="id">wval</span> <span class="id">mold</span>)<br/>
+&nbsp;&nbsp;<span class="kwd">end</span>.<br/>
+<br/>
+<div class="doc">A program's effect on memory is to sequentially execute its statements </div>
+<span class="kwd">Definition</span> <span class="id">modelProgramMemorySideEffect</span> (<span class="id">p</span>: <span class="kwd">Program</span>) : <span class="id">Memory</span> :=<br/>
+&nbsp;&nbsp;<span class="kwd">match</span> <span class="id">p</span> <span class="kwd">with</span><br/>
+&nbsp;&nbsp;| <span class="id">Program2Stmts</span> <span class="id">s1</span> <span class="id">s2</span> =&gt; <span class="kwd">let</span> <span class="id">s1mem</span> := (<span class="id">modelStmtMemorySideEffect</span> <span class="id">s1</span> <span class="id">initMemory</span>) <span class="kwd">in</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id">modelStmtMemorySideEffect</span> <span class="id">s2</span> <span class="id">s1mem</span>)<br/>
+&nbsp;&nbsp;<span class="kwd">end</span>.<br/>
+<br/>
+<br/>
+<div class="doc">Two programs are equivalent if their final states of memory is the same </div>
+<span class="kwd">Definition</span> <span class="id">programsEquivalent</span> (<span class="id">p</span>:<span class="kwd">Program</span>) (<span class="id">q</span>: <span class="kwd">Program</span>) : <span class="kwd">Prop</span> :=<br/>
+&nbsp;&nbsp;<span class="id">modelProgramMemorySideEffect</span> <span class="id">p</span>  = <span class="id">modelProgramMemorySideEffect</span> <span class="id">q</span>.<br/>
+<br/>
+<br/>
+<span class="kwd">Theorem</span> <span class="id">trichotomy</span>: <span class="kwd">forall</span> (<span class="id">i1</span> <span class="id">i2</span> <span class="id">scrutinee</span>: <span class="id">Ix</span>), <span class="id">i1</span> &lt;&gt; <span class="id">i2</span> -&gt; (<span class="id">scrutinee</span> = <span class="id">i1</span>) \/ (<span class="id">scrutinee</span> = <span class="id">i2</span>) \/ (<span class="id">scrutinee</span> &lt;&gt; <span class="id">i1</span> /\ <span class="id">scrutinee</span> &lt;&gt; <span class="id">i2</span>)%<span class="id">Z</span>.<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof4')">Proof.</div>
+<div class="proofscript" id="proof4">
+&nbsp;&nbsp;<span class="tactic">intros</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">omega</span>.<br/>
+Qed.</div>
+<br/>
+<div class="doc">Theorem to be proven: If array indeces are not equal, it is safe to flip writes </div>
+<span class="kwd">Theorem</span> <span class="id">allowFlipIfWritesDontAlias</span>:<br/>
+&nbsp;&nbsp;<span class="kwd">forall</span> (<span class="id">i1</span> <span class="id">i2</span>: <span class="id">Ix</span>), <span class="kwd">forall</span> (<span class="id">v1</span> <span class="id">v2</span>: <span class="id">MemValue</span>),<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="id">i1</span> &lt;&gt; <span class="id">i2</span> -&gt;<br/>
+&nbsp;&nbsp;<span class="id">programsEquivalent</span><br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id">Program2Stmts</span> (<span class="id">Write</span> <span class="id">i1</span> <span class="id">v1</span>) (<span class="id">Write</span> <span class="id">i2</span> <span class="id">v2</span>))<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;(<span class="id">Program2Stmts</span> (<span class="id">Write</span> <span class="id">i2</span> <span class="id">v2</span>) (<span class="id">Write</span> <span class="id">i1</span> <span class="id">v1</span>)).<br/>
+<div class="toggleproof" onclick="toggleDisplay('proof5')">Proof.</div>
+<div class="proofscript" id="proof5">
+&nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">i1</span> <span class="id">i2</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">v1</span> <span class="id">v2</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">intros</span> <span class="id">i1_neq_i2</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">programsEquivalent</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">modelProgramMemorySideEffect</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">unfold</span> <span class="id">modelStmtMemorySideEffect</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">extensionality</span> <span class="id">curix</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">destruct</span> (<span class="id">trichotomy</span> <span class="id">i1</span> <span class="id">i2</span> <span class="id">curix</span>).<br/>
+&nbsp;&nbsp;<span class="tactic">auto</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">readFromWriteDifferent</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">H</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">readFromWriteIdentical</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">readFromWriteIdentical</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">reflexivity</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">omega</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">destruct</span> <span class="id">H</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">H</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">readFromWriteIdentical</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">readFromWriteDifferent</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">readFromWriteIdentical</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">auto</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">auto</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">readFromWriteDifferent</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">readFromWriteDifferent</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">readFromWriteDifferent</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">rewrite</span> <span class="id">readFromWriteDifferent</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">auto</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">omega</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">omega</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">omega</span>.<br/>
+&nbsp;&nbsp;<span class="tactic">omega</span>.<br/>
+Qed.</div>
+<br/>
+</div>
+<div class="footer"><hr/>Generated by coq2html</div>
+</body>
+</html>
