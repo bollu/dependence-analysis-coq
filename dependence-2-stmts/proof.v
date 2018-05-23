@@ -11,38 +11,42 @@ Require Import Coq.ZArith.Zhints.
 Require Import Coq.Classes.EquivDec.
 Require Import Coq.Structures.Equalities.
 
+Open Scope Z_scope.
 
-(* An index into memory *)
-Definition Ix := Z.
 
-(* values in memory *)
+(** An index into memory *)
+Notation Ix := Z.
+
+(** values in memory *)
 Definition MemValue := Z.
 
-(* factor used in building expressions *)
-(*Inductive Factor : Set := Raw : MemValue -> Factor. *)
 
-(* A statement in our grammar *)
+(** A statement in our grammar *)
 Inductive Stmt : Type := Write : Z -> MemValue -> Stmt.
 
-(* A program is a list of statements *)
+(** A program is a list of statements *)
 Inductive Program : Type :=
   Program2Stmts : Stmt -> Stmt -> Program.
 
-(* Memory is a function from an index to a value *)
+(** Memory is a function from an index to a value *)
 Definition Memory :=  Ix -> MemValue.
 
-(* initial state of memory *)
+(** initial state of memory *)
 Definition initMemory : Memory := fun ix => Z0.
 
+(** Lemma that describes the initial state of memory as being zeroed out *)
 Theorem initMemoryAlwaysZero : forall (wix: Ix), (initMemory wix) = Z0.
 Proof.
   auto.
 Qed.
 
 
+(** Implement writing to memory *)
 Definition writeToMemory (wix: Ix) (wval: MemValue) (mold: Memory) : Memory :=
   fun ix => if (ix =? wix)%Z then wval else mold ix.
 
+(* Show that reading from a memory location that has been written to returns
+the written value *)
 Theorem readFromWriteIdentical : forall (wix: Ix) (wval: MemValue) (mem: Memory),
     (writeToMemory wix wval mem) wix = wval.
 Proof.
@@ -53,7 +57,8 @@ Proof.
 Qed.
 
 
-(* I do not know who Zneq_to_neq fails. TODO: debug this *)
+(** Reading from a memory location that was written to, when the read does not
+alias the write queries the previous state of memory *)
 Theorem readFromWriteDifferent : forall (wix: Ix) (rix: Ix) (wval : MemValue) (mem: Memory),
     rix <> wix -> (writeToMemory wix wval mem) rix = mem rix.
 Proof.
@@ -68,14 +73,13 @@ Proof.
 Qed.
 
 
-  
-
-(* Model the effect of memory writes on memory. *)
+(** Model the effect of memory writes on memory. *)
 Definition modelStmtMemorySideEffect (s: Stmt) (mold: Memory) : Memory :=
   match s with
   | Write wix wval => (writeToMemory wix wval mold)
   end.
 
+(** A program's effect on memory is to sequentially execute its statements *)
 Definition modelProgramMemorySideEffect (p: Program) : Memory :=
   match p with
   | Program2Stmts s1 s2 => let s1mem := (modelStmtMemorySideEffect s1 initMemory) in
@@ -83,28 +87,19 @@ Definition modelProgramMemorySideEffect (p: Program) : Memory :=
   end.
 
 
-(* Two programs are equivalent if their final states of memory is the same *)
+(** Two programs are equivalent if their final states of memory is the same *)
 Definition programsEquivalent (p:Program) (q: Program) : Prop :=
   modelProgramMemorySideEffect p  = modelProgramMemorySideEffect q.
 
 
-(* State theorem I wish to prove. *)
-(* If array indeces are not equal, it is safe to flip them*)
-Definition AllowFlipIfWritesDontAlias : Prop :=
-  forall (i1 i2: Ix), forall (v1 v2: MemValue),
-      i1 <> i2 ->
-  programsEquivalent
-    (Program2Stmts (Write i1 v1) (Write i2 v2))
-    (Program2Stmts (Write i2 v2) (Write i1 v1)).
-
 (* Theorem about integer equalities I need to separate writes into disjoint sets *)
-Theorem trichotomy: forall (i1 i2 scrutinee: Ix), i1 <> i2 -> (scrutinee = i1) \/ (scrutinee = i2) \/ (scrutinee <> i1 /\ scrutinee <> i2).
+Theorem trichotomy: forall (i1 i2 scrutinee: Ix), i1 <> i2 -> (scrutinee = i1) \/ (scrutinee = i2) \/ (scrutinee <> i1 /\ scrutinee <> i2)%Z.
 Proof.
-  intros i1 i2 scrutinee.
-  intros i1_neq_i2.
+  intros.
   omega.
 Qed.
 
+(** Theorem to be proven: If array indeces are not equal, it is safe to flip writes *)
 Theorem allowFlipIfWritesDontAlias:
   forall (i1 i2: Ix), forall (v1 v2: MemValue),
       i1 <> i2 ->
@@ -144,12 +139,4 @@ Proof.
   omega.
   omega.
 Qed.
-
-
-(**** Schedule stuff for later, I know nothing on how to prove this stuff ****)
-(* A timepoint for a schedule *)
-Definition Timepoint := nat. 
-
-(* A schedule maps statements to time points *)
-Definition ScheduleMap := Stmt -> Timepoint.
 
