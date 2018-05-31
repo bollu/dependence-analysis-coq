@@ -1,0 +1,30 @@
+#+TITLE:     Formal Verification of Polyhedral Compilation
+#+AUTHOR:    Siddharth Bhat
+#+EMAIL:     siddharth.bhat@research.iiit.ac.in
+#+DATE:      June 1, 2017
+
+#+startup: beamer
+#+LaTeX_CLASS: beamer
+#+LaTeX_CLASS_OPTIONS: [bigger]
+
+* Polyhedral Compilation
+* Formal Verification
+- Have proofs of compiler correctness
+- Involve semantic preservation between source and target language
+- Use a theorem prover to encode proofs
+
+* Coq
+- Three-puns: 
+-- Thierry Coquand.
+-- Calculus of Constructions (CoC).
+-- Tradition of naming tools after animals: "rooster".
+
+- Built on a theory of the Calculus of Constructions.
+- Write programs, prove propositions about given program.
+- Demo
+
+* CompCert
+
+
+* VE-LLVM
+* Future directions
