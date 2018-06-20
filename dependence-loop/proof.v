@@ -11,6 +11,7 @@ Require Import Coq.Sorting.Permutation.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Logic.ExtensionalityFacts.
 Require Import Omega.
+Require Import Lia.
 Require Import Coq.Bool.Sumbool.
 Require Import Coq.ZArith.Zhints.
 Require Import Coq.Classes.EquivDec.
@@ -124,7 +125,7 @@ Fixpoint comlen (c: com) : nat :=
   end.
 
 Theorem n_minus_1_plus_1_eq_n_when_n_gt_0: forall (n: nat), n > 0 -> n - 1 + 1 = n.
-Proof. intros. omega. Qed.
+Proof. intros. lia. Qed.
 
 
 
@@ -151,7 +152,7 @@ Proof.
   unfold singletonWriteSet in H.
   unfold addToWriteSet in H.
   assert (curix = ix \/ curix <> ix).
-  omega.
+  lia.
 
   destruct H0.
   (* curix = ix *)
@@ -184,7 +185,7 @@ Proof.
   intros.
   unfold writeToWriteset in H.
   apply destructInSingletonWriteSet in H.
-  omega.
+  lia.
 Qed.
 
 
@@ -204,14 +205,14 @@ Proof.
   intros.
   unfold commandIxInRange in H.
   unfold commandIxInRange. simpl in H.
-  omega.
+  lia.
 Qed.
 
 Lemma commandIxInRangeInclusive: forall (c: com) (w: write) (i: nat), commandIxInRange c i -> commandIxInRange (CSeq c w) i.
 Proof.
   unfold commandIxInRange. unfold comlen. fold comlen.
   intros.
-  omega.
+  lia.
 Qed.
  
 
@@ -229,7 +230,7 @@ Proof.
   unfold  commandIxInRange.
   simpl.
   intros.
-  omega.
+  lia.
   split.
   apply H.
   apply H.
@@ -313,11 +314,11 @@ Proof.
   rewrite List.in_app_iff in H.
   destruct H.
   specialize (IHc  _ _ H).
-  unfold comlen. fold comlen. omega.
+  unfold comlen. fold comlen. lia.
   unfold comlen. fold comlen.
   unfold writeToWriteset in H. simpl in H. destruct w.
   apply destructInSingletonWriteSet in H.
-  omega.
+  lia.
   intros.
   inversion H.
 Qed.
@@ -346,7 +347,7 @@ Proof.
   unfold dependenceLexPositive.
   subst.
   simpl.
-  omega.
+  lia.
   specialize (IHc d H).
   assumption.
   intros.
@@ -380,7 +381,7 @@ Proof.
   inversion H.
   subst.
   apply computeWriteSetInBounds in H0.
-  omega.
+  lia.
   specialize (IHc d H).
   unfold dependenceInRange.
   unfold dependenceInRange in IHc.
@@ -390,7 +391,7 @@ Proof.
   unfold commandIxInRange.
   unfold commandIxInRange in IHc.
   unfold comlen. fold comlen.
-  omega.
+  lia.
 
   intros.
   simpl in H.
@@ -406,31 +407,31 @@ Proof.
   intros.
   unfold getWriteAt' in H.
   fold getWriteAt' in H.
-  assert(forall (x y : nat), x < y \/ x = y \/ x > y) as trichotomy. intros. omega.
+  assert(forall (x y : nat), x < y \/ x = y \/ x > y) as trichotomy. intros. lia.
   unfold comlen in H. fold comlen in H.
   specialize( trichotomy i ((comlen c) + 1)).
   destruct trichotomy.
   (* i < n + 1 *)
-    assert (i <> 1 + (comlen c)). omega.
+    assert (i <> 1 + (comlen c)). lia.
     fold getWriteAt' in H.
     rewrite <- Nat.eqb_neq in H1.
     rewrite H1 in H.
     specialize (IHc _ _ H).
     destruct IHc.
-    split; try assumption. unfold comlen. fold comlen. omega.
+    split; try assumption. unfold comlen. fold comlen. lia.
 
   intros.
      destruct H0.
      (* i = n + 1 *)
      unfold comlen. fold comlen.
-     omega.
+     lia.
 
      (* i > n + 1 *)
-      assert (i <> 1 + (comlen c)). omega.
+      assert (i <> 1 + (comlen c)). lia.
         rewrite <- Nat.eqb_neq in H1.
         rewrite H1 in H.
         specialize (IHc _ _ H).
-        omega.
+        lia.
         (* contradiction *)
   (*CBegin case - contradiction *)
     intros.
@@ -445,7 +446,7 @@ Proof.
   intros.
   unfold getWriteAt'. fold getWriteAt'.
   remember (comlen c) as n.
-  assert(i = 1 + n\/ i < 1 + n \/ i > 1 + n) as trichotomy. omega.
+  assert(i = 1 + n\/ i < 1 + n \/ i > 1 + n) as trichotomy. lia.
   (* i = n  + 1 *)
   destruct trichotomy as [tri | tri'].
   rewrite <- Nat.eqb_eq in tri.
@@ -457,21 +458,21 @@ Proof.
 
   destruct tri' as [tri' | tri''].
   (* i < n + 1 *)
-  assert(i >= 1 /\ i <= n). omega.
+  assert(i >= 1 /\ i <= n). lia.
   specialize (IHc _ H0).
   destruct IHc.
-  assert (i <> 1 + n). omega.
+  assert (i <> 1 + n). lia.
   rewrite <- Nat.eqb_neq in H2.
   unfold comlen. fold comlen. rewrite <- Heqn.
   rewrite H2.
   exists x.
   assumption.
-  assert (i >= 1 /\ i <= n). unfold comlen in H. fold comlen in H. omega.
+  assert (i >= 1 /\ i <= n). unfold comlen in H. fold comlen in H. lia.
   specialize (IHc i H0).
   assert (i > 1 + n /\ i <= n).
-  omega.
+  lia.
   inversion H1.
-  assert (i <> 1 + comlen c). omega.
+  assert (i <> 1 + comlen c). lia.
   rewrite <- Nat.eqb_neq in H4.
   unfold comlen. fold comlen.
   rewrite H4.
@@ -482,7 +483,7 @@ Proof.
   intros.
   unfold comlen in H.
   inversion H.
-  omega.
+  lia.
 Qed.
 
 
@@ -493,7 +494,7 @@ Proof.
   intros.
   simpl.
   assert (comlen c + 1  =? S (comlen c) = true).
-  rewrite Nat.eqb_eq. omega.
+  rewrite Nat.eqb_eq. lia.
   unfold comlen. fold comlen.
   rewrite H.
   reflexivity.
@@ -509,26 +510,26 @@ Proof.
   dependent induction c.
   intros.
   assert (i = comlen c + 1 \/ i < comlen  c + 1).
-  unfold comlen in H. fold comlen in H. omega.
+  unfold comlen in H. fold comlen in H. lia.
   destruct H0.
   rewrite H0.
   rewrite getWriteAt'OnCSeq.
   simpl.
   assert (comlen c + 1 =? S (S (comlen c)) = false).
-  rewrite Nat.eqb_neq. omega.
+  rewrite Nat.eqb_neq. lia.
   rewrite H1.
-  assert (comlen c +1 =? S(comlen c) = true). rewrite Nat.eqb_eq. omega.
+  assert (comlen c +1 =? S(comlen c) = true). rewrite Nat.eqb_eq. lia.
   rewrite H2.
   reflexivity.
   simpl.
-  assert (i =?  (S (S (comlen c))) = false). rewrite Nat.eqb_neq. omega.
-  assert (i =? S (comlen c) = false). rewrite Nat.eqb_neq. omega.
+  assert (i =?  (S (S (comlen c))) = false). rewrite Nat.eqb_neq. lia.
+  assert (i =? S (comlen c) = false). rewrite Nat.eqb_neq. lia.
   rewrite H1. rewrite H2.
   reflexivity.
   intros.
   simpl.
   unfold comlen in H. fold comlen in H.
-  omega.
+  lia.
 Qed.
 
 Lemma computeWriteSetRange: forall (c: com) (wix: memix) (i: nat), List.In i (((computeWriteSet  c)) wix) -> i >= 1 /\ i <= comlen c.
@@ -544,14 +545,14 @@ Proof.
   (* induction case - List.In i (computeWriteSet n c wix) *)
   specialize (IHc _ _ H).
   unfold comlen. fold comlen.
-  omega.
+  lia.
   unfold writeToWriteset in H.
   destruct w.
   (* new case - List.In i (singletonWriteSet m (n + 1) wix ) *)
   unfold singletonWriteSet in H.
   unfold addToWriteSet in H.
   assert (wix = n \/ wix <> n).
-  omega.
+  lia.
   destruct H0.
   (* wix = m *)
   rewrite <- Nat.eqb_eq in H0.
@@ -559,7 +560,7 @@ Proof.
   destruct H.
   unfold comlen. fold comlen.
   unfold comlen in H. fold comlen in H.
-  omega.
+  lia.
   destruct H.
   (* wix <> m *)
   rewrite <- Nat.eqb_neq in H0.
@@ -590,7 +591,7 @@ Proof.
   apply getWriteAt'RangeConsistent in H.
   unfold comlen in H. fold comlen in H.
   assert (i = comlen c + 1 \/ i < comlen c + 1) as icase.
-  omega.
+  lia.
   destruct icase as [i_eq_sn | i_lt_sn].
   - (* i = n + 1*)
   right.
@@ -599,7 +600,7 @@ Proof.
   unfold singletonWriteSet.
   unfold addToWriteSet.
   inversion getWriteAt'Invoke.
-  assert (i =? S(comlen c)= true). rewrite Nat.eqb_eq. omega.
+  assert (i =? S(comlen c)= true). rewrite Nat.eqb_eq. lia.
   rewrite H0 in H1. simpl in H1.
   inversion H1.
   assert (wix =? wix = true). exact (Nat.eqb_refl wix).
@@ -610,14 +611,14 @@ Proof.
   auto.
   (* i < n + 1 *)
   -  left.
-     assert (i >= 1 /\ i <= comlen c) as witness. omega.
+     assert (i >= 1 /\ i <= comlen c) as witness. lia.
      assert(exists (w: write), getWriteAt'  c i = Some w) as writeExists.
      apply (getWriteAt'RangeComplete _ _ witness).
      inversion getWriteAt'Invoke.
      destruct writeExists.
      destruct x.
      specialize (IHc _ _ _ H0).
-     assert (i <> S (comlen c)). omega.
+     assert (i <> S (comlen c)). lia.
      rewrite <- Nat.eqb_neq in H2.
      rewrite H2 in H1.
      rewrite H0 in H1.
@@ -658,27 +659,27 @@ Proof.
   assert (i >= 1 /\ i <= S (comlen c)).
   apply computeWriteSetInBounds in H0.
   unfold comlen in H0. fold comlen in H0.
-  omega.
+  lia.
   unfold computeWriteSet in H0. fold computeWriteSet in H0. unfold mergeWriteSets in H0.
 
   rewrite List.in_app_iff in H0.
   destruct H0.
   - (* in write set till n*)
     assert (i <= comlen c).
-    apply computeWriteSetInBounds in H0. omega.
+    apply computeWriteSetInBounds in H0. lia.
     destruct w.
     specialize (IHc _ _ H0).
     destruct IHc.
     exists x.
     rewrite getWriteAt'DestructOnCSeq.
     assumption.
-    omega.
+    lia.
   - (* in new write set *)
     intros.
     assert (i = comlen c+ 1). apply destructInWriteToWriteSet in H0.
     unfold comlen in H1. fold comlen in H1.
     unfold comlen in H0. fold comlen in H0.
-    omega.
+    lia.
     destruct w.
     exists z.
     apply destructInWriteToWriteSet' in H0.
@@ -711,19 +712,19 @@ Proof.
   unfold dependenceInRange in H0.
   unfold commandIxInRange in H0.
   simpl in H0.
-  omega.
+  lia.
   destruct H2.
   (* tend = n + 1 *)
   left.
   unfold dependenceAliases' in H1.
   simpl in H1.
   subst.
-  assert (comlen c + 1 =? S (comlen c) = true). rewrite Nat.eqb_eq. omega.
+  assert (comlen c + 1 =? S (comlen c) = true). rewrite Nat.eqb_eq. lia.
   rewrite H2 in H1. simpl.
   assert (tbegin =? S (comlen c) = false).
   unfold dependenceLexPositive in H.
   simpl in H.
-  rewrite Nat.eqb_neq. omega.
+  rewrite Nat.eqb_neq. lia.
   rewrite H3 in H1.
   simpl in H1.
   split.
@@ -732,7 +733,7 @@ Proof.
   assert (exists (w: write), getWriteAt' c tbegin = Some w).
   apply getWriteAt'RangeComplete.
   unfold dependenceInRange in H0. unfold commandIxInRange in H0. simpl in H0.
-  unfold dependenceLexPositive in H. simpl in H. omega.
+  unfold dependenceLexPositive in H. simpl in H. lia.
   destruct H4.
   subst.
   destruct x eqn:xSave.
@@ -754,15 +755,15 @@ Proof.
   unfold dependenceLexPositive in H. simpl in H.
   unfold dependenceInRange in H0.
   unfold commandIxInRange in H0. simpl in H0.
-  omega.
+  lia.
   rewrite getWriteAt'DestructOnCSeq in H1.
   rewrite getWriteAt'DestructOnCSeq in H1.
   unfold dependenceAliases'.
   simpl.
-  assert (tend <> comlen c + 1). omega.
+  assert (tend <> comlen c + 1). lia.
   auto.
-  omega.
-  omega.
+  lia.
+  lia.
   (* <- *)
   intros.
   destruct H1.
@@ -773,10 +774,10 @@ Proof.
   rewrite H1. rewrite getWriteAt'OnCSeq.
   assert (tbegin < comlen c + 1 /\ tbegin >= 1).
   unfold dependenceLexPositive in H. unfold dependenceInRange in H0. unfold commandIxInRange in H0. simpl in H. simpl in H0.
-  omega.
+  lia.
   assert (getWriteAt'  (CSeq c (Write wix wval)) tbegin = getWriteAt' c tbegin).
   apply getWriteAt'DestructOnCSeq.
-  omega.
+  lia.
   rewrite H4.
   destruct H2.
   rewrite H2.
@@ -793,18 +794,18 @@ Proof.
   exact H2.
   simpl.
   unfold dependenceInRange in H0. unfold commandIxInRange in H0. simpl in H0.
-  omega.
+  lia.
   simpl.
   unfold dependenceInRange in H0. unfold commandIxInRange in H0. simpl in H0.
   unfold dependenceLexPositive in H. simpl in H.
-  omega.
+  lia.
 Qed.
 
 Lemma dependenceInRangeInclusive: forall (d: dependence) (c: com) (w: write),  dependenceInRange d c -> dependenceInRange d  (CSeq c w).
 Proof.
   unfold dependenceInRange. unfold commandIxInRange. destruct d. simpl.
   intros.
-  omega.
+  lia.
 Qed.
   
 
@@ -830,12 +831,12 @@ Proof.
   unfold dependenceAliases'. simpl.
   assert (n0 >= 1 /\ n0 <= comlen c).
   apply computeWriteSetInBounds in H0.
-  omega.
+  lia.
   assert (n0 =? S (comlen c) = false).
   rewrite Nat.eqb_neq.
-  omega.
+  lia.
   assert (comlen c =? comlen c = true).
-  rewrite Nat.eqb_eq. omega.
+  rewrite Nat.eqb_eq. lia.
   rewrite H2. rewrite H3.
   simpl.
   apply computeWriteSetCharacterFwd in H0.
@@ -851,13 +852,13 @@ Proof.
     apply computeDependencesInRange in H.
     apply dependenceInRangeInclusive. exact H.
     assert (n1 = comlen c + 1 \/ n1 <> comlen c+ 1).
-    omega.
+    lia.
     destruct H0.
     + (* n1 = n + 1 *)
       apply computeDependencesInRange in H.
       unfold dependenceInRange in H.
       unfold commandIxInRange in H.
-      simpl in H. omega.
+      simpl in H. lia.
     + (* n1 <> n + 1 *)
       intros.
       right.
@@ -879,7 +880,7 @@ Proof.
   unfold dependenceLexPositive.
   destruct d. simpl.
   intros.
-  omega.
+  lia.
 Qed.
 
 
@@ -928,7 +929,7 @@ Proof.
     unfold dependenceInRange in H0.
     unfold commandIxInRange in H0.
     simpl in H0.
-    omega.
+    lia.
 Qed.
 
 
@@ -1042,17 +1043,17 @@ Theorem ceq_switch_no_alias: forall (wix1 wix2: memix) (wval1 wval2: memvalue),
   unfold writeToMemory'.
   apply functional_extensionality.
   intros.
-  assert (x = wix2 \/ x <> wix2). omega.
+  assert (x = wix2 \/ x <> wix2). lia.
   destruct H0.
   rewrite H0.
   unfold writeToMemory.
-  assert (wix2 =? wix2 = true). rewrite Nat.eqb_eq. omega.
-  assert (wix2 =? wix1 = false). rewrite Nat.eqb_neq. omega.
+  assert (wix2 =? wix2 = true). rewrite Nat.eqb_eq. lia.
+  assert (wix2 =? wix1 = false). rewrite Nat.eqb_neq. lia.
   rewrite H1. rewrite H2. reflexivity.
 
   unfold writeToMemory.
   subst.
-  assert (x =? wix2 = false). rewrite Nat.eqb_neq. omega.
+  assert (x =? wix2 = false). rewrite Nat.eqb_neq. lia.
   rewrite H1. reflexivity.
 Qed.
 
@@ -1134,19 +1135,19 @@ Proof.
   unfold dependenceInRange in H1. destruct H1. simpl in H1.
   unfold commandIxInRange in H1.
   apply getWriteAt'RangeComplete.
-  omega.
+  lia.
   assert (exists (wj: write), getWriteAt' c j = Some wj).
   unfold dependenceInRange in H1.  simpl in H1. destruct H1.
   apply getWriteAt'RangeComplete.
   unfold commandIxInRange in H3.
-  omega.
+  lia.
   destruct H2. destruct H3.
   exists x. exists x0.
   split.
   assumption.
   split.
   assumption.
-  assert (writeIx x = writeIx x0 \/ writeIx x <> writeIx x0) as aliasing_cases. omega.
+  assert (writeIx x = writeIx x0 \/ writeIx x <> writeIx x0) as aliasing_cases. lia.
   destruct aliasing_cases.
   (* have alias *)
   -  unfold completeDependenceSet in H.
@@ -1169,7 +1170,7 @@ Qed.
 Theorem emptyDependenceSetImpliesNoAliasing': forall (i j : nat) (c: com), completeDependenceSet c Datatypes.nil -> i <> j ->  commandIxInRange c i -> commandIxInRange c j -> exists (w w': write), getWriteAt' c i = Some w /\ getWriteAt' c j = Some w' /\ writeIx w <> writeIx w'.
 Proof.
   intros.
-  assert (i < j \/ i > j) as ij_order. omega.
+  assert (i < j \/ i > j) as ij_order. lia.
   destruct ij_order as [i_lt_j | i_gt_j].
   - (* i < j *)
     apply emptyDependenceSetImpliesNoAliasing.
@@ -1192,7 +1193,7 @@ Proof.
     destruct H3. destruct H4. assumption.
     split.
     destruct H3.  assumption.
-    destruct H3. destruct H4. omega.
+    destruct H3. destruct H4. lia.
 Qed.
 
 
@@ -1209,7 +1210,7 @@ Proof.
   destruct H0.
   split.
   - (* lengths equal *)
-    unfold comlen in H0. fold comlen in H0. omega.
+    unfold comlen in H0. fold comlen in H0. lia.
   - split.
     + (* bijective *)
       destruct H2.
@@ -1217,11 +1218,11 @@ Proof.
     + (* range *)
       intros.
       destruct H2. specialize (H4 i). destruct H4.
-      unfold comlen. fold comlen. omega.
+      unfold comlen. fold comlen. lia.
       unfold comlen in H5. fold comlen in H5.
-      split. omega. split.
+      split. lia. split.
       unfold comlen in H0. fold comlen in H0.
-      assert (comlen c = comlen c'). omega.
+      assert (comlen c = comlen c'). lia.
       unfold scheduleRespectsDependenceSet in H1.
 Abort.
 
@@ -1236,8 +1237,8 @@ Proof.
   intros.
   destruct w.
   destruct w'.
-  assert( n = n0 \/ n <> n0). omega.
-  assert (z = z0 \/ z <> z0). omega.
+  assert( n = n0 \/ n <> n0). lia.
+  assert (z = z0 \/ z <> z0). lia.
   destruct H.
   destruct H0.
   left.
@@ -1269,7 +1270,7 @@ Proof.
     specialize (H i).
     simpl in H.
     assert (i =? S (comlen c ) = false).
-    rewrite Nat.eqb_neq. unfold commandIxInRange in H0. omega.
+    rewrite Nat.eqb_neq. unfold commandIxInRange in H0. lia.
     rewrite H1 in H.
     apply H.
     apply commandIxInRangeInclusive.
@@ -1279,13 +1280,13 @@ Proof.
     unfold NoAliasingBetweenSubprogramAndWrite in H.
     specialize (H (comlen c + 1)).
     simpl in H.
-    assert (comlen c + 1 =? S (comlen c) = true). rewrite Nat.eqb_eq. omega.
+    assert (comlen c + 1 =? S (comlen c) = true). rewrite Nat.eqb_eq. lia.
     rewrite H0 in H.
     simpl in H.
     assert (Some wix <> Some wixalias -> wix <> wixalias). auto.
     apply H1. apply H.
     unfold commandIxInRange.
-    unfold comlen. fold comlen. omega.
+    unfold comlen. fold comlen. lia.
 Qed.
 
 (** If two subprograms do not alias, we can reorder them freely **)
@@ -1313,18 +1314,18 @@ Proof.
   specialize (H H2 H1).
   rewrite getWriteAt'DestructOnCSeq in H.
   exact H.
-  unfold commandIxInRange in H0. omega.
+  unfold commandIxInRange in H0. lia.
   (* No aliasing with write *)
   unfold NoAliasingBetweenSubprogramAndWrite.
   unfold NoAliasingBetweenSubprograms in H.
   specialize (H (comlen c1 + 1)).
   assert (commandIxInRange (CSeq c1 (Write wix wval)) (comlen c1 + 1)).
-  unfold commandIxInRange. unfold comlen. fold comlen. omega.
+  unfold commandIxInRange. unfold comlen. fold comlen. lia.
   intros.
   specialize (H i H0 H1).
   simpl in H.
   assert (comlen c1 + 1 =? S(comlen c1) = true).
-  rewrite Nat.eqb_eq. omega.
+  rewrite Nat.eqb_eq. lia.
   rewrite H2 in H.
   simpl in H. auto.
 Qed.
@@ -1341,7 +1342,7 @@ Proof.
   unfold runProgram. fold runProgram.
   unfold writeToMemory'. destruct w eqn:wsave.
   unfold writeToMemory.
-  assert (wix = n \/ wix <> n) as wixcases. omega.
+  assert (wix = n \/ wix <> n) as wixcases. lia.
   destruct wixcases.
   - (* wix = m, but this cannot be possible since the program does not alias *)
     unfold NoAliasingBetweenSubprogramAndWrite in H.
@@ -1349,11 +1350,11 @@ Proof.
     (* pick last instruction *)
     specialize (H (comlen c + 1)).
     unfold commandIxInRange in H. unfold comlen in H. fold comlen in H.
-    assert (comlen c + 1 <= 1 + comlen c). omega.
-    assert (comlen c + 1 >= 1). omega.
+    assert (comlen c + 1 <= 1 + comlen c). lia.
+    assert (comlen c + 1 >= 1). lia.
     simpl in H.
     (* TODO: why do I need to prove this?! PROOF AUTOMATION. *)
-    assert (comlen c + 1 =? S (comlen c) = true).  rewrite Nat.eqb_eq. omega.
+    assert (comlen c + 1 =? S (comlen c) = true).  rewrite Nat.eqb_eq. lia.
     rewrite H3 in H. simpl in H.
     assert (Some n <> Some wix -> wix <> n). auto.
     apply H4. apply H; auto.
@@ -1361,7 +1362,7 @@ Proof.
 
   - (* wix <> m. We automatically use the written value *)
     intros.
-    assert (wix =? n = false). rewrite Nat.eqb_neq. omega.
+    assert (wix =? n = false). rewrite Nat.eqb_neq. lia.
     apply NoAliasingBetweenSubprogramAndWriteDestructOnCSeq in H.
     destruct H.
     specialize (IHc H).
@@ -1385,13 +1386,13 @@ Proof.
   intros.
   apply functional_extensionality.
   intros.
-  assert (x = wix \/ x <> wix) as xcases. omega.
+  assert (x = wix \/ x <> wix) as xcases. lia.
 
   destruct xcases.
   (* x = wix. *)
   unfold writeToMemory'.
   unfold writeToMemory.
-  assert (x =? wix = true). rewrite Nat.eqb_eq. omega.
+  assert (x =? wix = true). rewrite Nat.eqb_eq. lia.
   rewrite H1. fold writeToMemory.
   remember (fun ix : memix => if ix =? wix then wval else mem0 ix) as oldmem.
   assert (runProgram c oldmem x = oldmem x).
@@ -1399,7 +1400,7 @@ Proof.
   rewrite <- H0 in H. assumption.
   rewrite H2.
   rewrite Heqoldmem. rewrite H1. reflexivity.
-  assert (x =? wix = false). rewrite Nat.eqb_neq. omega.
+  assert (x =? wix = false). rewrite Nat.eqb_neq. lia.
   (* x <> wix *)
   generalize dependent wix.
   generalize dependent wval.
@@ -1420,17 +1421,17 @@ Proof.
   unfold writeToMemory' in IHc.
   unfold writeToMemory'.
   assert (n = x \/ n <> x) as mcases.
-  omega.
+  lia.
   destruct mcases.
   - (* m = x *)
     unfold writeToMemory.
-    assert (x =? n = true). rewrite Nat.eqb_eq. omega.
+    assert (x =? n = true). rewrite Nat.eqb_eq. lia.
     rewrite H5.
     reflexivity.
   - (* m <> x *)
     intros.
     assert (writeToMemory n z (runProgram c mem0) x = runProgram c mem0 x).
-    unfold writeToMemory. assert (x =? n = false). rewrite Nat.eqb_neq. omega.
+    unfold writeToMemory. assert (x =? n = false). rewrite Nat.eqb_neq. lia.
     rewrite H5.
     reflexivity.
     rewrite H5.
@@ -1438,7 +1439,7 @@ Proof.
     setoid_rewrite readFromWriteDifferent.
     rewrite IHc.
     setoid_rewrite readFromWriteDifferent.
-    reflexivity. omega. omega.
+    reflexivity. lia. lia.
     rewrite H6.
     reflexivity.
     (* CBegin case *)
@@ -1505,19 +1506,19 @@ Proof.
   unfold getAliasingWriteTimepointsForProgram in H.
   fold getAliasingWriteTimepointsForProgram in H.
 
-  assert (writeIx w = ix \/ writeIx w <> ix) as ix_destruct. omega.
+  assert (writeIx w = ix \/ writeIx w <> ix) as ix_destruct. lia.
   destruct ix_destruct.
   - (* writeIx = w *)
-  assert (writeIx w =? ix = true). rewrite Nat.eqb_eq. omega.
+  assert (writeIx w =? ix = true). rewrite Nat.eqb_eq. lia.
   rewrite H1 in H.
   apply List.in_inv in H.
   destruct H.
   + (* comlen (CSeq c w) = t0 *)
     unfold commandIxInRange.
-    split. unfold comlen. fold comlen. unfold comlen in H. fold comlen in H. omega.
+    split. unfold comlen. fold comlen. unfold comlen in H. fold comlen in H. lia.
     destruct w eqn:wsave. (* need acess to wval *)
     exists m0. unfold getWriteAt'.
-    assert (t0 =? comlen (CSeq c (Write m m0)) = true). rewrite Nat.eqb_eq. omega.
+    assert (t0 =? comlen (CSeq c (Write m m0)) = true). rewrite Nat.eqb_eq. lia.
     rewrite H2. auto. unfold writeIx in H0. rewrite H0. reflexivity.
   +  (*  List.In t0 (getAliasingWriteTimepointsForProgram c ix - induction! *)
     intros.
@@ -1626,10 +1627,10 @@ Theorem emptyDependenceSetWillHaveSingleAliasingWrite:
 Proof.
   intros.
   unfold aliasingWriteTimepointsSet in H0.
-  assert (length lt <= 1 \/ length lt >= 2) as lt_destruct. omega.
+  assert (length lt <= 1 \/ length lt >= 2) as lt_destruct. lia.
   destruct lt_destruct.
   - (* length lt <= 1 *)
-    assert (length lt = 0 \/ length lt = 1) as lt_0_or_1. omega.
+    assert (length lt = 0 \/ length lt = 1) as lt_0_or_1. lia.
     destruct lt_0_or_1.
     + (* length lt = 0 *)
       assert (lt = List.nil).
@@ -1655,7 +1656,7 @@ Proof.
     unfold List.In.
     right. left. reflexivity.
     assert (x = x0 \/ x <> x0).
-    omega.
+    lia.
     destruct H2.
     + (* x = x0, will lead to contradiction because set is nodup *)
       destruct H0.
@@ -1725,11 +1726,11 @@ Proof.
 
   assert (getWriteAt' c' (s n) = getWriteAt' c n).
   specialize (H3 n).
-  assert (n >= 1 /\ n <= comlen c) as n_inbounds. unfold dependenceInRange in H1. unfold commandIxInRange in H1. simpl in H1. omega.
+  assert (n >= 1 /\ n <= comlen c) as n_inbounds. unfold dependenceInRange in H1. unfold commandIxInRange in H1. simpl in H1. lia.
   specialize (H3 n_inbounds).
   destruct H3. destruct H4. destruct H5. intuition. 
 
-  assert (getWriteAt' c' (s n0) = getWriteAt' c n0). specialize (H3 n0). assert (n0 >= 1 /\ n0 <= comlen c). unfold dependenceInRange in H1. unfold commandIxInRange in H1. simpl in H1. omega.
+  assert (getWriteAt' c' (s n0) = getWriteAt' c n0). specialize (H3 n0). assert (n0 >= 1 /\ n0 <= comlen c). unfold dependenceInRange in H1. unfold commandIxInRange in H1. simpl in H1. lia.
   specialize (H3 H5). intuition.
   subst.
   rewrite H4. rewrite H5. rewrite H0. reflexivity.
@@ -1749,8 +1750,8 @@ Proof.
   simpl.
   intuition.
   simpl. specialize (H4 n). cut (n >=1 /\ n <= comlen c). intros.
-  specialize (H4 H3). omega. omega.
-  specialize (H4 n). omega. specialize (H4 n0). omega. specialize (H4 n0). omega.
+  specialize (H4 H3). lia. lia.
+  specialize (H4 n). lia. specialize (H4 n0). lia. specialize (H4 n0). lia.
 Qed.
 
 
@@ -1791,7 +1792,7 @@ Proof.
   destruct w as [wix wval] eqn:wsavee.
 
 
-  assert (s tbegin < s tend \/ s tbegin = s tend \/ s tbegin > s tend) as tbegin_tend_cases. omega.
+  assert (s tbegin < s tend \/ s tbegin = s tend \/ s tbegin > s tend) as tbegin_tend_cases. lia.
 
 
   destruct tbegin_tend_cases as [tbegin_tend_lt | tbegin_tend_eq_or_gt].
@@ -1812,7 +1813,7 @@ Proof.
   rewrite tbegin_tend_eq. auto.
   unfold dependenceLexPositive in lexpos. simpl in lexpos.
   assert (tbegin = tend /\ tbegin < tend). auto.
-  omega.
+  lia.
 
 
    (* tbegin > tend.
@@ -1835,8 +1836,8 @@ Proof.
   unfold applyScheduleToDependence in tbegin_tend_respected_by_s.
   simpl in tbegin_tend_respected_by_s.
   assert (s tbegin > s tend /\ s tbegin < s tend) as contra.
-  omega.
-  omega.
+  lia.
+  lia.
 
   - (* CBegin cannot have a dependence *)
     destruct d  as [tbegin tend].
@@ -1844,7 +1845,7 @@ Proof.
      unfold dependenceInRange in inrange.
      unfold commandIxInRange in inrange.
      simpl in inrange.
-     omega.
+     lia.
 Qed.
 
 Theorem is_inverse_injective: forall (A B:Set) (f: A -> B) (g: B -> A) (a b: A), is_inverse f g -> f a = f b -> a = b.
@@ -1921,7 +1922,7 @@ Proof.
 
 
   destruct d' as [tbegin tend] eqn:dsave.
-  assert (sinv tbegin < sinv tend \/ sinv tbegin = sinv tend \/ sinv tbegin > sinv tend) as cases. omega.
+  assert (sinv tbegin < sinv tend \/ sinv tbegin = sinv tend \/ sinv tbegin > sinv tend) as cases. lia.
   destruct cases as [lt | eq_or_gt].
   (* lt *)
   unfold dependenceLexPositive, applyScheduleToDependence.
@@ -1936,7 +1937,7 @@ Proof.
   unfold dependenceLexPositive in lexpos_d'.
   assert (tbegin < tend /\ tbegin = tend) as contradict.
   intuition.
-  omega.
+  lia.
   (* gt *)
   assert (List.In (applyScheduleToDependence sinv (tend, tbegin)) ds) as wrong_dep.
   unfold completeDependenceSet in H.
@@ -1968,14 +1969,14 @@ Proof.
     cut (s (sinv tend) = tend).
     cut (s (sinv tbegin) = tbegin).
     intros tend_inv tbegin_inv.
-    rewrite <- tend_inv. rewrite <- tbegin_inv. omega.
+    rewrite <- tend_inv. rewrite <- tbegin_inv. lia.
     apply inv_s.
     apply inv_s.
     assert (tend < tbegin /\ tbegin < tend) as contra.
     unfold dependenceLexPositive in lexpos_d'. simpl in lexpos_d'.
-    omega.
+    lia.
     (* blow this up *)
-    omega.
+    lia.
 
   + intros d'_in_transport_ds.
     (* other direction: we know that we hve a dependence d', we need to show it's fine *)
@@ -2020,7 +2021,7 @@ Lemma completeDependenceSetConsDestructOnCSeq:
 Proof.
   intros c wix wval tbegin tend ds completedepset.
   assert (tend = comlen c + 1 \/ tend <= comlen c \/ tend > comlen c + 1) as tend_cases.
-  omega.
+  lia.
   destruct tend_cases as [tend_at_end| tend_not_at_end].
 
   - (* tend = comlen c + 1 *)
@@ -2041,7 +2042,7 @@ Proof.
     simpl in d_in_range.
     destruct d_in_range as [tbegin_range tend_range].
     unfold dependenceLexPositive in d_lexpos. simpl in d_lexpos.
-    omega.
+    lia.
 
 
     destruct exists_w_tbegin as [w_tbegin w_tbegin_witness].
@@ -2058,10 +2059,10 @@ Proof.
     rewrite w_tbegin_witness.
     rewrite H0. reflexivity.
     rewrite Nat.eqb_eq. unfold dependenceInRange, commandIxInRange, dependenceLexPositive in d_in_range, d_lexpos. simpl in d_in_range,d_lexpos.
-    omega.
-    rewrite Nat.eqb_neq. unfold dependenceInRange, commandIxInRange, dependenceLexPositive in d_in_range, d_lexpos. simpl in d_in_range,d_lexpos. omega.
+    lia.
+    rewrite Nat.eqb_neq. unfold dependenceInRange, commandIxInRange, dependenceLexPositive in d_in_range, d_lexpos. simpl in d_in_range,d_lexpos. lia.
 
-  -  intros. right. omega.
+  -  intros. right. lia.
 Qed.
 
 Lemma latestAliasingWriteTimepointSpecDestructOnCSeq:
@@ -2085,7 +2086,7 @@ Proof.
 
   - (* commandIxInRange c x *)
     unfold commandIxInRange in *.
-    unfold comlen in *. fold comlen in *. omega.
+    unfold comlen in *. fold comlen in *. lia.
 
   - intros. split.
     destruct H2 as [wval].
@@ -2094,7 +2095,7 @@ Proof.
     intros write_at_destruct.
     rewrite <- write_at_destruct. rewrite H2. reflexivity.
     rewrite getWriteAt'DestructOnCSeq. auto.
-    rewrite <- H5. unfold commandIxInRange in H1. unfold comlen in H1. fold comlen in H1. omega.
+    rewrite <- H5. unfold commandIxInRange in H1. unfold comlen in H1. fold comlen in H1. lia.
 
     intros.
     specialize (H3 t0 H4).
@@ -2106,7 +2107,7 @@ Proof.
     destruct write_at_t0_witness.
     assert (getWriteAt' (CSeq c latestw) t0 = getWriteAt' c t0).
     apply getWriteAt'DestructOnCSeq.
-    unfold commandIxInRange in H6. omega.
+    unfold commandIxInRange in H6. lia.
     rewrite <- H8.
     split. exact H3.
     exact H7.
@@ -2136,13 +2137,13 @@ Proof.
   assert (getWriteAt' c t_check = getWriteAt' (CSeq c w) t_check) as write_inclusive.
   symmetry.
   apply getWriteAt'DestructOnCSeq. unfold commandIxInRange in t_check_in_c.
-  omega.
+  lia.
 
   assert (exists (w_t : write), getWriteAt' (CSeq c w) t_check = Some w_t) as w_at_tcheck_in_cseq.
   apply (getWriteAt'RangeComplete (CSeq c w) t_check).
   (* TODO: an "auto" should suffice after this *)
   unfold commandIxInRange in t_check_in_c.
-  unfold comlen. fold comlen. omega.
+  unfold comlen. fold comlen. lia.
 
   destruct w_at_tcheck_in_cseq as [w_at_tcheck  w_at_tcheck_witness].
   exists w_at_tcheck.
@@ -2185,7 +2186,7 @@ Proof.
   exact no_aliasing_tp.
   destruct w as [wix wval].
   assert (wix = readix \/ wix <> readix) as wix_cases.
-  omega.
+  lia.
   destruct wix_cases as [wix_eq_readix | wix_neq_readix].
   (* wix = readix *)
   (* I can create a contradiction because now the write aliases *)
@@ -2195,20 +2196,20 @@ Proof.
   + destruct contra. destruct H. inversion H.
   + destruct useful. specialize (H0 (comlen c + 1)).
     assert (commandIxInRange (CSeq c (Write wix wval)) (comlen c + 1)) as inrange.
-    unfold commandIxInRange, comlen. fold comlen. omega.
+    unfold commandIxInRange, comlen. fold comlen. lia.
     specialize (H0 inrange).
     destruct H0.
     destruct H0.
     inversion H0.
     assert (comlen c + 1 =? S(comlen c) = true) as eq_dumb.
-    rewrite Nat.eqb_eq. omega.
+    rewrite Nat.eqb_eq. lia.
     rewrite eq_dumb in H3.
     clear eq_dumb.
     destruct x as [xix xval].
     inversion H3.
     simpl in H1. exact H1.
   +  assert (wix = readix /\ wix <> readix) as absurd. auto.
-     omega.
+     lia.
   + (* wix = readix *)
     intros.
     unfold runProgram.
@@ -2217,7 +2218,7 @@ Proof.
     rewrite readFromWriteDifferent.
     apply IHc.
     exact destruct_H.
-    omega.
+    lia.
   + (* CBegin case *)
     intros.
     unfold runProgram. auto.
@@ -2238,7 +2239,7 @@ Proof.
     assert (aliasingt = S(comlen c) \/ aliasingt < S (comlen c)).
     apply getWriteAt'RangeConsistent in aliasingtwrite.
     unfold comlen in aliasingtwrite. fold comlen in aliasingtwrite.
-    omega.
+    lia.
     destruct H as [aliasingt_at_end | aliasingt_before_end].
     (* aliasingt = S (comlen C) *)
     + rewrite aliasingt_at_end in *. clear aliasingt_at_end.
@@ -2246,7 +2247,7 @@ Proof.
     unfold getWriteAt' in aliasingtwrite.
     unfold comlen in aliasingtwrite. fold comlen in aliasingtwrite.
     assert (S (comlen c) =? 1 + comlen c = true) as comlen_c_p_1_equiv.
-    rewrite Nat.eqb_eq. omega.
+    rewrite Nat.eqb_eq. lia.
     rewrite comlen_c_p_1_equiv in aliasingtwrite.
     inversion aliasingtwrite.
     reflexivity.
@@ -2260,7 +2261,7 @@ Proof.
       destruct w as [finalwix finalwval].
       assert (finalwix <> readix).
       * assert (finalwix <> readix \/ finalwix = readix).
-        omega.
+        lia.
         destruct H.
         assumption.
       (* derive contradition from finalwix = readix *)
@@ -2273,15 +2274,15 @@ Proof.
         destruct H1.
         destruct H1.
         specialize (H2 (S (comlen c))).
-        assert (S (comlen c) > aliasingt). omega.
+        assert (S (comlen c) > aliasingt). lia.
         specialize (H2 H3). clear H3.
         assert (commandIxInRange (CSeq c (Write finalwix finalwval)) (S (comlen c))).
-        unfold commandIxInRange. unfold comlen. fold comlen. omega.
+        unfold commandIxInRange. unfold comlen. fold comlen. lia.
         specialize (H2 H3). clear H3.
         destruct H2.
         unfold getWriteAt' in H2.
         assert (S (comlen c) =? comlen (CSeq c (Write finalwix finalwval)) = true).
-        unfold comlen. fold comlen. rewrite Nat.eqb_eq. omega.
+        unfold comlen. fold comlen. rewrite Nat.eqb_eq. lia.
         rewrite H3 in H2. clear H3.
         destruct H2.
         inversion H2.
@@ -2290,8 +2291,8 @@ Proof.
         simpl in H3.
         (* contradiction, baby *)
         assert (finalwix <> readix /\ finalwix = readix).
-        omega.
-        omega.
+        lia.
+        lia.
         (* Some tp = None *)
         destruct H0. inversion H0.
 
@@ -2304,7 +2305,7 @@ Proof.
         symmetry.
         eapply getWriteAt'DestructOnCSeq.
         apply getWriteAt'RangeConsistent in aliasingtwrite.
-        omega.
+        lia.
 
         unfold runProgram. fold runProgram.
         unfold writeToMemory'.
@@ -2315,9 +2316,9 @@ Proof.
 can be destructed *)
         eapply latestAliasingWriteTimepointSpecDestructOnCSeq.
         exact tpspec.
-        omega.
+        lia.
         exact H0.
-        omega.
+        lia.
 
   - (* CBegin *)
     intros.
@@ -2357,8 +2358,8 @@ Proof.
     rewrite H1 in H3.
     cut (t0 >= 1 /\ t0 <= comlen c'). intros t0_in_range_c.
     specialize (H3 t0_in_range_c).
-    omega.
-    omega.
+    lia.
+    lia.
     specialize (H0 H1).
     destruct H0 as [w_at_sinv_t0 witness_w_at_sinv_t0].
     exists w_at_sinv_t0.
@@ -2367,7 +2368,7 @@ Proof.
     destruct schedwitness.
     destruct H2.
     specialize (H3 t0).
-    assert (t0 >= 1 /\ t0 <= comlen c) as t0_range. unfold commandIxInRange in t0_in_range. rewrite H0 in *. omega.
+    assert (t0 >= 1 /\ t0 <= comlen c) as t0_range. unfold commandIxInRange in t0_in_range. rewrite H0 in *. lia.
     specialize (H3 t0_range).
     intuition.
     rewrite H0.
@@ -2393,8 +2394,8 @@ Proof.
   intros tp_inrange'.
   specialize (H1 tp_inrange').
   destruct H1. destruct H2.
-  rewrite <- H. omega.
-  omega.
+  rewrite <- H. lia.
+  lia.
 
   intros stp_inrange.
   unfold commandIxInRange in *.
@@ -2407,7 +2408,7 @@ Proof.
   destruct H0.
   apply H0.
   rewrite H2 in H1.
-  omega.
+  lia.
 Qed.
 
 
@@ -2529,7 +2530,7 @@ Proof.
             intros t'_in_range.
             assert (exists (w: write), getWriteAt' c' t' = Some w) as existence_of_write_at_t'.
             apply getWriteAt'RangeComplete.
-            unfold commandIxInRange in t'_in_range. omega.
+            unfold commandIxInRange in t'_in_range. lia.
             destruct existence_of_write_at_t' as [w_at_t' witness_w_at_t'].
             exists w_at_t'.
             split.
@@ -2537,12 +2538,12 @@ Proof.
             *** intros.
                 assert (writeIx w_at_t' = readix \/ writeIx w_at_t' <> readix) as
                     writeIx_w_at_t'_cases.
-                omega.
+                lia.
                 destruct writeIx_w_at_t'_cases as [writeIx_eq | writeIx_neq].
                 **** (* writeIX w_at_t' = readix. Derive contradiction since this will give us a dependence that is not supposed to exist *)
                   (* TODO, NOTE: Note that I don't actually derive a contradiction, sow what's going on? *)
                   assert (dependenceLexPositive (s latest_tp, t')) as lexpos.
-                  unfold dependenceLexPositive. simpl. omega.
+                  unfold dependenceLexPositive. simpl. lia.
 
 
                   assert (dependenceAliases' (s latest_tp, t') c') as aliases.
@@ -2572,7 +2573,7 @@ Proof.
                   exact H2.
                   exact inv_sinv_s.
                   apply getWriteAt'RangeConsistent in witness_w_at_t'.
-                  unfold commandIxInRange. omega.
+                  unfold commandIxInRange. lia.
 
 
                   assert (completeDependenceSet c' (applyScheduleToDependenceSet s ds)) as ds'_complete.
@@ -2671,7 +2672,7 @@ Proof.
 
   unfold latestAliasingWriteTimepointSpec.
   destruct w as [wix wval].
-  assert (wix = aliasix \/ wix <> aliasix). omega.
+  assert (wix = aliasix \/ wix <> aliasix). lia.
   destruct H0 as [wix_eq_aliasix | wix_neq_aliasix].
   (* wix = aliasix *)
   - left.
@@ -2682,19 +2683,19 @@ Proof.
 
 
     assert (wix =? aliasix = true) as wix_eq_aliasix'.
-    rewrite Nat.eqb_eq. omega.
+    rewrite Nat.eqb_eq. lia.
     rewrite wix_eq_aliasix'. clear wix_eq_aliasix'.
     split.
     + assert (S (comlen c) = comlen c + 1).
-      omega.
+      lia.
       rewrite H0. clear H0.
       reflexivity.
     + split.
       * unfold commandIxInRange. unfold comlen. fold comlen.
-        omega.
+        lia.
       * split.
         ** assert (comlen c + 1 =? S (comlen c) = true).
-           rewrite Nat.eqb_eq. omega.
+           rewrite Nat.eqb_eq. lia.
            rewrite H0. clear H0.
            exists wval.
            rewrite wix_eq_aliasix.
@@ -2703,12 +2704,12 @@ Proof.
             unfold commandIxInRange in H1.
             unfold comlen in H1.
             fold comlen in H1.
-            omega.
+            lia.
 
   (* wix <> aliasix *)
   - intros.
     left.
-    assert (wix =? aliasix = false). rewrite Nat.eqb_neq. omega.
+    assert (wix =? aliasix = false). rewrite Nat.eqb_neq. lia.
     unfold getLatestAliasingWriteTimepointForProgram.
     simpl.
     fold getLatestAliasingWriteTimepointForProgram.
@@ -2731,19 +2732,19 @@ Proof.
 
 
         assert (aliasingtp = S (comlen c) \/ aliasingtp <> S (comlen c)).
-        omega.
+        lia.
         destruct H4 as [aliasingtp_eq_end | aliasingtp_neq_end].
         apply getWriteAt'RangeConsistent in H2.
         rewrite aliasingtp_eq_end in *.
         clear aliasingtp_eq_end. clear aliasingtp.
 
 
-        assert (S (comlen c) <= comlen c) as contra. omega.
-        omega. (* contradiction *)
+        assert (S (comlen c) <= comlen c) as contra. lia.
+        lia. (* contradiction *)
 
 
         assert (aliasingtp =? S (comlen c) = false) as aliasingtp_neq_end'.
-        rewrite Nat.eqb_neq. omega.
+        rewrite Nat.eqb_neq. lia.
         rewrite aliasingtp_neq_end'.
         exists x.
         assumption.
@@ -2762,14 +2763,14 @@ Proof.
                  tp_gt_aliasingtp < S (comlen c)).
          unfold commandIxInRange in *.
          unfold comlen in *. fold comlen in *.
-         omega.
+         lia.
 
          destruct H4 as [tp_gt_aliasingtp_eq_end |
                          tp_gt_aliasingtp_neq_end].
 
 
          assert (tp_gt_aliasingtp =? S(comlen c) = true).
-         rewrite Nat.eqb_eq. omega.
+         rewrite Nat.eqb_eq. lia.
          rewrite H4. clear H4.
          exists (Write wix wval).
          split.
@@ -2778,7 +2779,7 @@ Proof.
 
 
          assert (tp_gt_aliasingtp =? S (comlen c) = false).
-         rewrite Nat.eqb_neq. omega.
+         rewrite Nat.eqb_neq. lia.
          rewrite H4.
 
 
@@ -2786,25 +2787,25 @@ Proof.
            as tp_gt_aliasingtp_inrange'.
          unfold commandIxInRange in *.
          unfold comlen in *. fold comlen in *.
-         omega.
+         lia.
          specialize (H3 tp_gt_aliasingtp_inrange').
          assumption.
 
   - unfold latestAliasingWriteTimepointSpec.
     destruct w as [wix wval].
-    assert (wix = aliasix \/ wix <> aliasix). omega.
+    assert (wix = aliasix \/ wix <> aliasix). lia.
     destruct H0 as [wix_eq_aliasix | wix_neq_aliasix].
     left.
     unfold getLatestAliasingWriteTimepointForProgram.
     simpl.
-    assert (wix =? aliasix = true). rewrite Nat.eqb_eq. omega.
+    assert (wix =? aliasix = true). rewrite Nat.eqb_eq. lia.
     rewrite H0. clear H0.
     exists (S (comlen c)).
     split.
     + reflexivity.
     + intros.
       split.
-      * unfold commandIxInRange. unfold comlen. fold comlen. omega.
+      * unfold commandIxInRange. unfold comlen. fold comlen. lia.
       * intros. split.
         ** exists wval.
            simpl.
@@ -2816,12 +2817,12 @@ Proof.
         ** intros.
            unfold commandIxInRange in H1. unfold comlen in H1. fold comlen in H1.
            assert (t0 <= 1 + comlen c /\ t0 > S (comlen c)) as contra.
-           omega.
-           omega.
+           lia.
+           lia.
     +intros.
      right.
      assert (wix =? aliasix = false) as wix_neq_aliasix'.
-     rewrite Nat.eqb_neq. omega.
+     rewrite Nat.eqb_neq. lia.
      unfold getLatestAliasingWriteTimepointForProgram.
      simpl.
      fold getLatestAliasingWriteTimepointForProgram.
@@ -2829,23 +2830,23 @@ Proof.
      split.
      *  destruct H. exact H.
      * intros.
-       assert (t0 = S (comlen c) \/ t0 <> S (comlen c)). omega.
+       assert (t0 = S (comlen c) \/ t0 <> S (comlen c)). lia.
        destruct H1 as [t0_eq_end | t0_neq_end].
         ** assert (t0 =? S (comlen c) = true).
-           rewrite Nat.eqb_eq. omega.
+           rewrite Nat.eqb_eq. lia.
            rewrite H1. clear H1.
            exists (Write wix wval).
            auto.
 
         ** assert (t0 =? S (comlen c) = false).
-           rewrite Nat.eqb_neq. omega.
+           rewrite Nat.eqb_neq. lia.
            rewrite H1. clear H1.
            destruct H.
            assert (commandIxInRange c t0) as t0_in_c_range.
            unfold commandIxInRange in *.
            unfold comlen in *.
            fold comlen in *.
-           omega.
+           lia.
            specialize (H1 _ t0_in_c_range).
            exact H1.
   - intros.
@@ -2856,7 +2857,7 @@ Proof.
     + reflexivity.
     + intros. inversion H.
       simpl in H0.
-      omega.
+      lia.
 Qed.
 
 
@@ -2868,7 +2869,7 @@ Theorem getWriteAt'TransportAlongValidSchedule':
     getWriteAt' c tp = getWriteAt' c' (s tp).
 Proof.
   intros.
-  assert ((tp >= 1 /\ tp <= comlen c) \/ tp = 0 \/ tp > comlen c) as tp_cases. omega.
+  assert ((tp >= 1 /\ tp <= comlen c) \/ tp = 0 \/ tp > comlen c) as tp_cases. lia.
   destruct tp_cases as [tp_in_range | tp_out_of_range].
 Abort.
 
